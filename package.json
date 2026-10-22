@@ -36,5 +36,8 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@12.10.1"
+  "packageManager": "pnpm@12.10.1",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
 }
