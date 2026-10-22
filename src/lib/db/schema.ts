@@ -20,6 +20,8 @@ export const user = pgTable("user", {
   image: text("image"),
   role: text("role", { enum: ["trainer", "client"] }).notNull().default("client"),
   approved: boolean("approved").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  membershipType: text("membership_type", { enum: ["2dias", "3dias", "pase_libre"] }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -75,16 +77,21 @@ export const exercise = pgTable("exercise", {
   name: text("name").notNull(),
   description: text("description"),
   muscleGroup: muscleGroupEnum("muscle_group").notNull().default("full_body"),
+  imageUrl: text("image_url"),
   videoUrl: text("video_url"),
+  difficulty: text("difficulty", { enum: ["beginner", "intermediate", "advanced"] }).default("intermediate"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // ─── Dominio: Planes de entrenamiento ─────────────────────────────────────
 
+export const planCategoryEnum = pgEnum("plan_category", ["calentamiento", "funcional", "musculación"]);
+
 export const plan = pgTable("plan", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   description: text("description"),
+  category: text("category", { enum: ["calentamiento", "funcional", "musculación"] }).notNull().default("musculación"),
   daysPerWeek: integer("days_per_week").notNull().default(3),
   durationWeeks: integer("duration_weeks"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -98,6 +105,7 @@ export const planDay = pgTable("plan_day", {
     .references(() => plan.id, { onDelete: "cascade" }),
   dayNumber: integer("day_number").notNull(), // 1, 2, 3…
   name: text("name"), // ej: "Pecho + Tríceps"
+  dayOfWeek: integer("day_of_week"), // 1=Lun … 6=Sáb, null = sin día fijo
 });
 
 export const planExercise = pgTable("plan_exercise", {
@@ -108,6 +116,7 @@ export const planExercise = pgTable("plan_exercise", {
   exerciseId: uuid("exercise_id")
     .notNull()
     .references(() => exercise.id),
+  section: text("section", { enum: ["warmup", "main"] }).notNull().default("main"),
   orderIndex: integer("order_index").notNull().default(0),
   sets: integer("sets").notNull().default(3),
   reps: text("reps").notNull().default("10"), // "10", "8-12", "AMRAP"
@@ -129,6 +138,7 @@ export const planAssignment = pgTable("plan_assignment", {
   startDate: timestamp("start_date").notNull().defaultNow(),
   active: boolean("active").notNull().default(true),
   trainerNotes: text("trainer_notes"),
+  daySchedule: text("day_schedule"), // JSON: [{planDayId: string, dayOfWeek: number}]
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -175,6 +185,46 @@ export const bodyWeight = pgTable("body_weight", {
   notes: text("notes"),
 });
 
+// ─── Notificaciones ───────────────────────────────────────────────────────
+
+export const notification = pgTable("notification", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  fromId: text("from_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  toId: text("to_id").references(() => user.id, { onDelete: "set null" }), // null = todos
+  body: text("body").notNull(),
+  sentAt: timestamp("sent_at").notNull().defaultNow(),
+  readAt: timestamp("read_at"),
+});
+
+// ─── Turnos (clases recurrentes) ──────────────────────────────────────────
+
+export const classSlot = pgTable("class_slot", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  dayOfWeek: integer("day_of_week").notNull(), // 1=Lun … 5=Vie
+  startTime: text("start_time").notNull(),     // "16:00"
+  type: text("type").notNull(),                // "musculación" | "funcional"
+  maxCapacity: integer("max_capacity"),
+});
+
+export const slotEnrollment = pgTable("slot_enrollment", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slotId: uuid("slot_id").notNull().references(() => classSlot.id, { onDelete: "cascade" }),
+  clientId: text("client_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  enrolledAt: timestamp("enrolled_at").notNull().defaultNow(),
+});
+
+// ─── Asistencias ──────────────────────────────────────────────────────────
+
+export const attendance = pgTable("attendance", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  clientId: text("client_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  date: timestamp("date").notNull(),
+  present: boolean("present").notNull().default(true),
+  notes: text("notes"),
+});
+
 // ─── Relations ────────────────────────────────────────────────────────────
 
 export const planRelations = relations(plan, ({ many }) => ({
@@ -203,6 +253,3 @@ export type PlanDay = typeof planDay.$inferSelect;
 export type PlanExercise = typeof planExercise.$inferSelect;
 export type Exercise = typeof exercise.$inferSelect;
 export type PlanAssignment = typeof planAssignment.$inferSelect;
-export type WorkoutLog = typeof workoutLog.$inferSelect;
-export type ExerciseLog = typeof exerciseLog.$inferSelect;
-export type BodyWeight = typeof bodyWeight.$inferSelect;

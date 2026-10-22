@@ -1,38 +1,147 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0a0a0a;
-  --bg-subtle: #111111;
-  --bg-panel: #1a1a1a;
-  --bg-hover: #222222;
-  --bg-raised: #1f1f1f;
-  --text: #f0f0f0;
-  --text-2: #a0a0a0;
-  --text-3: #555555;
-  --border: #2a2a2a;
-  --border-strong: #3a3a3a;
+  /* ── Categorical / semantic colors (dark mode defaults) ── */
+  --c-lime:      #c4f135;
+  --c-lime-bg:   rgba(196,241,53,0.10);
+  --c-blue:      #60a5fa;
+  --c-blue-bg:   rgba(96,165,250,0.10);
+  --c-orange:    #fb923c;
+  --c-orange-bg: rgba(251,146,60,0.10);
+  --c-purple:    #c084fc;
+  --c-purple-bg: rgba(192,132,252,0.10);
+  --c-pink:      #f472b6;
+  --c-pink-bg:   rgba(244,114,182,0.10);
+  --c-yellow:    #facc15;
+  --c-yellow-bg: rgba(250,204,21,0.13);
+  --c-red:       #f87171;
+  --c-red-bg:    rgba(248,113,113,0.10);
+  --c-green:     #34d399;
+  --c-green-bg:  rgba(52,211,153,0.10);
 
-  /* Acento: verde lima gym */
-  --accent: #b5ff4d;
-  --accent-hover: #c8ff6a;
-  --accent-soft: #1a2a00;
+  /* Surfaces */
+  --bg: #080808;
+  --bg-subtle: #0d0d0d;
+  --bg-panel: #121212;
+  --bg-hover: #1a1a1a;
+  --bg-raised: #161616;
+
+  /* Text */
+  --text: #f5f5f5;
+  --text-2: #999999;
+  --text-3: #7d7d7d;
+
+  /* Borders */
+  --border: #1e1e1e;
+  --border-strong: #2a2a2a;
+
+  /* Accent — lima */
+  --accent: #c4f135;
+  --accent-hover: #d0ff50;
+  --accent-soft: #1a2800;
   --accent-fg: #0a0a0a;
 
+  /* States */
   --destructive: #ef4444;
   --warning: #f59e0b;
   --success: #22c55e;
 }
 
+/* ─── Light theme ─────────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg: #f5f5f5;
+  --bg-subtle: #efefef;
+  --bg-panel: #ffffff;
+  --bg-hover: #e8e8e8;
+  --bg-raised: #f9f9f9;
+  --text: #0a0a0a;
+  --text-2: #444444;
+  --text-3: #666666;      /* was #aaaaaa (2.3:1) — now 5.3:1 ✓ */
+  --border: #e0e0e0;
+  --border-strong: #cccccc;
+  --accent: #3d6b00;      /* darkened for 5.5:1 contrast on #f5f5f5 */
+  --accent-hover: #4d8500;
+  --accent-soft: #e9f7bb;
+  --accent-fg: #ffffff;
+  --destructive: #b91c1c;
+  --warning: #b45309;
+  --success: #15803d;
+
+  /* Categorical colors — dark enough for 4.5:1 on #f5f5f5 */
+  --c-lime:      #3d6b00;
+  --c-lime-bg:   #e9f7bb;
+  --c-blue:      #1e5fa4;
+  --c-blue-bg:   #dbeafe;
+  --c-orange:    #9a3412;
+  --c-orange-bg: #fed7aa;
+  --c-purple:    #6b21a8;
+  --c-purple-bg: #f3e8ff;
+  --c-pink:      #9d174d;
+  --c-pink-bg:   #fce7f3;
+  --c-yellow:    #854d0e;
+  --c-yellow-bg: #fef3c7;
+  --c-red:       #9f1239;
+  --c-red-bg:    #fee2e2;
+  --c-green:     #14532d;
+  --c-green-bg:  #dcfce7;
+}
+
+[data-theme="light"] .badge-beginner { background: #dcfce7; color: #16a34a; }
+[data-theme="light"] .badge-intermediate { background: #e8f9c0; color: #5c9a00; }
+[data-theme="light"] .badge-advanced { background: #fee2e2; color: #dc2626; }
+
+/* ─── Sidebar: adapts to page theme ───────────────────────────────────────── */
+[data-sidebar] {
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+}
+
+/* ─── Client theme dark bg (ligeramente distinto del trainer) ──────────────── */
+[data-client-theme] {
+  --bg: #0d0e10;
+  --bg-subtle: #111214;
+  --bg-panel: rgba(18, 20, 22, 0.82);
+  --bg-hover: rgba(28, 31, 35, 0.88);
+  --bg-raised: rgba(20, 22, 25, 0.85);
+  --border: rgba(40, 44, 54, 0.9);
+  --border-strong: rgba(52, 57, 70, 0.9);
+  --text: #f0f0f0;
+  --text-2: #8a8e99;
+  --text-3: #83868f;
+}
+
+/* ─── Client light mode ────────────────────────────────────────────────────── */
+[data-theme="light"] [data-client-theme] {
+  --bg: #f5f5f5;
+  --bg-subtle: #efefef;
+  --bg-panel: #ffffff;
+  --bg-hover: #e8e8e8;
+  --bg-raised: #f9f9f9;
+  --text: #0a0a0a;
+  --text-2: #444444;
+  --text-3: #666666;
+  --border: #e0e0e0;
+  --border-strong: #cccccc;
+  --success: #15803d;
+}
+
 * { box-sizing: border-box; }
 
 html {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-body { min-height: 100svh; }
+body { min-height: 100svh; overflow-x: hidden; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg-panel); }
@@ -40,3 +149,80 @@ body { min-height: 100svh; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Plan cards hover effect */
+.plan-card { transition: border-color 150ms; }
+.plan-card:hover { border-color: var(--accent) !important; }
+
+/* Exercise card hover */
+.exercise-card { transition: border-color 150ms, background 150ms; }
+.exercise-card:hover { border-color: var(--accent) !important; background: var(--bg-hover) !important; }
+
+/* Difficulty badges */
+.badge-beginner { background: #0f2a1a; color: #22c55e; }
+.badge-intermediate { background: #1a2800; color: #c4f135; }
+.badge-advanced { background: #2a0a0a; color: #ef4444; }
+
+/* ─── Nav animations ──────────────────────────────────────────────────────── */
+@keyframes neon-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px #c4f135, 0 0 18px rgba(196,241,53,0.45), 0 0 40px rgba(196,241,53,0.2); }
+  50%       { opacity: 0.6; box-shadow: 0 0 3px #c4f135, 0 0 8px rgba(196,241,53,0.2); }
+}
+
+@keyframes indicator-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  70%  { transform: scale(1.1); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes login-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nav-item-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.nav-item-enter {
+  opacity: 0;
+  animation: nav-item-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes nav-glow {
+  0%, 100% { box-shadow: 0 0 18px rgba(196,241,53,0.45), 0 0 4px rgba(196,241,53,0.85); }
+  50%      { box-shadow: 0 0 30px rgba(196,241,53,0.7), 0 0 7px rgba(196,241,53,0.95); }
+}
+
+.nav-active-glow {
+  animation:
+    indicator-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+    nav-glow 2.8s ease-in-out 0.28s infinite;
+}
+
+.nav-neon-line {
+  animation: neon-pulse 3s ease-in-out infinite;
+}
+
+.nav-indicator {
+  animation: indicator-pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Orange glow on accent buttons */
+.btn-accent {
+  background: var(--accent);
+  color: var(--accent-fg);
+  box-shadow: 0 0 20px rgba(196,241,53,0.2);
+  transition: box-shadow 150ms, background 150ms;
+}
+.btn-accent:hover { background: var(--accent-hover); box-shadow: 0 0 28px rgba(196,241,53,0.35); }
+
+/* Stat cards */
+.stat-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  transition: border-color 150ms;
+}
+.stat-card:hover { border-color: var(--accent); }
+

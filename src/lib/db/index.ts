@@ -6,7 +6,10 @@ let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
 export function getDb() {
   if (!_db) {
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL!,
+      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+    });
     _db = drizzle(pool, { schema });
   }
   return _db;

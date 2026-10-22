@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronDown, ChevronUp, Dumbbell, CheckCircle, Clock } from "lucide-react";
 import type { Plan, PlanDay, PlanExercise, Exercise, PlanAssignment } from "@/lib/db/schema";
+
+const DOW_FULL = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const DOW_SHORT = ["", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 type FullExercise = PlanExercise & { exercise: Exercise };
 type FullDay = PlanDay & { planExercises: FullExercise[] };
@@ -22,6 +25,16 @@ export function PlanView({ plan, assignment }: Props) {
   const [logging, setLogging] = useState(false);
   const [loggedDay, setLoggedDay] = useState<string | null>(null);
   const [successDay, setSuccessDay] = useState<string | null>(null);
+
+  const scheduleMap = useMemo<Record<string, number>>(() => {
+    if (!assignment.daySchedule) return {};
+    try {
+      const arr = JSON.parse(assignment.daySchedule) as { planDayId: string; dayOfWeek: number }[];
+      return Object.fromEntries(arr.map((e) => [e.planDayId, e.dayOfWeek]));
+    } catch {
+      return {};
+    }
+  }, [assignment.daySchedule]);
 
   function updateEntry(planExerciseId: string, field: keyof LogEntry, value: string) {
     setLogEntries((prev) => ({
@@ -95,6 +108,12 @@ export function PlanView({ plan, assignment }: Props) {
         {plan.planDays.map((day) => {
           const isOpen = openDay === day.id;
           const isSuccess = successDay === day.id;
+          const dow = scheduleMap[day.id] ?? day.dayOfWeek ?? null;
+          const dowShort = dow ? DOW_SHORT[dow] : null;
+          const dowFull = dow ? DOW_FULL[dow] : null;
+          const dayLabel = dowFull
+            ? `${dowFull} — ${day.name || `Día ${day.dayNumber}`}`
+            : day.name || `Día ${day.dayNumber}`;
 
           return (
             <div key={day.id} className="rounded-2xl overflow-hidden"
@@ -110,9 +129,16 @@ export function PlanView({ plan, assignment }: Props) {
                     style={{ background: isOpen ? "var(--accent)" : "var(--bg-hover)", color: isOpen ? "var(--accent-fg)" : "var(--text-3)" }}>
                     {day.dayNumber}
                   </span>
-                  <span className="font-bold text-sm" style={{ color: "var(--text)" }}>
-                    {day.name || `Día ${day.dayNumber}`}
-                  </span>
+                  <div className="flex flex-col items-start">
+                    {dowShort && (
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: isOpen ? "var(--accent)" : "var(--text-3)", opacity: 0.7 }}>
+                        {dowShort}
+                      </span>
+                    )}
+                    <span className="font-bold text-sm" style={{ color: "var(--text)" }}>
+                      {dayLabel}
+                    </span>
+                  </div>
                   <span className="text-xs" style={{ color: "var(--text-3)" }}>
                     {day.planExercises.length} ejercicios
                   </span>

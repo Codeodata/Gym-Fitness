@@ -1,3 +1,4 @@
+export const instant = false;
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";
@@ -51,5 +52,9 @@ export default async function MyPlanPage() {
 
   if (!plan) return null;
 
-  return <PlanView plan={plan} assignment={assignment} clientId={session!.user.id} />;
+  return (
+    <div className="max-w-2xl mx-auto">
+      <PlanView plan={plan} assignment={assignment} clientId={session!.user.id} />
+    </div>
+  );
 }

@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
+const NGROK_HOST = process.env.TRUSTED_ORIGINS
+  ? process.env.TRUSTED_ORIGINS.split(",").map((u) => u.replace(/^https?:\/\//, ""))
+  : [];
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  allowedDevOrigins: NGROK_HOST,
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

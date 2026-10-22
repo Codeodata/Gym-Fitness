@@ -7,6 +7,7 @@ import { z } from "zod";
 
 const exerciseSchema = z.object({
   exerciseName: z.string().min(1),
+  section: z.enum(["warmup", "main"]).default("main"),
   sets: z.number().int().min(1).max(20),
   reps: z.string().min(1),
   weightKg: z.string().optional(),
@@ -15,13 +16,15 @@ const exerciseSchema = z.object({
 
 const daySchema = z.object({
   name: z.string(),
+  dayOfWeek: z.number().int().min(1).max(6).nullable().optional(),
   exercises: z.array(exerciseSchema).min(1),
 });
 
 const planSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  daysPerWeek: z.number().int().min(1).max(7),
+  category: z.enum(["calentamiento", "funcional", "musculación"]).default("musculación"),
+  daysPerWeek: z.union([z.literal(2), z.literal(3), z.literal(5)]),
   durationWeeks: z.number().int().min(1).nullable().optional(),
   days: z.array(daySchema).min(1),
 });
@@ -36,12 +39,13 @@ export async function POST(req: NextRequest) {
   if (!body.success) return NextResponse.json({ error: "Invalid body", issues: body.error.issues }, { status: 400 });
 
   const db = getDb();
-  const { name, description, daysPerWeek, durationWeeks, days } = body.data;
+  const { name, description, category, daysPerWeek, durationWeeks, days } = body.data;
 
   // 1. Create plan
   const [newPlan] = await db.insert(schema.plan).values({
     name,
     description: description ?? null,
+    category,
     daysPerWeek,
     durationWeeks: durationWeeks ?? null,
   }).returning();
@@ -55,6 +59,7 @@ export async function POST(req: NextRequest) {
       planId: newPlan.id,
       dayNumber: dayIdx + 1,
       name: day.name || null,
+      dayOfWeek: day.dayOfWeek ?? null,
     }).returning();
 
     if (!planDay) continue;
@@ -82,6 +87,7 @@ export async function POST(req: NextRequest) {
       await db.insert(schema.planExercise).values({
         planDayId: planDay.id,
         exerciseId,
+        section: ex.section ?? "main",
         orderIndex: exIdx,
         sets: ex.sets,
         reps: ex.reps,

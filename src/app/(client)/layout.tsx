@@ -1,3 +1,4 @@
+export const instant = false;
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -24,12 +25,32 @@ export default async function ClientLayout({ children }: { children: React.React
     );
   }
 
+  if (!session.user.active) {
+    return (
+      <div className="min-h-svh flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
+        <div className="text-center max-w-sm flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+            style={{ background: "var(--bg-panel)" }}>
+            🚫
+          </div>
+          <h2 className="text-xl font-bold" style={{ color: "var(--text)" }}>Cuenta desactivada</h2>
+          <p className="text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
+            Tu acceso a la plataforma fue desactivado. Contactá al entrenador para más información.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ background: "var(--bg)", minHeight: "100svh" }}>
-      <ClientNav userName={session.user.name} />
-      <main className="pb-24 md:pb-8 pt-16 md:pt-0 md:pl-64 px-4 md:px-8 md:py-8">
-        {children}
-      </main>
+    <div data-client-theme="" style={{ minHeight: "100svh", position: "relative" }}>
+      {/* Content */}
+      <div style={{ position: "relative", zIndex: 4 }}>
+        <ClientNav userName={session.user.name} />
+        <main className="pb-8 pt-16 lg:pt-0 lg:pl-64 px-4 lg:px-8 lg:py-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

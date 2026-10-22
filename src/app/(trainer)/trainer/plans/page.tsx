@@ -1,27 +1,31 @@
+export const instant = false;
+import { connection } from "next/server";
 import { getDb, schema } from "@/lib/db";
 import Link from "next/link";
 import { Plus, ClipboardList } from "lucide-react";
 import { count, eq } from "drizzle-orm";
+import { PlansGrid } from "@/components/trainer/plans-grid";
 
 export default async function PlansPage() {
+  await connection();
   const db = getDb();
   const plans = await db.select().from(schema.plan).orderBy(schema.plan.createdAt);
 
-  // Get day count per plan
   const dayCountRows = await db
     .select({ planId: schema.planDay.planId, count: count() })
     .from(schema.planDay)
     .groupBy(schema.planDay.planId);
 
   const dayCountMap = new Map(dayCountRows.map((r) => [r.planId, Number(r.count)]));
+  const plansWithCount = plans.map((p) => ({ ...p, dayCount: dayCountMap.get(p.id) ?? 0 }));
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-5xl">
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Planes</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--text-2)" }}>
-            Creá plantillas y asignalas a tus clientes
+            Creá plantillas y asignalas a tus alumnos
           </p>
         </div>
         <Link
@@ -45,7 +49,7 @@ export default async function PlansPage() {
           <div>
             <p className="font-bold" style={{ color: "var(--text)" }}>Todavía no hay planes</p>
             <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>
-              Creá el primer plan y asignalo a tus clientes
+              Creá el primer plan y asignalo a tus alumnos
             </p>
           </div>
           <Link
@@ -57,41 +61,7 @@ export default async function PlansPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {plans.map((plan) => (
-            <Link
-              key={plan.id}
-              href={`/trainer/plans/${plan.id}`}
-              className="rounded-2xl p-5 flex flex-col gap-3 group"
-              style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <h2 className="font-extrabold text-base" style={{ color: "var(--text)" }}>{plan.name}</h2>
-                <span
-                  className="text-xs px-2 py-1 rounded-lg font-semibold shrink-0"
-                  style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-                >
-                  {plan.daysPerWeek}d/sem
-                </span>
-              </div>
-              {plan.description && (
-                <p className="text-sm line-clamp-2" style={{ color: "var(--text-3)" }}>{plan.description}</p>
-              )}
-              <div className="flex items-center gap-4 mt-auto pt-2" style={{ borderTop: "1px solid var(--border)" }}>
-                <span className="text-xs" style={{ color: "var(--text-3)" }}>
-                  {dayCountMap.get(plan.id) ?? 0} días
-                </span>
-                {plan.durationWeeks && (
-                  <span className="text-xs" style={{ color: "var(--text-3)" }}>
-                    {plan.durationWeeks} semanas
-                  </span>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
+        <PlansGrid plans={plansWithCount} />
       )}
     </div>
   );
