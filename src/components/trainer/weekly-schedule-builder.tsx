@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, X, Flame, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, X, Flame, Dumbbell, ChevronDown, ChevronUp } from "lucide-react";
 
 const DAYS = [
   { label: "Lunes",     short: "Lun", dow: 1 },
@@ -11,15 +11,18 @@ const DAYS = [
   { label: "Viernes",   short: "Vie", dow: 5 },
 ];
 
-const CAT_COLOR: Record<string, string> = {
-  musculación:   "var(--accent)",
-  calentamiento: "var(--c-orange)",
-  funcional:     "var(--c-blue)",
+const CAT: Record<string, { color: string; bg: string; border: string }> = {
+  musculación:   { color: "#84cc16",  bg: "rgba(132,204,22,0.10)",  border: "rgba(132,204,22,0.30)"  },
+  calentamiento: { color: "#fb923c",  bg: "rgba(251,146,60,0.10)",  border: "rgba(251,146,60,0.30)"  },
+  funcional:     { color: "#60a5fa",  bg: "rgba(96,165,250,0.10)",  border: "rgba(96,165,250,0.30)"  },
 };
-const CAT_BG: Record<string, string> = {
-  musculación:   "var(--accent-soft)",
-  calentamiento: "rgba(251,146,60,0.12)",
-  funcional:     "rgba(96,165,250,0.12)",
+
+const DAY_ACCENT: Record<number, { color: string; bg: string }> = {
+  1: { color: "#60a5fa",  bg: "rgba(96,165,250,0.10)"  },
+  2: { color: "#c084fc",  bg: "rgba(192,132,252,0.10)" },
+  3: { color: "#fb923c",  bg: "rgba(251,146,60,0.10)"  },
+  4: { color: "#f472b6",  bg: "rgba(244,114,182,0.10)" },
+  5: { color: "#4ade80",  bg: "rgba(74,222,128,0.10)"  },
 };
 
 type Block = {
@@ -72,14 +75,15 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
         body: JSON.stringify({ clientId, dayOfWeek: activeDow, planDayId }),
       });
       const data = await res.json() as { block: Block };
-      const planDay = library.flatMap((p) => p.days.map((d) => ({ ...d, planName: p.name, planCategory: p.category }))).find((d) => d.id === planDayId);
+      const flat = library.flatMap((p) =>
+        p.days.map((d) => ({ ...d, planName: p.name, planCategory: p.category }))
+      );
+      const planDay = flat.find((d) => d.id === planDayId);
       if (planDay) {
-        setBlocks((prev) => [...prev, {
-          ...data.block,
-          planDayName: planDay.name,
-          planName: planDay.planName,
-          planCategory: planDay.planCategory,
-        }]);
+        setBlocks((prev) => [
+          ...prev,
+          { ...data.block, planDayName: planDay.name, planName: planDay.planName, planCategory: planDay.planCategory },
+        ]);
       }
     } finally {
       setLoadingBlock(null);
@@ -99,101 +103,148 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
   function togglePlan(planId: string) {
     setExpandedPlans((prev) => {
       const next = new Set(prev);
-      if (next.has(planId)) next.delete(planId);
-      else next.add(planId);
+      next.has(planId) ? next.delete(planId) : next.add(planId);
       return next;
     });
   }
 
-  const blocksForDay = (dow: number) => blocks.filter((b) => b.dayOfWeek === dow).sort((a, b) => a.orderIndex - b.orderIndex);
+  const blocksForDay = (dow: number) =>
+    blocks.filter((b) => b.dayOfWeek === dow).sort((a, b) => a.orderIndex - b.orderIndex);
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
+
+      {/* Header */}
       <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
         <h2 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: "var(--text)" }}>
           Semana del alumno
         </h2>
         <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
-          Hacé click en un día para agregar bloques de rutina
+          Hacé clic en un día para agregar bloques de rutina
         </p>
       </div>
 
-      {/* Weekly grid */}
-      <div className="grid grid-cols-5 divide-x" style={{ borderBottom: "1px solid var(--border)", "--tw-divide-opacity": 1 } as React.CSSProperties}>
-        {DAYS.map(({ label, short, dow }) => {
+      {/* 5-column grid */}
+      <div className="grid grid-cols-5" style={{ borderBottom: activeDow !== null ? "1px solid var(--border)" : "none" }}>
+        {DAYS.map(({ label, short, dow }, colIdx) => {
           const dayBlocks = blocksForDay(dow);
           const isActive = activeDow === dow;
+          const da = DAY_ACCENT[dow]!;
+
           return (
-            <div key={dow} className="flex flex-col" style={{ minHeight: 120 }}>
-              {/* Day header */}
+            <div
+              key={dow}
+              className="flex flex-col"
+              style={{
+                borderRight: colIdx < 4 ? "1px solid var(--border)" : "none",
+                borderTop: `3px solid ${isActive ? da.color : "transparent"}`,
+                background: isActive ? da.bg : "transparent",
+                transition: "background 0.15s, border-color 0.15s",
+              }}
+            >
+              {/* Day header button */}
               <button
                 onClick={() => setActiveDow(isActive ? null : dow)}
-                className="w-full px-2 py-2.5 text-center flex flex-col items-center gap-0.5 cursor-pointer transition-all"
-                style={{
-                  background: isActive ? "var(--accent-soft)" : "transparent",
-                  borderBottom: "1px solid var(--border)",
-                }}
+                className="w-full px-2 py-3 text-center cursor-pointer"
+                style={{ borderBottom: "1px solid var(--border)" }}
               >
-                <span className="text-xs font-extrabold uppercase tracking-wider" style={{ color: isActive ? "var(--accent)" : "var(--text-3)" }}>
+                <span
+                  className="text-xs font-extrabold uppercase tracking-wider block"
+                  style={{ color: isActive ? da.color : "var(--text-3)" }}
+                >
                   {short}
                 </span>
-                <span className="hidden sm:block text-[10px]" style={{ color: "var(--text-3)" }}>{label}</span>
+                <span
+                  className="text-[10px] hidden sm:block mt-0.5"
+                  style={{ color: isActive ? da.color : "var(--text-3)", opacity: 0.7 }}
+                >
+                  {label}
+                </span>
                 {dayBlocks.length > 0 && (
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold mt-0.5"
-                    style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
+                  <span
+                    className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-extrabold mt-1.5"
+                    style={{ background: da.color, color: "#000" }}
+                  >
                     {dayBlocks.length}
                   </span>
                 )}
               </button>
 
-              {/* Blocks */}
-              <div className="flex-1 p-1.5 flex flex-col gap-1">
-                {dayBlocks.map((block) => (
-                  <div
-                    key={block.id}
-                    className="rounded-lg px-2 py-1.5 flex items-start justify-between gap-1 group"
-                    style={{
-                      background: CAT_BG[block.planCategory] ?? "var(--bg-hover)",
-                      border: `1px solid ${CAT_COLOR[block.planCategory] ?? "var(--border)"}20`,
-                    }}
-                  >
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-extrabold truncate leading-tight" style={{ color: CAT_COLOR[block.planCategory] ?? "var(--text)" }}>
+              {/* Blocks list */}
+              <div className="flex flex-col gap-2 p-2 flex-1">
+                {dayBlocks.map((block) => {
+                  const cat = CAT[block.planCategory] ?? CAT.musculación!;
+                  return (
+                    <div
+                      key={block.id}
+                      className="rounded-xl p-2.5 flex flex-col gap-1 group relative"
+                      style={{
+                        background: cat.bg,
+                        border: `1px solid ${cat.border}`,
+                      }}
+                    >
+                      {/* Category icon */}
+                      <div className="flex items-center gap-1.5">
+                        {block.planCategory === "calentamiento"
+                          ? <Flame className="h-3 w-3 shrink-0" style={{ color: cat.color }} />
+                          : <Dumbbell className="h-3 w-3 shrink-0" style={{ color: cat.color }} />}
+                        <span
+                          className="text-[9px] font-extrabold uppercase tracking-wider truncate"
+                          style={{ color: cat.color }}
+                        >
+                          {block.planCategory}
+                        </span>
+                      </div>
+                      {/* Block name */}
+                      <p
+                        className="text-[11px] font-extrabold leading-tight"
+                        style={{ color: "var(--text)" }}
+                      >
                         {block.planDayName ?? block.planName}
                       </p>
-                      <p className="text-[9px] truncate leading-tight mt-0.5" style={{ color: "var(--text-3)" }}>
-                        {block.planName}
-                      </p>
+                      {/* Plan name (only if different) */}
+                      {block.planDayName && (
+                        <p
+                          className="text-[10px] leading-tight truncate"
+                          style={{ color: "var(--text-3)" }}
+                        >
+                          {block.planName}
+                        </p>
+                      )}
+                      {/* Remove button */}
+                      <button
+                        onClick={() => removeBlock(block.id)}
+                        disabled={loadingBlock === block.id}
+                        className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => removeBlock(block.id)}
-                      disabled={loadingBlock === block.id}
-                      className="w-4 h-4 flex items-center justify-center rounded shrink-0 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ color: "var(--destructive)" }}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* Add button */}
                 <button
                   onClick={() => setActiveDow(isActive ? null : dow)}
-                  className="w-full flex items-center justify-center rounded-lg cursor-pointer transition-all mt-auto"
+                  className="w-full flex items-center justify-center rounded-xl cursor-pointer transition-colors mt-auto"
                   style={{
-                    height: 28,
-                    border: `1px dashed ${isActive ? "var(--accent)" : "var(--border-strong)"}`,
-                    color: isActive ? "var(--accent)" : "var(--text-3)",
+                    height: 34,
+                    border: `1.5px dashed ${isActive ? da.color : "var(--border)"}`,
+                    color: isActive ? da.color : "var(--text-3)",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent)"; }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = da.color;
+                    e.currentTarget.style.color = da.color;
+                  }}
                   onMouseLeave={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.borderColor = "var(--border-strong)";
+                      e.currentTarget.style.borderColor = "var(--border)";
                       e.currentTarget.style.color = "var(--text-3)";
                     }
                   }}
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -203,41 +254,64 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
 
       {/* Library panel */}
       {activeDow !== null && (
-        <div className="p-4">
-          <p className="text-xs font-extrabold uppercase tracking-wider mb-3" style={{ color: "var(--text-3)" }}>
-            Agregar bloque a {DAYS.find((d) => d.dow === activeDow)?.label}
+        <div className="p-5" style={{ background: "var(--bg)" }}>
+          <p className="text-xs font-extrabold uppercase tracking-wider mb-4" style={{ color: "var(--text-3)" }}>
+            Agregar bloque a{" "}
+            <span style={{ color: DAY_ACCENT[activeDow]?.color }}>
+              {DAYS.find((d) => d.dow === activeDow)?.label}
+            </span>
           </p>
 
           <div className="flex flex-col gap-2">
             {library.map((plan) => {
+              const cat = CAT[plan.category] ?? CAT.musculación!;
               const expanded = expandedPlans.has(plan.id);
               return (
-                <div key={plan.id} className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+                <div
+                  key={plan.id}
+                  className="rounded-xl overflow-hidden"
+                  style={{ border: "1px solid var(--border)" }}
+                >
                   <button
                     onClick={() => togglePlan(plan.id)}
                     className="w-full flex items-center justify-between px-4 py-3 cursor-pointer"
-                    style={{ background: "var(--bg-hover)" }}
+                    style={{ background: "var(--bg-panel)" }}
                   >
-                    <div className="flex items-center gap-2">
-                      {plan.category === "calentamiento" && <Flame className="h-3.5 w-3.5" style={{ color: "var(--c-orange)" }} />}
-                      <span className="text-sm font-bold" style={{ color: "var(--text)" }}>{plan.name}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                        style={{ background: CAT_BG[plan.category] ?? "var(--bg)", color: CAT_COLOR[plan.category] ?? "var(--text-3)" }}>
-                        {plan.category}
-                      </span>
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: cat.bg, border: `1px solid ${cat.border}` }}
+                      >
+                        {plan.category === "calentamiento"
+                          ? <Flame className="h-3.5 w-3.5" style={{ color: cat.color }} />
+                          : <Dumbbell className="h-3.5 w-3.5" style={{ color: cat.color }} />}
+                      </div>
+                      <div className="text-left">
+                        <span className="text-sm font-bold" style={{ color: "var(--text)" }}>
+                          {plan.name}
+                        </span>
+                        <span
+                          className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                          style={{ background: cat.bg, color: cat.color }}
+                        >
+                          {plan.category}
+                        </span>
+                      </div>
                     </div>
-                    {expanded ? <ChevronUp className="h-4 w-4" style={{ color: "var(--text-3)" }} /> : <ChevronDown className="h-4 w-4" style={{ color: "var(--text-3)" }} />}
+                    {expanded
+                      ? <ChevronUp className="h-4 w-4 shrink-0" style={{ color: "var(--text-3)" }} />
+                      : <ChevronDown className="h-4 w-4 shrink-0" style={{ color: "var(--text-3)" }} />}
                   </button>
 
                   {expanded && (
-                    <div className="flex flex-col divide-y" style={{ borderTop: "1px solid var(--border)" }}>
+                    <div style={{ borderTop: "1px solid var(--border)" }}>
                       {plan.days.map((day) => (
                         <button
                           key={day.id}
                           onClick={() => addBlock(day.id)}
                           disabled={loadingBlock === day.id}
-                          className="w-full flex items-center justify-between px-4 py-2.5 cursor-pointer text-left transition-all"
-                          style={{ background: "var(--bg-panel)" }}
+                          className="w-full flex items-center justify-between px-4 py-3 cursor-pointer text-left transition-colors"
+                          style={{ background: "var(--bg-panel)", borderBottom: "1px solid var(--border)" }}
                           onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-panel)"; }}
                         >
@@ -245,13 +319,17 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
                             <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
                               {day.name ?? `Día ${day.dayNumber}`}
                             </p>
-                            <p className="text-xs" style={{ color: "var(--text-3)" }}>
+                            <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
                               {day.exerciseCount} ejercicio{day.exerciseCount !== 1 ? "s" : ""}
                             </p>
                           </div>
-                          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                            style={{ background: CAT_BG[plan.category] ?? "var(--bg-hover)" }}>
-                            <Plus className="h-4 w-4" style={{ color: CAT_COLOR[plan.category] ?? "var(--accent)" }} />
+                          <div
+                            className="w-8 h-8 flex items-center justify-center rounded-xl shrink-0"
+                            style={{ background: cat.bg, border: `1px solid ${cat.border}` }}
+                          >
+                            {loadingBlock === day.id
+                              ? <span className="text-[10px]" style={{ color: cat.color }}>…</span>
+                              : <Plus className="h-4 w-4" style={{ color: cat.color }} />}
                           </div>
                         </button>
                       ))}
