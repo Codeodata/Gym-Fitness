@@ -8,14 +8,14 @@ export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // JS: 0=Sun,1=Mon...6=Sat → our schema: 1=Mon...5=Fri
   const jsDay = new Date().getDay();
   const dayOfWeek = jsDay === 0 || jsDay === 6 ? null : jsDay;
-
-  if (!dayOfWeek) return NextResponse.json({ blocks: [] });
+  if (!dayOfWeek) return NextResponse.json({ blocks: [], singleExercises: [] });
 
   const db = getDb();
+  const clientId = session.user.id;
 
+  // Plan day blocks
   const blocks = await db
     .select({
       id: schema.clientDayBlock.id,
@@ -29,12 +29,11 @@ export async function GET() {
     .innerJoin(schema.planDay, eq(schema.clientDayBlock.planDayId, schema.planDay.id))
     .innerJoin(schema.plan, eq(schema.planDay.planId, schema.plan.id))
     .where(and(
-      eq(schema.clientDayBlock.clientId, session.user.id),
+      eq(schema.clientDayBlock.clientId, clientId),
       eq(schema.clientDayBlock.dayOfWeek, dayOfWeek),
     ))
     .orderBy(asc(schema.clientDayBlock.orderIndex));
 
-  // Get exercises per block
   const blocksWithExercises = await Promise.all(
     blocks.map(async (block) => {
       const exercises = await db
@@ -57,5 +56,24 @@ export async function GET() {
     })
   );
 
-  return NextResponse.json({ blocks: blocksWithExercises });
+  // Individual exercises
+  const singleExercises = await db
+    .select({
+      id: schema.clientDayExercise.id,
+      sets: schema.clientDayExercise.sets,
+      reps: schema.clientDayExercise.reps,
+      restSeconds: schema.clientDayExercise.restSeconds,
+      orderIndex: schema.clientDayExercise.orderIndex,
+      exerciseName: schema.exercise.name,
+      muscleGroup: schema.exercise.muscleGroup,
+    })
+    .from(schema.clientDayExercise)
+    .innerJoin(schema.exercise, eq(schema.clientDayExercise.exerciseId, schema.exercise.id))
+    .where(and(
+      eq(schema.clientDayExercise.clientId, clientId),
+      eq(schema.clientDayExercise.dayOfWeek, dayOfWeek),
+    ))
+    .orderBy(asc(schema.clientDayExercise.orderIndex));
+
+  return NextResponse.json({ blocks: blocksWithExercises, singleExercises });
 }

@@ -224,6 +224,22 @@ export const clientDayBlock = pgTable("client_day_block", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// ─── Ejercicios sueltos por día ───────────────────────────────────────────
+
+export const clientDayExercise = pgTable("client_day_exercise", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  clientId: text("client_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  dayOfWeek: integer("day_of_week").notNull(), // 1=Lun … 5=Vie
+  exerciseId: uuid("exercise_id").notNull().references(() => exercise.id, { onDelete: "cascade" }),
+  sets: integer("sets").notNull().default(3),
+  reps: text("reps").notNull().default("10"),
+  restSeconds: integer("rest_seconds"),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type ClientDayExercise = typeof clientDayExercise.$inferSelect;
+
 // ─── Asistencias ──────────────────────────────────────────────────────────
 
 export const attendance = pgTable("attendance", {

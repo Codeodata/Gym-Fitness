@@ -123,8 +123,18 @@ function ExerciseRow({ ex }: { ex: Exercise }) {
   );
 }
 
+type SingleExercise = {
+  id: string;
+  sets: number;
+  reps: string;
+  restSeconds: number | null;
+  exerciseName: string;
+  muscleGroup: string;
+};
+
 export function TodayRoutine() {
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [singles, setSingles] = useState<SingleExercise[]>([]);
   const [loading, setLoading] = useState(true);
 
   const jsDay = new Date().getDay();
@@ -134,7 +144,7 @@ export function TodayRoutine() {
   useEffect(() => {
     fetch("/api/client/today-routine")
       .then((r) => r.json())
-      .then((d) => setBlocks(d.blocks ?? []))
+      .then((d) => { setBlocks(d.blocks ?? []); setSingles(d.singleExercises ?? []); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -153,7 +163,9 @@ export function TodayRoutine() {
     </div>
   );
 
-  if (blocks.length === 0) return (
+  const total = blocks.length + singles.length;
+
+  if (total === 0) return (
     <div className="rounded-2xl p-6 flex flex-col items-center gap-2 text-center"
       style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
       <Dumbbell className="h-8 w-8" style={{ color: "var(--text-3)" }} />
@@ -172,12 +184,30 @@ export function TodayRoutine() {
         </h2>
         <span className="text-xs px-2.5 py-1 rounded-full font-bold"
           style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-          {blocks.length} bloque{blocks.length !== 1 ? "s" : ""}
+          {total} elemento{total !== 1 ? "s" : ""}
         </span>
       </div>
+
       {blocks.map((block) => (
         <BlockCard key={block.id} block={block} />
       ))}
+
+      {singles.length > 0 && (
+        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
+          <div className="px-5 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
+            <p className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5"
+              style={{ color: "var(--text-3)" }}>
+              <Dumbbell className="h-3 w-3" />
+              Ejercicios sueltos
+            </p>
+          </div>
+          <div className="px-5 py-3 flex flex-col gap-1.5">
+            {singles.map(ex => (
+              <ExerciseRow key={ex.id} ex={{ ...ex, section: "main", notes: null }} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
