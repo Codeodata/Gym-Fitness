@@ -211,14 +211,16 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
                           {block.planName}
                         </p>
                       )}
-                      {/* Remove button */}
+                      {/* Remove button — always visible */}
                       <button
                         onClick={() => removeBlock(block.id)}
                         disabled={loadingBlock === block.id}
-                        className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                        style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}
+                        className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-lg cursor-pointer"
+                        style={{ background: "rgba(239,68,68,0.18)", color: "#ef4444" }}
                       >
-                        <X className="w-3 h-3" />
+                        {loadingBlock === block.id
+                          ? <span className="text-[9px]">…</span>
+                          : <X className="w-3 h-3" />}
                       </button>
                     </div>
                   );
