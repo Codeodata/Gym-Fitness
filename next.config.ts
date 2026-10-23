@@ -6,7 +6,7 @@ const NGROK_HOST = process.env.TRUSTED_ORIGINS
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: NGROK_HOST,
-  cacheComponents: true,
+  cacheComponents: false,
   partialPrefetching: true,
   turbopack: {
     rules: {
