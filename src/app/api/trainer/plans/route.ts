@@ -10,8 +10,9 @@ const exerciseSchema = z.object({
   section: z.enum(["warmup", "main"]).default("main"),
   sets: z.number().int().min(1).max(20),
   reps: z.string().min(1),
-  weightKg: z.string().optional(),
-  notes: z.string().optional(),
+  weightKg: z.string().nullable().optional(),
+  restSeconds: z.number().int().nullable().optional(),
+  notes: z.string().nullable().optional(),
 });
 
 const daySchema = z.object({
@@ -24,7 +25,7 @@ const planSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   category: z.enum(["calentamiento", "funcional", "musculación"]).default("musculación"),
-  daysPerWeek: z.union([z.literal(2), z.literal(3), z.literal(5)]),
+  daysPerWeek: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5)]),
   durationWeeks: z.number().int().min(1).nullable().optional(),
   days: z.array(daySchema).min(1),
 });
@@ -91,8 +92,9 @@ export async function POST(req: NextRequest) {
         orderIndex: exIdx,
         sets: ex.sets,
         reps: ex.reps,
-        weightKg: ex.weightKg || null,
-        notes: ex.notes || null,
+        weightKg: ex.weightKg ?? null,
+        restSeconds: ex.restSeconds ?? null,
+        notes: ex.notes ?? null,
       });
     }
   }
