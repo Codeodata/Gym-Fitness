@@ -1,4 +1,4 @@
-export const instant = false;
+export const dynamic = "force-dynamic";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";

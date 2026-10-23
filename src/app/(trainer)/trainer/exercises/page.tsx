@@ -1,4 +1,4 @@
-export const instant = false;
+export const dynamic = "force-dynamic";
 import { connection } from "next/server";
 import { getDb, schema } from "@/lib/db";
 import { ExerciseManager } from "@/components/trainer/exercise-manager";

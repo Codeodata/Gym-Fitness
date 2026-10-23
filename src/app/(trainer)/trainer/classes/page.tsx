@@ -1,4 +1,4 @@
-export const instant = false;
+export const dynamic = "force-dynamic";
 import { ClassSchedule } from "@/components/trainer/class-schedule";
 
 export default function ClassesPage() {

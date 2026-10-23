@@ -1,4 +1,4 @@
-export const instant = false;
+export const dynamic = "force-dynamic";
 import { MySchedule } from "@/components/client/my-schedule";
 
 export default function MySchedulePage() {
