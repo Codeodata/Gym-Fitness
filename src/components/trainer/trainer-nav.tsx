@@ -15,7 +15,7 @@ const NAV = [
   { href: "/trainer/classes",   label: "Turnos",     icon: Clock,           image: "/turnos.jpg",                  bgPos: "center" },
   { href: "/trainer/schedule",  label: "Asistencias", icon: CalendarDays,   image: "/asistencia2.jpg",             bgPos: "center" },
   { href: "/trainer/clients",   label: "Alumnos",    icon: Users,           image: "/alumnos.jpg",                 bgPos: "center" },
-  { href: "/trainer/plans",     label: "Planes",     icon: ClipboardList,   image: "/miplan.jpg",                  bgPos: "center" },
+  { href: "/trainer/routines",  label: "Rutinas",    icon: ClipboardList,   image: "/miplan.jpg",                  bgPos: "center" },
   { href: "/trainer/exercises", label: "Ejercicios", icon: Library,         image: "/trainer-bg2.jpg",             bgPos: "center" },
 ];
 
