@@ -22,6 +22,17 @@ const MUSCLE_LABELS: Record<string, string> = {
   legs: "Piernas", core: "Core", cardio: "Cardio", full_body: "Cuerpo completo",
 };
 
+const MUSCLE_COLOR: Record<string, { color: string; bg: string }> = {
+  chest:     { color: "#f87171", bg: "rgba(248,113,113,0.12)" },
+  back:      { color: "#60a5fa", bg: "rgba(96,165,250,0.12)"  },
+  shoulders: { color: "#c084fc", bg: "rgba(192,132,252,0.12)" },
+  arms:      { color: "#fb923c", bg: "rgba(251,146,60,0.12)"  },
+  legs:      { color: "#4ade80", bg: "rgba(74,222,128,0.12)"  },
+  core:      { color: "#facc15", bg: "rgba(250,204,21,0.12)"  },
+  cardio:    { color: "#f472b6", bg: "rgba(244,114,182,0.12)" },
+  full_body: { color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
+};
+
 const DAY_ACCENT: Record<number, { color: string; bg: string }> = {
   1: { color: "#60a5fa",  bg: "rgba(96,165,250,0.08)"  },
   2: { color: "#c084fc",  bg: "rgba(192,132,252,0.08)" },
@@ -62,6 +73,7 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
   const [pickReps, setPickReps] = useState("10");
   const [pickNotes, setPickNotes] = useState("");
   const [exSearch, setExSearch] = useState("");
+  const [muscleFilter, setMuscleFilter] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/trainer/weekly-schedule?clientId=${clientId}`)
@@ -153,10 +165,15 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
   const exercisesForDay = (dow: number) =>
     dayExercises.filter(e => e.dayOfWeek === dow).sort((a, b) => a.orderIndex - b.orderIndex);
 
-  const filteredExercises = allExercises.filter(e =>
-    e.name.toLowerCase().includes(exSearch.toLowerCase()) ||
-    MUSCLE_LABELS[e.muscleGroup]?.toLowerCase().includes(exSearch.toLowerCase())
-  );
+  const filteredExercises = allExercises.filter(e => {
+    const matchSearch = !exSearch ||
+      e.name.toLowerCase().includes(exSearch.toLowerCase());
+    const matchMuscle = !muscleFilter || e.muscleGroup === muscleFilter;
+    return matchSearch && matchMuscle;
+  });
+
+  // Unique muscle groups present in library
+  const muscleGroups = [...new Set(allExercises.map(e => e.muscleGroup))];
 
   // Group exercises by muscle group
   const grouped = filteredExercises.reduce<Record<string, ExerciseItem[]>>((acc, ex) => {
@@ -392,10 +409,43 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
             {/* EJERCICIOS TAB */}
             {libraryTab === "ejercicios" && (
               <div className="flex flex-col gap-3">
+                {/* Muscle group filter chips */}
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => setMuscleFilter(null)}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-all"
+                    style={{
+                      background: !muscleFilter ? "var(--accent)" : "var(--bg-panel)",
+                      color: !muscleFilter ? "var(--accent-fg)" : "var(--text-3)",
+                      border: `1px solid ${!muscleFilter ? "var(--accent)" : "var(--border)"}`,
+                    }}
+                  >
+                    Todos
+                  </button>
+                  {muscleGroups.map(mg => {
+                    const mc = MUSCLE_COLOR[mg] ?? { color: "var(--text-3)", bg: "var(--bg-panel)" };
+                    const active = muscleFilter === mg;
+                    return (
+                      <button
+                        key={mg}
+                        onClick={() => setMuscleFilter(active ? null : mg)}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer transition-all"
+                        style={{
+                          background: active ? mc.color : mc.bg,
+                          color: active ? "#000" : mc.color,
+                          border: `1px solid ${active ? mc.color : "transparent"}`,
+                        }}
+                      >
+                        {MUSCLE_LABELS[mg] ?? mg}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 {/* Search */}
                 <input
                   type="text"
-                  placeholder="Buscar ejercicio o grupo muscular…"
+                  placeholder="Buscar ejercicio…"
                   value={exSearch}
                   onChange={e => setExSearch(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl text-sm outline-none"
