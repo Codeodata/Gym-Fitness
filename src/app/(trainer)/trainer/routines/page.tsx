@@ -44,7 +44,7 @@ export default async function RoutinesPage() {
             Expandí una rutina para ver, agregar o quitar ejercicios
           </p>
         </div>
-        <RoutinesLibrary />
+        <RoutinesLibrary clients={approvedClients} />
       </div>
     </div>
   );
