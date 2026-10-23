@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import {
-  ChevronDown, ChevronUp, Dumbbell, Flame, Plus, Trash2, Search, X,
+  ChevronDown, ChevronUp, Dumbbell, Flame, Plus, Trash2, Search,
 } from "lucide-react";
 
 const CAT: Record<string, { color: string; bg: string; border: string; label: string }> = {
@@ -22,6 +22,7 @@ export function RoutinesLibrary() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [planData, setPlanData] = useState<Record<string, PlanDetail>>({});
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [errorPlan, setErrorPlan] = useState<string | null>(null);
 
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
@@ -49,21 +50,27 @@ export function RoutinesLibrary() {
       return;
     }
     setExpanded(prev => new Set([...prev, planId]));
+    setErrorPlan(null);
     if (planData[planId]) return;
     setLoadingPlan(planId);
     try {
       const res  = await fetch(`/api/trainer/plans/${planId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json() as { days: { id: string; dayNumber: number; name: string | null }[]; exercises: (ExerciseItem & { planDayId: string })[] };
-      const exByDay = data.exercises.reduce<Record<string, ExerciseItem[]>>((acc, ex) => {
+      const exercises = data.exercises ?? [];
+      const exByDay = exercises.reduce<Record<string, ExerciseItem[]>>((acc, ex) => {
         (acc[ex.planDayId] ??= []).push(ex);
         return acc;
       }, {});
       setPlanData(prev => ({
         ...prev,
         [planId]: {
-          days: data.days.map(d => ({ ...d, exercises: (exByDay[d.id] ?? []).sort((a, b) => a.orderIndex - b.orderIndex) })),
+          days: (data.days ?? []).map(d => ({ ...d, exercises: (exByDay[d.id] ?? []).sort((a, b) => a.orderIndex - b.orderIndex) })),
         },
       }));
+    } catch {
+      setErrorPlan(planId);
+      setExpanded(prev => { const n = new Set(prev); n.delete(planId); return n; });
     } finally {
       setLoadingPlan(null);
     }
@@ -147,6 +154,7 @@ export function RoutinesLibrary() {
         const isOpen   = expanded.has(plan.id);
         const loading  = loadingPlan === plan.id;
         const detail   = planData[plan.id];
+        const hasError = errorPlan === plan.id;
 
         return (
           <div key={plan.id} className="rounded-2xl overflow-hidden"
@@ -175,9 +183,11 @@ export function RoutinesLibrary() {
               </div>
               {loading
                 ? <span className="text-xs" style={{ color: "var(--text-3)" }}>Cargando…</span>
-                : isOpen
-                  ? <ChevronUp className="h-4 w-4 shrink-0" style={{ color: "var(--text-3)" }} />
-                  : <ChevronDown className="h-4 w-4 shrink-0" style={{ color: "var(--text-3)" }} />}
+                : hasError
+                  ? <span className="text-xs font-semibold" style={{ color: "#ef4444" }}>Error — reintentar</span>
+                  : isOpen
+                    ? <ChevronUp className="h-4 w-4 shrink-0" style={{ color: "var(--text-3)" }} />
+                    : <ChevronDown className="h-4 w-4 shrink-0" style={{ color: "var(--text-3)" }} />}
             </button>
 
             {/* Expanded detail */}
