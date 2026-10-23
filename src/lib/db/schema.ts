@@ -213,6 +213,17 @@ export const slotEnrollment = pgTable("slot_enrollment", {
   enrolledAt: timestamp("enrolled_at").notNull().defaultNow(),
 });
 
+// ─── Semana del alumno ────────────────────────────────────────────────────
+
+export const clientDayBlock = pgTable("client_day_block", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  clientId: text("client_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  dayOfWeek: integer("day_of_week").notNull(), // 1=Lun … 5=Vie
+  planDayId: uuid("plan_day_id").notNull().references(() => planDay.id, { onDelete: "cascade" }),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // ─── Asistencias ──────────────────────────────────────────────────────────
 
 export const attendance = pgTable("attendance", {
@@ -253,3 +264,4 @@ export type PlanDay = typeof planDay.$inferSelect;
 export type PlanExercise = typeof planExercise.$inferSelect;
 export type Exercise = typeof exercise.$inferSelect;
 export type PlanAssignment = typeof planAssignment.$inferSelect;
+export type ClientDayBlock = typeof clientDayBlock.$inferSelect;

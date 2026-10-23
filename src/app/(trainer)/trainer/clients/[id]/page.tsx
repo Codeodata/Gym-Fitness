@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { AssignPlanPanel } from "@/components/trainer/assign-plan-panel";
 import { MembershipPicker } from "@/components/trainer/membership-picker";
 import { TrainerNotesEditor } from "@/components/trainer/trainer-notes-editor";
+import { WeeklyScheduleBuilder } from "@/components/trainer/weekly-schedule-builder";
 import { ArrowLeft, Calendar, Mail, ClipboardList, Bell } from "lucide-react";
 import Link from "next/link";
 
@@ -129,12 +130,19 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       {/* Membership */}
       <MembershipPicker clientId={id} current={client.membershipType as "2dias" | "3dias" | "pase_libre" | null} />
 
+      {/* Weekly schedule */}
+      <div className="mt-6">
+        <WeeklyScheduleBuilder clientId={id} />
+      </div>
+
       {/* Assign plan */}
-      <AssignPlanPanel
-        clientId={id}
-        plans={allPlans}
-        currentPlanId={currentPlan?.id ?? null}
-      />
+      <div className="mt-4">
+        <AssignPlanPanel
+          clientId={id}
+          plans={allPlans}
+          currentPlanId={currentPlan?.id ?? null}
+        />
+      </div>
     </div>
   );
 }

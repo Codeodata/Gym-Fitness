@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Bell, Clock, CalendarCheck, ClipboardList, Flame, Activity, Trophy, ArrowRight, Dumbbell } from "lucide-react";
 import Link from "next/link";
 import { MonthCalendar } from "@/components/trainer/monthly-calendar";
+import { TodayRoutine } from "@/components/client/today-routine";
 
 type Slot = { id: string; dayOfWeek: number; startTime: string; type: string };
 type Notification = { id: string; body: string; toId: string | null; sentAt: string; readAt: string | null };
@@ -184,6 +185,11 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
                 style={{ color: "var(--accent)" }} />
             </Link>
           )}
+
+          {/* Rutina de hoy */}
+          <section>
+            <TodayRoutine />
+          </section>
 
           {/* Hoy */}
           <section>
