@@ -1,4 +1,3 @@
-export const dynamic = "force-dynamic";
 import { connection } from "next/server";
 import { getDb, schema } from "@/lib/db";
 import { eq, and, gte, lt } from "drizzle-orm";
