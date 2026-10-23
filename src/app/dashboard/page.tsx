@@ -1,3 +1,4 @@
+export const instant = false;
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";

@@ -1,3 +1,4 @@
+export const instant = false;
 import { MySchedule } from "@/components/client/my-schedule";
 
 export default function MySchedulePage() {

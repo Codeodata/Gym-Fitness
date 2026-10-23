@@ -1,3 +1,4 @@
+export const instant = false;
 import { connection } from "next/server";
 import { getDb, schema } from "@/lib/db";
 import Link from "next/link";

@@ -1,3 +1,4 @@
+export const instant = false;
 import { connection } from "next/server";
 import { getDb, schema } from "@/lib/db";
 import { eq, and, gte, lt } from "drizzle-orm";

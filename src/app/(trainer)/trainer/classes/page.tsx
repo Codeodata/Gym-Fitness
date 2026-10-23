@@ -1,3 +1,4 @@
+export const instant = false;
 import { ClassSchedule } from "@/components/trainer/class-schedule";
 
 export default function ClassesPage() {
