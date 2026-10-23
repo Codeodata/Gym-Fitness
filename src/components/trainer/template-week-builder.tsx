@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, X, Flame, Dumbbell, ChevronDown, ChevronUp, Users, Check } from "lucide-react";
+import { Plus, X, Flame, Dumbbell, ChevronDown, ChevronUp, Users, Check, Trash2, Search } from "lucide-react";
 import Link from "next/link";
 
 const DAYS = [
@@ -27,7 +27,7 @@ const DAY_ACCENT: Record<number, { color: string; bg: string }> = {
 };
 
 type TemplateBlock = {
-  uid: string; // local only
+  uid: string;
   dayOfWeek: number;
   planDayId: string;
   planDayName: string | null;
@@ -38,6 +38,14 @@ type TemplateBlock = {
 type LibraryDay  = { id: string; name: string | null; dayNumber: number; exerciseCount: number };
 type LibraryPlan = { id: string; name: string; category: string; days: LibraryDay[] };
 type Client      = { id: string; name: string; email: string };
+
+type ExerciseForEdit = {
+  id: string; planDayId: string; section: "warmup" | "main";
+  sets: number; reps: string; weightKg: string | null; notes: string | null;
+  exerciseName: string; muscleGroup: string; orderIndex: number;
+};
+type PlanExData = { days: { id: string; dayNumber: number; name: string | null; exercises: ExerciseForEdit[] }[] };
+type CatalogItem = { id: string; name: string; muscleGroup: string };
 
 type Props = { clients: Client[] };
 
@@ -51,10 +59,26 @@ export function TemplateWeekBuilder({ clients }: Props) {
   const [assigning, setAssigning] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  // Per-day exercise expand/edit state
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+  const [planExData, setPlanExData] = useState<Record<string, PlanExData>>({});
+  const [loadingPlanEx, setLoadingPlanEx] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [addExDayId, setAddExDayId] = useState<string | null>(null);
+  const [addExPlanId, setAddExPlanId] = useState<string | null>(null);
+  const [addExSection, setAddExSection] = useState<"main" | "warmup">("main");
+  const [addExSearch, setAddExSearch] = useState("");
+  const [savingEx, setSavingEx] = useState(false);
+
   useEffect(() => {
     fetch("/api/trainer/plan-library")
       .then(r => r.json())
       .then(d => setLibrary(d.library ?? []));
+    fetch("/api/trainer/exercises")
+      .then(r => r.json())
+      .then((d: CatalogItem[]) => { setCatalog(d); setCatalogLoaded(true); })
+      .catch(() => setCatalogLoaded(true));
   }, []);
 
   function addBlock(plan: LibraryPlan, day: LibraryDay) {
@@ -105,6 +129,95 @@ export function TemplateWeekBuilder({ clients }: Props) {
     } finally { setAssigning(false); }
   }
 
+  // ── Per-day exercise management ─────────────────────────────────────────────
+  async function toggleDayEx(planId: string, dayId: string) {
+    if (expandedDays.has(dayId)) {
+      setExpandedDays(prev => { const n = new Set(prev); n.delete(dayId); return n; });
+      return;
+    }
+    setExpandedDays(prev => new Set([...prev, dayId]));
+    if (planExData[planId]) return;
+    setLoadingPlanEx(planId);
+    try {
+      const res = await fetch(`/api/trainer/plans/${planId}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json() as {
+        days: { id: string; dayNumber: number; name: string | null }[];
+        exercises: (ExerciseForEdit & { planDayId: string })[];
+      };
+      const exByDay = (data.exercises ?? []).reduce<Record<string, ExerciseForEdit[]>>((acc, ex) => {
+        (acc[ex.planDayId] ??= []).push(ex);
+        return acc;
+      }, {});
+      setPlanExData(prev => ({
+        ...prev,
+        [planId]: {
+          days: (data.days ?? []).map(d => ({
+            ...d,
+            exercises: (exByDay[d.id] ?? []).sort((a, b) => a.orderIndex - b.orderIndex),
+          })),
+        },
+      }));
+    } catch {
+      setExpandedDays(prev => { const n = new Set(prev); n.delete(dayId); return n; });
+    } finally {
+      setLoadingPlanEx(null);
+    }
+  }
+
+  async function removeExercise(planId: string, dayId: string, exerciseId: string) {
+    setPlanExData(prev => ({
+      ...prev,
+      [planId]: {
+        ...prev[planId]!,
+        days: prev[planId]!.days.map(d =>
+          d.id === dayId ? { ...d, exercises: d.exercises.filter(e => e.id !== exerciseId) } : d
+        ),
+      },
+    }));
+    await fetch(`/api/trainer/plans/${planId}/exercises`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planExerciseId: exerciseId }),
+    });
+  }
+
+  async function addExercise(item: CatalogItem) {
+    if (!addExDayId || !addExPlanId || savingEx) return;
+    setSavingEx(true);
+    try {
+      const res = await fetch(`/api/trainer/plans/${addExPlanId}/exercises`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planDayId: addExDayId,
+          exerciseName: item.name,
+          section: addExSection,
+          sets: addExSection === "main" ? 3 : 1,
+          reps: "10",
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { exercise: ExerciseForEdit };
+        const pid = addExPlanId, did = addExDayId;
+        setPlanExData(prev => ({
+          ...prev,
+          [pid]: {
+            ...prev[pid]!,
+            days: prev[pid]!.days.map(d =>
+              d.id === did ? { ...d, exercises: [...d.exercises, data.exercise] } : d
+            ),
+          },
+        }));
+        setAddExDayId(null);
+        setAddExPlanId(null);
+        setAddExSearch("");
+      }
+    } finally {
+      setSavingEx(false);
+    }
+  }
+
   const blocksForDay = (dow: number) => blocks.filter(b => b.dayOfWeek === dow);
   const totalBlocks = blocks.length;
 
@@ -116,7 +229,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-xl"
           style={{ background: "var(--bg-panel)", border: "1px solid var(--accent)", color: "var(--text)" }}>
           {toast}
-          <button onClick={() => setToast(null)} style={{ color: "var(--text-3)" }}><X className="h-4 w-4" /></button>
+          <button type="button" onClick={() => setToast(null)} style={{ color: "var(--text-3)" }}><X className="h-4 w-4" /></button>
         </div>
       )}
 
@@ -132,7 +245,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
             </p>
           </div>
           {totalBlocks > 0 && (
-            <button onClick={clearTemplate} className="text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer"
+            <button type="button" onClick={clearTemplate} className="text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer"
               style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.25)" }}>
               Limpiar
             </button>
@@ -152,8 +265,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
                 background: isActive ? da.bg : "transparent",
                 transition: "background 0.15s, border-color 0.15s",
               }}>
-                {/* Header */}
-                <button onClick={() => setActiveDow(isActive ? null : dow)}
+                <button type="button" onClick={() => setActiveDow(isActive ? null : dow)}
                   className="w-full px-2 py-3 text-center cursor-pointer"
                   style={{ borderBottom: "1px solid var(--border)" }}>
                   <span className="text-xs font-extrabold uppercase tracking-wider block"
@@ -166,7 +278,6 @@ export function TemplateWeekBuilder({ clients }: Props) {
                   )}
                 </button>
 
-                {/* Blocks */}
                 <div className="flex flex-col gap-2 p-2 flex-1">
                   {dayBlocks.map(block => {
                     const cat = CAT[block.planCategory] ?? CAT.musculación!;
@@ -187,7 +298,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
                         {block.planDayName && (
                           <p className="text-[10px] truncate" style={{ color: "var(--text-3)" }}>{block.planName}</p>
                         )}
-                        <button onClick={() => removeBlock(block.uid)}
+                        <button type="button" onClick={() => removeBlock(block.uid)}
                           className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-lg cursor-pointer"
                           style={{ background: "rgba(239,68,68,0.18)", color: "#ef4444" }}>
                           <X className="w-3 h-3" />
@@ -195,8 +306,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
                       </div>
                     );
                   })}
-                  {/* Add btn */}
-                  <button onClick={() => setActiveDow(isActive ? null : dow)}
+                  <button type="button" onClick={() => setActiveDow(isActive ? null : dow)}
                     className="w-full flex items-center justify-center rounded-xl cursor-pointer mt-auto"
                     style={{ height: 34, border: `1.5px dashed ${isActive ? da.color : "var(--border)"}`, color: isActive ? da.color : "var(--text-3)" }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = da.color; e.currentTarget.style.color = da.color; }}
@@ -230,7 +340,8 @@ export function TemplateWeekBuilder({ clients }: Props) {
                   const expanded = expandedPlans.has(plan.id);
                   return (
                     <div key={plan.id} className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-                      <button onClick={() => togglePlan(plan.id)}
+                      {/* Plan header */}
+                      <button type="button" onClick={() => togglePlan(plan.id)}
                         className="w-full flex items-center justify-between px-4 py-3 cursor-pointer"
                         style={{ background: "var(--bg-panel)" }}>
                         <div className="flex items-center gap-2.5">
@@ -248,28 +359,142 @@ export function TemplateWeekBuilder({ clients }: Props) {
                           ? <ChevronUp className="h-4 w-4" style={{ color: "var(--text-3)" }} />
                           : <ChevronDown className="h-4 w-4" style={{ color: "var(--text-3)" }} />}
                       </button>
+
+                      {/* Days list */}
                       {expanded && (
                         <div style={{ borderTop: "1px solid var(--border)" }}>
-                          {plan.days.map(day => (
-                            <button key={day.id} onClick={() => addBlock(plan, day)}
-                              className="w-full flex items-center justify-between px-4 py-3 cursor-pointer text-left"
-                              style={{ background: "var(--bg-panel)", borderBottom: "1px solid var(--border)" }}
-                              onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-hover)"; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-panel)"; }}>
-                              <div>
-                                <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                                  {day.name ?? `Día ${day.dayNumber}`}
-                                </p>
-                                <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
-                                  {day.exerciseCount} ejercicio{day.exerciseCount !== 1 ? "s" : ""}
-                                </p>
+                          {plan.days.map(day => {
+                            const planLoaded = planExData[plan.id];
+                            const dayWithEx  = planLoaded?.days.find(d => d.id === day.id);
+                            const exCount    = dayWithEx ? dayWithEx.exercises.length : day.exerciseCount;
+                            const isDayExp   = expandedDays.has(day.id);
+                            const isAddHere  = addExDayId === day.id && addExPlanId === plan.id;
+                            const filteredCat = addExSearch.trim()
+                              ? catalog.filter(e => e.name.toLowerCase().includes(addExSearch.toLowerCase()))
+                              : catalog.slice(0, 20);
+
+                            return (
+                              <div key={day.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                                {/* Day row */}
+                                <div className="flex items-center px-4" style={{ background: "var(--bg-panel)" }}>
+                                  {/* Left: expand exercises */}
+                                  <button type="button"
+                                    onClick={() => toggleDayEx(plan.id, day.id)}
+                                    className="flex-1 flex items-center gap-2 py-3 text-left cursor-pointer min-w-0">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                                        {day.name ?? `Día ${day.dayNumber}`}
+                                      </p>
+                                      <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
+                                        {loadingPlanEx === plan.id
+                                          ? "Cargando…"
+                                          : `${exCount} ejercicio${exCount !== 1 ? "s" : ""}`}
+                                      </p>
+                                    </div>
+                                    {isDayExp
+                                      ? <ChevronUp className="h-3 w-3 shrink-0" style={{ color: cat.color }} />
+                                      : <ChevronDown className="h-3 w-3 shrink-0" style={{ color: "var(--text-3)" }} />}
+                                  </button>
+                                  {/* Right: add to week */}
+                                  <button type="button"
+                                    onClick={() => addBlock(plan, day)}
+                                    title="Agregar al template"
+                                    className="w-8 h-8 flex items-center justify-center rounded-xl shrink-0 ml-3 cursor-pointer"
+                                    style={{ background: cat.bg, border: `1px solid ${cat.border}` }}>
+                                    <Plus className="h-4 w-4" style={{ color: cat.color }} />
+                                  </button>
+                                </div>
+
+                                {/* Expanded exercises */}
+                                {isDayExp && (
+                                  <div className="px-4 pb-4 pt-2 flex flex-col gap-2"
+                                    style={{ background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
+
+                                    {!dayWithEx && (
+                                      <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Cargando…</p>
+                                    )}
+
+                                    {dayWithEx && dayWithEx.exercises.length === 0 && !isAddHere && (
+                                      <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Sin ejercicios todavía</p>
+                                    )}
+
+                                    {dayWithEx?.exercises.map(ex => (
+                                      <ExerciseRowSimple key={ex.id} ex={ex}
+                                        accent={ex.section === "warmup" ? "var(--c-orange)" : cat.color}
+                                        onRemove={() => removeExercise(plan.id, day.id, ex.id)} />
+                                    ))}
+
+                                    {/* Add exercise panel */}
+                                    {isAddHere ? (
+                                      <div className="rounded-xl p-3 flex flex-col gap-2 mt-1"
+                                        style={{ border: `1px solid ${cat.color}`, background: "var(--bg-panel)" }}>
+                                        {/* Section toggle */}
+                                        <div className="flex gap-2">
+                                          {(["main", "warmup"] as const).map(s => (
+                                            <button key={s} type="button" onClick={() => setAddExSection(s)}
+                                              className="flex-1 py-1.5 rounded-lg text-xs font-bold cursor-pointer"
+                                              style={{
+                                                background: addExSection === s ? (s === "main" ? cat.color : "var(--c-orange)") : "var(--bg)",
+                                                color: addExSection === s ? "#000" : "var(--text-3)",
+                                                border: `1px solid ${addExSection === s ? (s === "main" ? cat.color : "var(--c-orange)") : "var(--border)"}`,
+                                              }}>
+                                              {s === "main"
+                                                ? <><Dumbbell className="h-3 w-3 inline mr-1" />Ejercicio</>
+                                                : <><Flame className="h-3 w-3 inline mr-1" />Calentamiento</>}
+                                            </button>
+                                          ))}
+                                        </div>
+                                        {/* Search */}
+                                        <div className="relative">
+                                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: "var(--text-3)" }} />
+                                          <input autoFocus placeholder="Buscar ejercicio…" value={addExSearch}
+                                            onChange={e => setAddExSearch(e.target.value)}
+                                            className="w-full rounded-lg pl-7 pr-3 py-1.5 text-sm outline-none"
+                                            style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
+                                            onFocus={e => (e.currentTarget.style.borderColor = cat.color)}
+                                            onBlur={e => (e.currentTarget.style.borderColor = "var(--border)")} />
+                                        </div>
+                                        {/* Results */}
+                                        <div className="flex flex-col gap-1 max-h-40 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+                                          {!catalogLoaded && <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Cargando…</p>}
+                                          {catalogLoaded && filteredCat.length === 0 && (
+                                            <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Sin resultados</p>
+                                          )}
+                                          {filteredCat.map(item => (
+                                            <button key={item.id} type="button" onClick={() => addExercise(item)} disabled={savingEx}
+                                              className="flex items-center justify-between px-3 py-2 rounded-lg text-left text-sm cursor-pointer"
+                                              style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
+                                              onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
+                                              onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}>
+                                              <span className="truncate">{item.name}</span>
+                                              <span className="text-[10px] font-bold uppercase ml-2 shrink-0" style={{ color: "var(--text-3)" }}>
+                                                {item.muscleGroup}
+                                              </span>
+                                            </button>
+                                          ))}
+                                        </div>
+                                        <button type="button"
+                                          onClick={() => { setAddExDayId(null); setAddExPlanId(null); setAddExSearch(""); }}
+                                          className="text-xs text-center cursor-pointer" style={{ color: "var(--text-3)" }}>
+                                          Cancelar
+                                        </button>
+                                      </div>
+                                    ) : dayWithEx && (
+                                      <button type="button"
+                                        onClick={() => { setAddExPlanId(plan.id); setAddExDayId(day.id); setAddExSection("main"); setAddExSearch(""); }}
+                                        className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold cursor-pointer mt-1"
+                                        style={{ border: `1.5px dashed ${cat.border}`, color: cat.color, background: "transparent" }}
+                                        onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
+                                        onMouseLeave={e => (e.currentTarget.style.borderColor = cat.border)}>
+                                        <Plus className="h-3 w-3" />
+                                        Agregar ejercicio
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                              <div className="w-8 h-8 flex items-center justify-center rounded-xl shrink-0"
-                                style={{ background: cat.bg, border: `1px solid ${cat.border}` }}>
-                                <Plus className="h-4 w-4" style={{ color: cat.color }} />
-                              </div>
-                            </button>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -284,7 +509,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
       {/* Assign section */}
       {totalBlocks > 0 && (
         <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
-          <button onClick={() => setShowClients(v => !v)}
+          <button type="button" onClick={() => setShowClients(v => !v)}
             className="w-full px-5 py-4 flex items-center justify-between cursor-pointer"
             style={{ borderBottom: showClients ? "1px solid var(--border)" : "none" }}>
             <div className="flex items-center gap-3">
@@ -310,7 +535,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
                 <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
                   Alumnos aprobados
                 </p>
-                <button onClick={() => setSelectedClients(new Set(clients.map(c => c.id)))}
+                <button type="button" onClick={() => setSelectedClients(new Set(clients.map(c => c.id)))}
                   className="text-xs font-bold cursor-pointer" style={{ color: "var(--accent)" }}>
                   Todos
                 </button>
@@ -320,7 +545,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
                 {clients.map(client => {
                   const sel = selectedClients.has(client.id);
                   return (
-                    <button key={client.id} onClick={() => toggleClient(client.id)}
+                    <button key={client.id} type="button" onClick={() => toggleClient(client.id)}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-left transition-all"
                       style={{
                         background: sel ? "var(--accent-soft)" : "var(--bg-hover)",
@@ -344,7 +569,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
                 )}
               </div>
 
-              <button onClick={assign} disabled={assigning}
+              <button type="button" onClick={assign} disabled={assigning}
                 className="w-full py-3 rounded-xl text-sm font-extrabold cursor-pointer transition-all disabled:opacity-50"
                 style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
                 {assigning
@@ -355,6 +580,23 @@ export function TemplateWeekBuilder({ clients }: Props) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function ExerciseRowSimple({ ex, accent, onRemove }: { ex: ExerciseForEdit; accent: string; onRemove: () => void }) {
+  return (
+    <div className="group flex items-center gap-2 px-3 py-2 rounded-lg"
+      style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+      <span className="flex-1 text-xs font-semibold truncate" style={{ color: "var(--text)" }}>{ex.exerciseName}</span>
+      <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: accent }}>{ex.sets}×{ex.reps}</span>
+      <button type="button" onClick={onRemove}
+        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md cursor-pointer shrink-0"
+        style={{ color: "var(--text-3)" }}
+        onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
+        onMouseLeave={e => (e.currentTarget.style.color = "var(--text-3)")}>
+        <Trash2 className="h-3 w-3" />
+      </button>
     </div>
   );
 }
