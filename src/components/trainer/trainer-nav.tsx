@@ -20,7 +20,7 @@ const NAV = [
 ];
 
 
-export function TrainerNav({ userName }: { userName: string }) {
+export function TrainerNav({ userName, pendingCount = 0 }: { userName: string; pendingCount?: number }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -104,6 +104,7 @@ export function TrainerNav({ userName }: { userName: string }) {
           <div className="flex flex-col gap-1">
             {NAV.map(({ href, label, icon: Icon }, i) => {
               const active = isActive(href);
+              const showBadge = href === "/trainer/clients" && pendingCount > 0;
               return (
                 <Link key={href} href={href}
                   className="nav-item-enter flex items-center gap-3 px-2 py-2 rounded-2xl text-sm"
@@ -118,7 +119,7 @@ export function TrainerNav({ userName }: { userName: string }) {
                   onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#fff"; } }}
                   onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.55)"; } }}
                 >
-                  <span className="w-12 flex items-center justify-center shrink-0">
+                  <span className="w-12 flex items-center justify-center shrink-0 relative">
                     <span
                       className={active ? "nav-indicator rounded-full flex items-center justify-center" : "rounded-full flex items-center justify-center"}
                       style={active
@@ -128,8 +129,20 @@ export function TrainerNav({ userName }: { userName: string }) {
                     >
                       <Icon style={{ color: active ? "var(--accent-fg)" : "rgba(255,255,255,0.6)" }} width={active ? 20 : 17} height={active ? 20 : 17} />
                     </span>
+                    {showBadge && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-extrabold px-1"
+                        style={{ background: "#f59e0b", color: "#000" }}>
+                        {pendingCount > 9 ? "9+" : pendingCount}
+                      </span>
+                    )}
                   </span>
-                  {label}
+                  <span className="flex-1">{label}</span>
+                  {showBadge && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                      style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b" }}>
+                      {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
+                    </span>
+                  )}
                 </Link>
               );
             })}
