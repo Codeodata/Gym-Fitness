@@ -37,7 +37,7 @@ type Block = {
 
 type DayExercise = {
   id: string; dayOfWeek: number; orderIndex: number;
-  sets: number; reps: string; restSeconds: number | null;
+  sets: number; reps: string; restSeconds: number | null; notes: string | null;
   exerciseId: string; exerciseName: string; muscleGroup: string;
 };
 
@@ -60,6 +60,7 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
   const [pickingEx, setPickingEx] = useState<string | null>(null); // exerciseId
   const [pickSets, setPickSets] = useState(3);
   const [pickReps, setPickReps] = useState("10");
+  const [pickNotes, setPickNotes] = useState("");
   const [exSearch, setExSearch] = useState("");
 
   useEffect(() => {
@@ -111,7 +112,7 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
       const res = await fetch("/api/trainer/day-exercises", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, dayOfWeek: activeDow, exerciseId, sets: pickSets, reps: pickReps }),
+        body: JSON.stringify({ clientId, dayOfWeek: activeDow, exerciseId, sets: pickSets, reps: pickReps, notes: pickNotes || null }),
       });
       const data = await res.json() as { exercise: DayExercise };
       const ex = allExercises.find(e => e.id === exerciseId);
@@ -126,6 +127,7 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
       setPickingEx(null);
       setPickSets(3);
       setPickReps("10");
+      setPickNotes("");
     } finally { setLoadingId(null); }
   }
 
@@ -262,6 +264,11 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
                     <p className="text-[9px]" style={{ color: "var(--text-3)" }}>
                       {MUSCLE_LABELS[ex.muscleGroup] ?? ex.muscleGroup}
                     </p>
+                    {ex.notes && (
+                      <p className="text-[9px] italic mt-0.5 leading-tight pr-5" style={{ color: "var(--text-3)" }}>
+                        {ex.notes}
+                      </p>
+                    )}
                     <button onClick={() => removeDayExercise(ex.id)} disabled={loadingId === ex.id}
                       className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-lg cursor-pointer"
                       style={{ background: "rgba(239,68,68,0.18)", color: "#ef4444" }}>
@@ -409,7 +416,7 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
                           {/* Exercise row */}
                           {pickingEx !== ex.id ? (
                             <button
-                              onClick={() => { setPickingEx(ex.id); setPickSets(3); setPickReps("10"); }}
+                              onClick={() => { setPickingEx(ex.id); setPickSets(3); setPickReps("10"); setPickNotes(""); }}
                               className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer text-left"
                               style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}
                               onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-hover)"; }}
@@ -448,6 +455,14 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
                                   />
                                 </div>
                               </div>
+                              <textarea
+                                rows={2}
+                                placeholder="Nota para el alumno (opcional)…"
+                                value={pickNotes}
+                                onChange={e => setPickNotes(e.target.value)}
+                                className="w-full px-2 py-1.5 rounded-lg text-xs outline-none resize-none"
+                                style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
+                              />
                               <div className="flex gap-2 mt-1">
                                 <button onClick={() => setPickingEx(null)}
                                   className="flex-1 py-1.5 rounded-lg text-xs font-bold cursor-pointer"

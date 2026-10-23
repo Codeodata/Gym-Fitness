@@ -63,6 +63,7 @@ export async function GET() {
       sets: schema.clientDayExercise.sets,
       reps: schema.clientDayExercise.reps,
       restSeconds: schema.clientDayExercise.restSeconds,
+      notes: schema.clientDayExercise.notes,
       orderIndex: schema.clientDayExercise.orderIndex,
       exerciseName: schema.exercise.name,
       muscleGroup: schema.exercise.muscleGroup,

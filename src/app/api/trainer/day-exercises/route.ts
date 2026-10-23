@@ -22,6 +22,7 @@ export async function GET(req: Request) {
       sets: schema.clientDayExercise.sets,
       reps: schema.clientDayExercise.reps,
       restSeconds: schema.clientDayExercise.restSeconds,
+      notes: schema.clientDayExercise.notes,
       exerciseId: schema.exercise.id,
       exerciseName: schema.exercise.name,
       muscleGroup: schema.exercise.muscleGroup,
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
   if (!session || session.user.role !== "trainer")
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { clientId, dayOfWeek, exerciseId, sets, reps, restSeconds } = await req.json();
+  const { clientId, dayOfWeek, exerciseId, sets, reps, restSeconds, notes } = await req.json();
 
   const db = getDb();
   const [{ value: maxOrder }] = await db
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
     sets: sets ?? 3,
     reps: reps ?? "10",
     restSeconds: restSeconds ?? null,
+    notes: notes ?? null,
     orderIndex: Number(maxOrder),
   }).returning();
 

@@ -234,6 +234,7 @@ export const clientDayExercise = pgTable("client_day_exercise", {
   sets: integer("sets").notNull().default(3),
   reps: text("reps").notNull().default("10"),
   restSeconds: integer("rest_seconds"),
+  notes: text("notes"),
   orderIndex: integer("order_index").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

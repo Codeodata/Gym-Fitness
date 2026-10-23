@@ -128,6 +128,7 @@ type SingleExercise = {
   sets: number;
   reps: string;
   restSeconds: number | null;
+  notes: string | null;
   exerciseName: string;
   muscleGroup: string;
 };
@@ -203,7 +204,7 @@ export function TodayRoutine() {
           </div>
           <div className="px-5 py-3 flex flex-col gap-1.5">
             {singles.map(ex => (
-              <ExerciseRow key={ex.id} ex={{ ...ex, section: "main", notes: null }} />
+              <ExerciseRow key={ex.id} ex={{ ...ex, section: "main" }} />
             ))}
           </div>
         </div>
