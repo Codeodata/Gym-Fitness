@@ -327,7 +327,7 @@ export function WeeklyScheduleBuilder({ clientId }: { clientId: string }) {
                   borderBottom: `2px solid ${libraryTab === tab ? DAY_ACCENT[activeDow]?.color : "transparent"}`,
                   background: "transparent",
                 }}>
-                {tab === "planes" ? "Planes" : "Ejercicios sueltos"}
+                {tab === "planes" ? "Rutinas" : "Ejercicios sueltos"}
               </button>
             ))}
           </div>
