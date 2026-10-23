@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { and, eq } from "drizzle-orm";
 import { TemplateWeekBuilder } from "@/components/trainer/template-week-builder";
+import { RoutinesLibrary } from "@/components/trainer/routines-library";
 
 export default async function RoutinesPage() {
   await connection();
@@ -34,6 +35,17 @@ export default async function RoutinesPage() {
       </div>
 
       <TemplateWeekBuilder clients={approvedClients} />
+
+      {/* Ejercicios de cada rutina */}
+      <div className="mt-10">
+        <div className="mb-5">
+          <h2 className="text-lg font-extrabold" style={{ color: "var(--text)" }}>Ejercicios por rutina</h2>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-2)" }}>
+            Expandí una rutina para ver, agregar o quitar ejercicios
+          </p>
+        </div>
+        <RoutinesLibrary />
+      </div>
     </div>
   );
 }
