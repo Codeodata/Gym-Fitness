@@ -6,9 +6,11 @@ let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
 export function getDb() {
   if (!_db) {
+    const isLocal = process.env.DATABASE_URL?.includes("localhost");
+    const url = process.env.DATABASE_URL!.replace(/[?&]sslmode=[^&]*/g, "");
     const pool = new Pool({
-      connectionString: process.env.DATABASE_URL!,
-      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+      connectionString: url,
+      ssl: isLocal ? false : { rejectUnauthorized: false },
     });
     _db = drizzle(pool, { schema });
   }
