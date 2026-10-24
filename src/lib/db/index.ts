@@ -1,19 +1,26 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
+import { Pool as PgPool } from "pg";
+import { Pool as NeonPool } from "@neondatabase/serverless";
 import * as schema from "./schema";
 
-let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
+type Db = ReturnType<typeof drizzlePg<typeof schema>>;
 
-export function getDb() {
+let _db: Db | null = null;
+
+export function getDb(): Db {
   if (!_db) {
-    const isLocal = process.env.DATABASE_URL?.includes("localhost");
-    const parsed = new URL(process.env.DATABASE_URL!);
-    parsed.searchParams.delete("sslmode");
-    const pool = new Pool({
-      connectionString: parsed.toString(),
-      ssl: isLocal ? false : { rejectUnauthorized: false },
-    });
-    _db = drizzle(pool, { schema });
+    const url = process.env.DATABASE_URL!;
+    const isLocal = url.includes("localhost") || url.includes("127.0.0.1");
+
+    if (isLocal) {
+      const pool = new PgPool({ connectionString: url });
+      _db = drizzlePg(pool, { schema });
+    } else {
+      // Neon serverless uses WebSockets — no TCP connection pool limits
+      const pool = new NeonPool({ connectionString: url });
+      _db = drizzleNeon(pool, { schema }) as unknown as Db;
+    }
   }
   return _db;
 }
