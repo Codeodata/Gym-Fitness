@@ -55,6 +55,12 @@ export function RoutinesLibrary({ clients }: Props) {
   const [assigning, setAssigning]             = useState(false);
   const [toast, setToast]                     = useState<string | null>(null);
 
+  // Assign panel search
+  const [assignSearch, setAssignSearch] = useState("");
+
+  // Unassign student
+  const [unassigning, setUnassigning] = useState<string | null>(null); // clientId being removed
+
   // Delete plan
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [deleting, setDeleting]           = useState(false);
@@ -248,6 +254,29 @@ export function RoutinesLibrary({ clients }: Props) {
     setAssignPanel({ planId, dayId });
     setAssignDow(null);
     setAssignClientIds(new Set());
+    setAssignSearch("");
+  }
+
+  async function unassignStudent(planId: string, clientId: string) {
+    setUnassigning(clientId);
+    try {
+      const res = await fetch(`/api/trainer/plans/${planId}/students`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId }),
+      });
+      if (res.ok) {
+        setLibrary(prev => prev.map(p =>
+          p.id !== planId ? p : {
+            ...p,
+            assignedStudentCount: p.assignedStudentCount - 1,
+            students: p.students.filter(s => s.clientId !== clientId),
+          }
+        ));
+      }
+    } finally {
+      setUnassigning(null);
+    }
   }
 
   async function assign() {
@@ -425,36 +454,50 @@ export function RoutinesLibrary({ clients }: Props) {
                 {/* Alumnos asignados */}
                 {plan.students.length > 0 && (
                   <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}>
-                    <div className="flex items-center gap-2 mb-2.5">
+                    <div className="flex items-center gap-2 mb-2">
                       <Users className="h-3.5 w-3.5" style={{ color: "var(--accent)" }} />
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
-                        Alumnos asignados ({plan.students.length})
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider flex-1" style={{ color: "var(--text-3)" }}>
+                        Alumnos con esta rutina ({plan.students.length})
                       </span>
                     </div>
-                    <div className="flex flex-col gap-1.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                       {plan.students.map(s => (
-                        <div key={s.clientId} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                        <div key={s.clientId}
+                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl group"
                           style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
-                          <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-extrabold"
+                          <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-[10px] font-extrabold"
                             style={{ background: cat.bg, color: cat.color }}>
                             {s.clientName?.charAt(0).toUpperCase()}
                           </div>
-                          <span className="text-sm font-semibold flex-1 min-w-0 truncate" style={{ color: "var(--text)" }}>
+                          <span className="text-xs font-semibold flex-1 min-w-0 truncate" style={{ color: "var(--text)" }}>
                             {s.clientName}
                           </span>
-                          <div className="flex items-center gap-1 flex-wrap justify-end">
+                          <div className="flex items-center gap-1 shrink-0">
                             {s.slots.length === 0 ? (
-                              <span className="text-[11px]" style={{ color: "var(--text-3)" }}>Sin turno</span>
+                              <span className="text-[10px]" style={{ color: "var(--text-3)" }}>—</span>
                             ) : (
-                              s.slots.map((slot, i) => (
-                                <span key={i} className="text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
-                                  style={{ background: "var(--bg-hover)", border: "1px solid var(--border)", color: "var(--text-2)" }}>
+                              s.slots.slice(0, 2).map((slot, i) => (
+                                <span key={i} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap"
+                                  style={{ background: "var(--bg-hover)", color: "var(--text-2)" }}>
                                   <span style={{ color: cat.color }}>{DOW_LABEL[slot.dayOfWeek]}</span>
                                   {" "}{slot.startTime}
                                 </span>
                               ))
                             )}
                           </div>
+                          <button
+                            type="button"
+                            disabled={unassigning === s.clientId}
+                            onClick={() => unassignStudent(plan.id, s.clientId)}
+                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md shrink-0 cursor-pointer transition-opacity disabled:opacity-50"
+                            style={{ color: "var(--text-3)" }}
+                            title="Quitar de esta rutina"
+                            onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
+                            onMouseLeave={e => (e.currentTarget.style.color = "var(--text-3)")}>
+                            {unassigning === s.clientId
+                              ? <span className="text-[10px]">…</span>
+                              : <X className="h-3 w-3" />}
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -498,30 +541,6 @@ export function RoutinesLibrary({ clients }: Props) {
                           </button>
                         </div>
 
-                        {/* Assigned students for this day */}
-                        {(() => {
-                          const assigned = plan.days.find(d => d.id === day.id)?.assignments ?? [];
-                          if (!assigned.length) return null;
-                          return (
-                            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                              {assigned.slice(0, 5).map((a: DayAssignment) => (
-                                <span key={`${a.clientId}-${a.dayOfWeek}`}
-                                  className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                                  style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", color: "var(--text-2)" }}>
-                                  {a.clientName?.split(" ")[0]}
-                                  <span className="font-extrabold" style={{ color: cat.color }}>
-                                    {DOW_LABEL[a.dayOfWeek]}
-                                  </span>
-                                </span>
-                              ))}
-                              {assigned.length > 5 && (
-                                <span className="text-[11px] font-bold" style={{ color: "var(--text-3)" }}>
-                                  +{assigned.length - 5} más
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })()}
                       </div>
 
                       <div className="px-4 py-3 flex flex-col gap-2">
@@ -602,7 +621,12 @@ export function RoutinesLibrary({ clients }: Props) {
                                   style={{ color: "var(--text-3)" }}>¿A qué alumnos?</p>
                                 {clients.length > 0 && (
                                   <button type="button"
-                                    onClick={() => setAssignClientIds(new Set(clients.map(c => c.id)))}
+                                    onClick={() => {
+                                      const visible = clients.filter(c =>
+                                        !assignSearch.trim() || c.name.toLowerCase().includes(assignSearch.toLowerCase())
+                                      );
+                                      setAssignClientIds(new Set(visible.map(c => c.id)));
+                                    }}
                                     className="text-xs font-bold cursor-pointer"
                                     style={{ color: cat.color }}>
                                     Todos
@@ -614,37 +638,49 @@ export function RoutinesLibrary({ clients }: Props) {
                                   No hay alumnos aprobados.
                                 </p>
                               ) : (
-                                <div className="flex flex-col gap-1 max-h-44 overflow-y-auto">
-                                  {clients.map(client => {
-                                    const sel = assignClientIds.has(client.id);
-                                    return (
-                                      <button key={client.id} type="button"
-                                        onClick={() => setAssignClientIds(prev => {
-                                          const n = new Set(prev);
-                                          n.has(client.id) ? n.delete(client.id) : n.add(client.id);
-                                          return n;
-                                        })}
-                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-left transition-all"
-                                        style={{
-                                          background: sel ? cat.bg : "var(--bg-panel)",
-                                          border: `1px solid ${sel ? cat.border : "var(--border)"}`,
-                                        }}>
-                                        <div className="w-4 h-4 rounded flex items-center justify-center shrink-0"
-                                          style={{ background: sel ? cat.color : "var(--bg-hover)", border: `1px solid ${sel ? cat.color : "var(--border)"}` }}>
-                                          {sel && <Check className="h-2.5 w-2.5" style={{ color: "#000" }} />}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
-                                            {client.name}
-                                          </p>
-                                          <p className="text-xs truncate" style={{ color: "var(--text-3)" }}>
-                                            {client.email}
-                                          </p>
-                                        </div>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
+                                <>
+                                  <div className="relative mb-2">
+                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3"
+                                      style={{ color: "var(--text-3)" }} />
+                                    <input
+                                      placeholder="Buscar alumno…"
+                                      value={assignSearch}
+                                      onChange={e => setAssignSearch(e.target.value)}
+                                      className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none"
+                                      style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", color: "var(--text)" }}
+                                      onFocus={e => (e.currentTarget.style.borderColor = cat.color)}
+                                      onBlur={e => (e.currentTarget.style.borderColor = "var(--border)")}
+                                    />
+                                  </div>
+                                  <div className="flex flex-col gap-1 max-h-44 overflow-y-auto">
+                                    {clients
+                                      .filter(c => !assignSearch.trim() || c.name.toLowerCase().includes(assignSearch.toLowerCase()))
+                                      .map(client => {
+                                        const sel = assignClientIds.has(client.id);
+                                        return (
+                                          <button key={client.id} type="button"
+                                            onClick={() => setAssignClientIds(prev => {
+                                              const n = new Set(prev);
+                                              n.has(client.id) ? n.delete(client.id) : n.add(client.id);
+                                              return n;
+                                            })}
+                                            className="flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer text-left transition-all"
+                                            style={{
+                                              background: sel ? cat.bg : "var(--bg-panel)",
+                                              border: `1px solid ${sel ? cat.border : "var(--border)"}`,
+                                            }}>
+                                            <div className="w-4 h-4 rounded flex items-center justify-center shrink-0"
+                                              style={{ background: sel ? cat.color : "var(--bg-hover)", border: `1px solid ${sel ? cat.color : "var(--border)"}` }}>
+                                              {sel && <Check className="h-2.5 w-2.5" style={{ color: "#000" }} />}
+                                            </div>
+                                            <span className="text-sm font-semibold truncate flex-1 min-w-0" style={{ color: "var(--text)" }}>
+                                              {client.name}
+                                            </span>
+                                          </button>
+                                        );
+                                      })}
+                                  </div>
+                                </>
                               )}
                             </div>
 
