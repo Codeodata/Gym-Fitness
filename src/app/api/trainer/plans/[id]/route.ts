@@ -5,6 +5,31 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || session.user.role !== "trainer") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const db = getDb();
+
+  // plan_assignment has no cascade from plan — delete manually
+  await db.delete(schema.planAssignment).where(eq(schema.planAssignment.planId, id));
+
+  const [deleted] = await db
+    .delete(schema.plan)
+    .where(eq(schema.plan.id, id))
+    .returning();
+
+  if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

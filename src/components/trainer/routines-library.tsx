@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import {
-  ChevronDown, ChevronUp, Dumbbell, Flame, Plus, Trash2, Search, Users, Check, X,
+  ChevronDown, ChevronUp, Dumbbell, Flame, Plus, Trash2, Search, Users, Check, X, AlertTriangle,
 } from "lucide-react";
 
 const CAT: Record<string, { color: string; bg: string; border: string; label: string }> = {
@@ -26,13 +26,13 @@ type Client       = { id: string; name: string; email: string };
 type Props = { clients: Client[] };
 
 export function RoutinesLibrary({ clients }: Props) {
-  const [library, setLibrary] = useState<LibraryPlan[]>([]);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [planData, setPlanData] = useState<Record<string, PlanDetail>>({});
+  const [library, setLibrary]         = useState<LibraryPlan[]>([]);
+  const [expanded, setExpanded]       = useState<Set<string>>(new Set());
+  const [planData, setPlanData]       = useState<Record<string, PlanDetail>>({});
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [errorPlan, setErrorPlan] = useState<string | null>(null);
+  const [errorPlan, setErrorPlan]     = useState<string | null>(null);
 
-  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [catalog, setCatalog]           = useState<CatalogItem[]>([]);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
 
   // Add-exercise panel
@@ -43,11 +43,15 @@ export function RoutinesLibrary({ clients }: Props) {
   const [saving, setSaving]             = useState(false);
 
   // Assign panel
-  const [assignPanel, setAssignPanel]     = useState<{ planId: string; dayId: string } | null>(null);
-  const [assignDow, setAssignDow]         = useState<number | null>(null);
+  const [assignPanel, setAssignPanel]         = useState<{ planId: string; dayId: string } | null>(null);
+  const [assignDow, setAssignDow]             = useState<number | null>(null);
   const [assignClientIds, setAssignClientIds] = useState<Set<string>>(new Set());
-  const [assigning, setAssigning]         = useState(false);
-  const [toast, setToast]                 = useState<string | null>(null);
+  const [assigning, setAssigning]             = useState(false);
+  const [toast, setToast]                     = useState<string | null>(null);
+
+  // Delete plan
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleting, setDeleting]           = useState(false);
 
   useEffect(() => {
     fetch("/api/trainer/plan-library")
@@ -95,6 +99,22 @@ export function RoutinesLibrary({ clients }: Props) {
       setExpanded(prev => { const n = new Set(prev); n.delete(planId); return n; });
     } finally {
       setLoadingPlan(null);
+    }
+  }
+
+  // ── Delete plan ─────────────────────────────────────────────────────────────
+  async function deletePlan(planId: string) {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/trainer/plans/${planId}`, { method: "DELETE" });
+      if (res.ok) {
+        setLibrary(prev => prev.filter(p => p.id !== planId));
+        setExpanded(prev => { const n = new Set(prev); n.delete(planId); return n; });
+        setPlanData(prev => { const n = { ...prev }; delete n[planId]; return n; });
+      }
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(null);
     }
   }
 
@@ -154,6 +174,7 @@ export function RoutinesLibrary({ clients }: Props) {
 
   function openAdd(planId: string, dayId: string) {
     setAssignPanel(null);
+    setConfirmDelete(null);
     setAddingPlanId(planId);
     setAddingDayId(dayId);
     setAddSection("main");
@@ -168,6 +189,7 @@ export function RoutinesLibrary({ clients }: Props) {
     }
     setAddingDayId(null);
     setAddingPlanId(null);
+    setConfirmDelete(null);
     setAssignPanel({ planId, dayId });
     setAssignDow(null);
     setAssignClientIds(new Set());
@@ -186,7 +208,7 @@ export function RoutinesLibrary({ clients }: Props) {
         }),
       });
       const data = await res.json() as { created: number };
-      setToast(`✓ ${data.created} bloque${data.created !== 1 ? "s" : ""} asignado${data.created !== 1 ? "s" : ""} a ${assignClientIds.size} alumno${assignClientIds.size !== 1 ? "s" : ""}`);
+      setToast(`${data.created} bloque${data.created !== 1 ? "s" : ""} asignado${data.created !== 1 ? "s" : ""} a ${assignClientIds.size} alumno${assignClientIds.size !== 1 ? "s" : ""}`);
       setAssignPanel(null);
     } finally {
       setAssigning(false);
@@ -217,22 +239,25 @@ export function RoutinesLibrary({ clients }: Props) {
         const loading  = loadingPlan === plan.id;
         const detail   = planData[plan.id];
         const hasError = errorPlan === plan.id;
+        const isConfirmingDelete = confirmDelete === plan.id;
 
         return (
           <div key={plan.id} className="rounded-2xl overflow-hidden"
             style={{ border: `1px solid ${isOpen ? cat.color : "var(--border)"}`, background: "var(--bg-panel)" }}>
 
             {/* Plan header */}
-            <button type="button" onClick={() => togglePlan(plan.id)}
-              className="w-full flex items-center gap-4 p-5 text-left cursor-pointer">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            <div className="flex items-center gap-3 px-4 py-4">
+              {/* Icon */}
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                 style={{ background: cat.bg, border: `1px solid ${cat.border}` }}>
                 {plan.category === "calentamiento"
                   ? <Flame className="h-4 w-4" style={{ color: cat.color }} />
                   : <Dumbbell className="h-4 w-4" style={{ color: cat.color }} />}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-extrabold" style={{ color: "var(--text)" }}>{plan.name}</p>
+
+              {/* Name + meta — clickable to expand */}
+              <button type="button" onClick={() => togglePlan(plan.id)} className="flex-1 min-w-0 text-left">
+                <p className="font-extrabold leading-tight" style={{ color: "var(--text)" }}>{plan.name}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
                     style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
@@ -240,15 +265,55 @@ export function RoutinesLibrary({ clients }: Props) {
                     {plan.days.length} día{plan.days.length !== 1 ? "s" : ""}
                   </span>
                 </div>
+              </button>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Delete — two-step confirm */}
+                {isConfirmingDelete ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold" style={{ color: "#ef4444" }}>
+                      ¿Eliminar?
+                    </span>
+                    <button type="button" onClick={() => deletePlan(plan.id)} disabled={deleting}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-extrabold cursor-pointer disabled:opacity-50"
+                      style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.35)" }}>
+                      {deleting ? "…" : "Sí"}
+                    </button>
+                    <button type="button" onClick={() => setConfirmDelete(null)}
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer"
+                      style={{ background: "var(--bg-hover)", color: "var(--text-3)", border: "1px solid var(--border)" }}>
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button"
+                    onClick={() => { setConfirmDelete(plan.id); setExpanded(prev => { const n = new Set(prev); n.delete(plan.id); return n; }); }}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl cursor-pointer transition-colors"
+                    style={{ color: "var(--text-3)", background: "transparent" }}
+                    title="Eliminar rutina"
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#ef4444"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,0.10)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-3)"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
+                {/* Expand/collapse */}
+                {!isConfirmingDelete && (
+                  <button type="button" onClick={() => togglePlan(plan.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl cursor-pointer"
+                    style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}>
+                    {loading
+                      ? <span className="text-[10px]" style={{ color: "var(--text-3)" }}>…</span>
+                      : hasError
+                        ? <AlertTriangle className="h-3.5 w-3.5" style={{ color: "#ef4444" }} />
+                        : isOpen
+                          ? <ChevronUp className="h-3.5 w-3.5" style={{ color: "var(--text-3)" }} />
+                          : <ChevronDown className="h-3.5 w-3.5" style={{ color: "var(--text-3)" }} />}
+                  </button>
+                )}
               </div>
-              {loading
-                ? <span className="text-xs" style={{ color: "var(--text-3)" }}>Cargando…</span>
-                : hasError
-                  ? <span className="text-xs font-semibold" style={{ color: "#ef4444" }}>Error — reintentar</span>
-                  : isOpen
-                    ? <ChevronUp className="h-4 w-4 shrink-0" style={{ color: "var(--text-3)" }} />
-                    : <ChevronDown className="h-4 w-4 shrink-0" style={{ color: "var(--text-3)" }} />}
-            </button>
+            </div>
 
             {/* Expanded */}
             {isOpen && detail && (
@@ -264,7 +329,7 @@ export function RoutinesLibrary({ clients }: Props) {
                       style={{ borderBottom: dayIdx < detail.days.length - 1 ? "1px solid var(--border)" : "none" }}>
 
                       {/* Day header */}
-                      <div className="flex items-center gap-3 px-5 py-3"
+                      <div className="flex items-center gap-3 px-4 py-3"
                         style={{ background: "var(--bg-hover)", borderBottom: "1px solid var(--border)" }}>
                         <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-extrabold shrink-0"
                           style={{ background: cat.bg, color: cat.color }}>
@@ -276,7 +341,6 @@ export function RoutinesLibrary({ clients }: Props) {
                         <span className="text-xs shrink-0 hidden sm:block" style={{ color: "var(--text-3)" }}>
                           {day.exercises.length} ejercicio{day.exercises.length !== 1 ? "s" : ""}
                         </span>
-                        {/* Asignar button */}
                         <button type="button"
                           onClick={() => openAssignPanel(plan.id, day.id)}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer shrink-0 transition-all"
@@ -290,7 +354,7 @@ export function RoutinesLibrary({ clients }: Props) {
                         </button>
                       </div>
 
-                      <div className="px-5 py-3 flex flex-col gap-2">
+                      <div className="px-4 py-3 flex flex-col gap-2">
                         {/* Warmup */}
                         {warmup.length > 0 && (
                           <div>
@@ -327,7 +391,7 @@ export function RoutinesLibrary({ clients }: Props) {
                           </div>
                         )}
 
-                        {day.exercises.length === 0 && !isAssigning && (
+                        {day.exercises.length === 0 && !isAssigning && !isAddingHere && (
                           <p className="text-xs py-1 text-center" style={{ color: "var(--text-3)" }}>
                             Sin ejercicios todavía
                           </p>
@@ -338,7 +402,6 @@ export function RoutinesLibrary({ clients }: Props) {
                           <div className="rounded-xl p-4 flex flex-col gap-4 mt-1"
                             style={{ border: `1px solid ${cat.color}`, background: "var(--bg)" }}>
 
-                            {/* DOW picker */}
                             <div>
                               <p className="text-xs font-extrabold uppercase tracking-wider mb-2"
                                 style={{ color: "var(--text-3)" }}>¿Qué día de la semana?</p>
@@ -361,7 +424,6 @@ export function RoutinesLibrary({ clients }: Props) {
                               </div>
                             </div>
 
-                            {/* Client selector */}
                             <div>
                               <div className="flex items-center justify-between mb-2">
                                 <p className="text-xs font-extrabold uppercase tracking-wider"
@@ -414,7 +476,6 @@ export function RoutinesLibrary({ clients }: Props) {
                               )}
                             </div>
 
-                            {/* Actions */}
                             <div className="flex gap-2">
                               <button type="button" onClick={() => setAssignPanel(null)}
                                 className="px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
@@ -467,7 +528,7 @@ export function RoutinesLibrary({ clients }: Props) {
                               {catalogLoaded && filtered.length === 0 && <p className="text-xs text-center py-3" style={{ color: "var(--text-3)" }}>Sin resultados</p>}
                               {filtered.map(item => (
                                 <button key={item.id} type="button" onClick={() => addExercise(item)} disabled={saving}
-                                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm font-semibold"
+                                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm font-semibold cursor-pointer"
                                   style={{ background: "var(--bg-panel)", color: "var(--text)", border: "1px solid var(--border)" }}
                                   onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
                                   onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}>
@@ -521,7 +582,7 @@ export function RoutinesLibrary({ clients }: Props) {
 
 function ExerciseRow({ ex, accent, onRemove }: { ex: ExerciseItem; accent: string; onRemove: () => void }) {
   return (
-    <div className="group flex items-center gap-3 px-3 py-2.5 rounded-xl"
+    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
       style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}>
       <span className="flex-1 text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
         {ex.exerciseName}
@@ -536,11 +597,11 @@ function ExerciseRow({ ex, accent, onRemove }: { ex: ExerciseItem; accent: strin
         </span>
       )}
       <button type="button" onClick={onRemove}
-        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg shrink-0 cursor-pointer"
+        className="p-1 rounded-lg shrink-0 cursor-pointer transition-colors"
         style={{ color: "var(--text-3)" }}
         onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
         onMouseLeave={e => (e.currentTarget.style.color = "var(--text-3)")}>
-        <Trash2 className="h-3.5 w-3.5" />
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );
