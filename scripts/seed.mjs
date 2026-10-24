@@ -24,6 +24,8 @@ async function seed() {
     DELETE FROM workout_log;
     DELETE FROM body_weight;
     DELETE FROM attendance;
+    DELETE FROM client_day_exercise;
+    DELETE FROM client_day_block;
     DELETE FROM slot_enrollment;
     DELETE FROM class_slot;
     DELETE FROM plan_assignment;
@@ -72,6 +74,11 @@ async function seed() {
     { name: "Julieta Acosta",     email: "juli@gym.com",     membership: "pase_libre" },
     { name: "Rodrigo Molina",     email: "rodri@gym.com",    membership: "2dias"     },
     { name: "Emilia Sosa",        email: "emilia@gym.com",   membership: "3dias"     },
+    { name: "Pedro Vargas",       email: "pedro@gym.com",    membership: "3dias"     },
+    { name: "Carolina Ibáñez",    email: "caro@gym.com",     membership: "pase_libre" },
+    { name: "Hernán Paz",         email: "hernan@gym.com",   membership: "2dias"     },
+    { name: "Natalia Ferreyra",   email: "nati@gym.com",     membership: "3dias"     },
+    { name: "Diego Suárez",       email: "diego@gym.com",    membership: "pase_libre" },
   ];
 
   const clientIds = [];
@@ -175,6 +182,16 @@ async function seed() {
     [18, 0], [18,11],
     // Emilia (3dias): Mar20, Mié20, Vie18
     [19, 5], [19, 8], [19,12],
+    // Pedro (3dias): Lun18, Mié19, Vie20
+    [20, 0], [20, 7], [20,14],
+    // Carolina (pase_libre): Lun20, Mar19, Mié18, Jue20, Vie19
+    [21, 2], [21, 4], [21, 6], [21,11], [21,13],
+    // Hernán (2dias): Mar17, Jue17
+    [22, 3], [22, 9],
+    // Natalia (3dias): Lun19, Mié20, Vie18
+    [23, 1], [23, 8], [23,12],
+    // Diego (pase_libre): Lun18, Mar20, Mié19, Jue19, Vie20
+    [24, 0], [24, 5], [24, 7], [24,10], [24,14],
   ];
 
   for (const [ci, si] of ENROLLMENTS) {
@@ -502,6 +519,11 @@ async function seed() {
     [17, p4Id, "Julieta: pase libre con hipertrofia. El viernes de glúteos es tu favorito, ya sé."],
     [18, p3Id, "Rodrigo: empezamos de cero pero vas a progresar rápido. Prestá atención al peso muerto."],
     [19, p5Id, "Emilia: funcional puro. Vas a mejorar tu cardio y fuerza al mismo tiempo."],
+    [20, p1Id, "Pedro: el PPL es ideal para tu objetivo de fuerza. Enfocate en los tres grandes levantamientos."],
+    [21, p4Id, "Carolina: con pase libre y 5 días tenés todo el tiempo del mundo. Aprovechalo bien."],
+    [22, p3Id, "Hernán: comenzamos suave para construir base. Dos días son suficientes para arrancar bien."],
+    [23, p2Id, "Natalia: el upper/lower con 4 días te va a dar la frecuencia necesaria para progresar rápido."],
+    [24, p5Id, "Diego: funcional + cardio es lo que necesitás para mejorar tu condición general. Disfrutalo."],
   ];
 
   const assignIds = [];
@@ -518,7 +540,52 @@ async function seed() {
   }
   console.log(`✓ ${ASSIGNMENTS.length} asignaciones`);
 
-  // ─── 9. Logs de entrenamiento (últimas 4 semanas) ────────────────────────
+  // ─── 9. Semana del alumno (client_day_block) ─────────────────────────────
+  // Asigna qué día de la semana entrena cada alumno y qué día del plan hace
+  // dayOfWeek: 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie
+  // Formato: [clientIndex, planDays, [dayIndex, dayOfWeek], ...]
+  const CLIENT_BLOCKS = [
+    [0,  p1Days, [0,1],[1,3],[2,5]],            // Lucas: PPL → Lun/Mié/Vie
+    [1,  p4Days, [0,1],[1,2],[2,3],[3,4],[4,5]], // Sofía: 5días → Lun-Vie
+    [2,  p3Days, [0,1],[1,4]],                   // Mateo: 2días → Lun/Jue
+    [3,  p2Days, [0,1],[1,2],[2,4],[3,5]],        // Valentina: UL → Lun/Mar/Jue/Vie
+    [4,  p4Days, [0,1],[1,2],[2,3],[3,4],[4,5]], // Nicolás: 5días → Lun-Vie
+    [5,  p3Days, [0,1],[1,4]],                   // Camila: 2días → Lun/Jue
+    [6,  p1Days, [0,2],[1,4],[2,5]],              // Tomás: PPL → Mar/Jue/Vie
+    [7,  p4Days, [0,1],[1,2],[2,3],[3,4],[4,5]], // Agustina: 5días → Lun-Vie
+    [8,  p2Days, [0,2],[1,3],[2,4],[3,5]],        // Santiago: UL → Mar/Mié/Jue/Vie
+    [9,  p3Days, [0,2],[1,5]],                   // Lucía: 2días → Mar/Vie
+    [10, p4Days, [0,1],[1,2],[2,3],[3,4],[4,5]], // Facundo: 5días → Lun-Vie
+    [11, p5Days, [0,1],[1,3],[2,5]],              // Martina: Func → Lun/Mié/Vie
+    [12, p3Days, [0,2],[1,5]],                   // Bruno: 2días → Mar/Vie
+    [13, p2Days, [0,1],[1,2],[2,4],[3,5]],        // Florencia: UL → Lun/Mar/Jue/Vie
+    [14, p4Days, [0,1],[1,2],[2,3],[3,4],[4,5]], // Ignacio: 5días → Lun-Vie
+    [15, p3Days, [0,1],[1,3]],                   // Delfina: 2días → Lun/Mié
+    [16, p1Days, [0,1],[1,3],[2,5]],              // Maximiliano: PPL → Lun/Mié/Vie
+    [17, p4Days, [0,1],[1,2],[2,3],[3,4],[4,5]], // Julieta: 5días → Lun-Vie
+    [18, p3Days, [0,1],[1,3]],                   // Rodrigo: 2días → Lun/Mié
+    [19, p5Days, [0,2],[1,4],[2,5]],              // Emilia: Func → Mar/Jue/Vie
+    [20, p1Days, [0,1],[1,3],[2,5]],              // Pedro: PPL → Lun/Mié/Vie
+    [21, p4Days, [0,1],[1,2],[2,3],[3,4],[4,5]], // Carolina: 5días → Lun-Vie
+    [22, p3Days, [0,2],[1,4]],                   // Hernán: 2días → Mar/Jue
+    [23, p2Days, [0,1],[1,2],[2,4],[3,5]],        // Natalia: UL → Lun/Mar/Jue/Vie
+    [24, p5Days, [0,1],[1,3],[2,5]],              // Diego: Func → Lun/Mié/Vie
+  ];
+
+  let totalBlocks = 0;
+  for (const [ci, planDays, ...dayMappings] of CLIENT_BLOCKS) {
+    for (let i = 0; i < dayMappings.length; i++) {
+      const [dayIdx, dow] = dayMappings[i];
+      await db.execute(`
+        INSERT INTO client_day_block (id, client_id, day_of_week, plan_day_id, order_index, created_at)
+        VALUES ('${uid()}', '${clientIds[ci]}', ${dow}, '${planDays[dayIdx]}', ${i}, now());
+      `);
+      totalBlocks++;
+    }
+  }
+  console.log(`✓ ${totalBlocks} bloques semanales (client_day_block)`);
+
+  // ─── 11. Logs de entrenamiento (últimas 4 semanas) ───────────────────────
   // Para los primeros 8 clientes generamos historial realista
 
   const planDaysMap = {
@@ -577,7 +644,7 @@ async function seed() {
   totalLogs += await logSessions(assignIds[7],  20, 40, 1.25); // Agustina
   console.log(`✓ ${totalLogs} logs de sesiones`);
 
-  // ─── 10. Peso corporal ───────────────────────────────────────────────────
+  // ─── 12. Peso corporal ───────────────────────────────────────────────────
   const WEIGHT_HISTORIES = [
     [0,  [ [28,"83.5"],[21,"83.2"],[14,"82.8"],[7,"82.4"],[0,"82.0"] ]],  // Lucas  ↓
     [1,  [ [21,"61.0"],[14,"60.8"],[7,"60.5"],[0,"60.2"] ]],              // Sofía  ↓
@@ -612,7 +679,7 @@ async function seed() {
   console.log("│  Entrenador:  trainer@gym.com    contraseña: Galileo26    │");
   console.log("│  Clientes:    lucas@gym.com      contraseña: password     │");
   console.log("│               sofia@gym.com      contraseña: password     │");
-  console.log("│               (y otros 18 más)   contraseña: password     │");
+  console.log("│               (y otros 23 más)   contraseña: password     │");
   console.log("│                                                            │");
   console.log("│  PLANES CREADOS                                            │");
   console.log("│  1. Fuerza PPL — 3 días           (musculación)           │");

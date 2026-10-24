@@ -59,8 +59,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
   const [assigning, setAssigning] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Per-day exercise expand/edit state
-  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+  // Per-plan exercise data
   const [planExData, setPlanExData] = useState<Record<string, PlanExData>>({});
   const [loadingPlanEx, setLoadingPlanEx] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
@@ -98,7 +97,9 @@ export function TemplateWeekBuilder({ clients }: Props) {
   }
 
   function togglePlan(id: string) {
+    const isExpanding = !expandedPlans.has(id);
     setExpandedPlans(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    if (isExpanding) loadPlanEx(id);
   }
 
   function toggleClient(id: string) {
@@ -129,13 +130,8 @@ export function TemplateWeekBuilder({ clients }: Props) {
     } finally { setAssigning(false); }
   }
 
-  // ── Per-day exercise management ─────────────────────────────────────────────
-  async function toggleDayEx(planId: string, dayId: string) {
-    if (expandedDays.has(dayId)) {
-      setExpandedDays(prev => { const n = new Set(prev); n.delete(dayId); return n; });
-      return;
-    }
-    setExpandedDays(prev => new Set([...prev, dayId]));
+  // ── Per-plan exercise loading ────────────────────────────────────────────────
+  async function loadPlanEx(planId: string) {
     if (planExData[planId]) return;
     setLoadingPlanEx(planId);
     try {
@@ -159,7 +155,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
         },
       }));
     } catch {
-      setExpandedDays(prev => { const n = new Set(prev); n.delete(dayId); return n; });
+      // silently fail — exercises won't show but plan stays expanded
     } finally {
       setLoadingPlanEx(null);
     }
@@ -363,11 +359,13 @@ export function TemplateWeekBuilder({ clients }: Props) {
                       {/* Days list */}
                       {expanded && (
                         <div style={{ borderTop: "1px solid var(--border)" }}>
-                          {plan.days.map(day => {
+                          {loadingPlanEx === plan.id ? (
+                            <div className="px-4 py-4 text-xs text-center" style={{ color: "var(--text-3)" }}>
+                              Cargando ejercicios…
+                            </div>
+                          ) : plan.days.map(day => {
                             const planLoaded = planExData[plan.id];
                             const dayWithEx  = planLoaded?.days.find(d => d.id === day.id);
-                            const exCount    = dayWithEx ? dayWithEx.exercises.length : day.exerciseCount;
-                            const isDayExp   = expandedDays.has(day.id);
                             const isAddHere  = addExDayId === day.id && addExPlanId === plan.id;
                             const filteredCat = addExSearch.trim()
                               ? catalog.filter(e => e.name.toLowerCase().includes(addExSearch.toLowerCase()))
@@ -375,27 +373,11 @@ export function TemplateWeekBuilder({ clients }: Props) {
 
                             return (
                               <div key={day.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                                {/* Day row */}
-                                <div className="flex items-center px-4" style={{ background: "var(--bg-panel)" }}>
-                                  {/* Left: expand exercises */}
-                                  <button type="button"
-                                    onClick={() => toggleDayEx(plan.id, day.id)}
-                                    className="flex-1 flex items-center gap-2 py-3 text-left cursor-pointer min-w-0">
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
-                                        {day.name ?? `Día ${day.dayNumber}`}
-                                      </p>
-                                      <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
-                                        {loadingPlanEx === plan.id
-                                          ? "Cargando…"
-                                          : `${exCount} ejercicio${exCount !== 1 ? "s" : ""}`}
-                                      </p>
-                                    </div>
-                                    {isDayExp
-                                      ? <ChevronUp className="h-3 w-3 shrink-0" style={{ color: cat.color }} />
-                                      : <ChevronDown className="h-3 w-3 shrink-0" style={{ color: "var(--text-3)" }} />}
-                                  </button>
-                                  {/* Right: add to week */}
+                                {/* Day header */}
+                                <div className="flex items-center px-4 py-3" style={{ background: "var(--bg-panel)" }}>
+                                  <p className="flex-1 text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+                                    {day.name ?? `Día ${day.dayNumber}`}
+                                  </p>
                                   <button type="button"
                                     onClick={() => addBlock(plan, day)}
                                     title="Agregar al template"
@@ -405,93 +387,87 @@ export function TemplateWeekBuilder({ clients }: Props) {
                                   </button>
                                 </div>
 
-                                {/* Expanded exercises */}
-                                {isDayExp && (
-                                  <div className="px-4 pb-4 pt-2 flex flex-col gap-2"
-                                    style={{ background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
+                                {/* Exercises — always visible */}
+                                <div className="px-4 pb-4 pt-2 flex flex-col gap-2"
+                                  style={{ background: "var(--bg)", borderTop: "1px solid var(--border)" }}>
 
-                                    {!dayWithEx && (
-                                      <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Cargando…</p>
-                                    )}
+                                  {!planLoaded && (
+                                    <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Cargando…</p>
+                                  )}
 
-                                    {dayWithEx && dayWithEx.exercises.length === 0 && !isAddHere && (
-                                      <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Sin ejercicios todavía</p>
-                                    )}
+                                  {dayWithEx && dayWithEx.exercises.length === 0 && !isAddHere && (
+                                    <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Sin ejercicios todavía</p>
+                                  )}
 
-                                    {dayWithEx?.exercises.map(ex => (
-                                      <ExerciseRowSimple key={ex.id} ex={ex}
-                                        accent={ex.section === "warmup" ? "var(--c-orange)" : cat.color}
-                                        onRemove={() => removeExercise(plan.id, day.id, ex.id)} />
-                                    ))}
+                                  {dayWithEx?.exercises.map(ex => (
+                                    <ExerciseRowSimple key={ex.id} ex={ex}
+                                      accent={ex.section === "warmup" ? "var(--c-orange)" : cat.color}
+                                      onRemove={() => removeExercise(plan.id, day.id, ex.id)} />
+                                  ))}
 
-                                    {/* Add exercise panel */}
-                                    {isAddHere ? (
-                                      <div className="rounded-xl p-3 flex flex-col gap-2 mt-1"
-                                        style={{ border: `1px solid ${cat.color}`, background: "var(--bg-panel)" }}>
-                                        {/* Section toggle */}
-                                        <div className="flex gap-2">
-                                          {(["main", "warmup"] as const).map(s => (
-                                            <button key={s} type="button" onClick={() => setAddExSection(s)}
-                                              className="flex-1 py-1.5 rounded-lg text-xs font-bold cursor-pointer"
-                                              style={{
-                                                background: addExSection === s ? (s === "main" ? cat.color : "var(--c-orange)") : "var(--bg)",
-                                                color: addExSection === s ? "#000" : "var(--text-3)",
-                                                border: `1px solid ${addExSection === s ? (s === "main" ? cat.color : "var(--c-orange)") : "var(--border)"}`,
-                                              }}>
-                                              {s === "main"
-                                                ? <><Dumbbell className="h-3 w-3 inline mr-1" />Ejercicio</>
-                                                : <><Flame className="h-3 w-3 inline mr-1" />Calentamiento</>}
-                                            </button>
-                                          ))}
-                                        </div>
-                                        {/* Search */}
-                                        <div className="relative">
-                                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: "var(--text-3)" }} />
-                                          <input autoFocus placeholder="Buscar ejercicio…" value={addExSearch}
-                                            onChange={e => setAddExSearch(e.target.value)}
-                                            className="w-full rounded-lg pl-7 pr-3 py-1.5 text-sm outline-none"
-                                            style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
-                                            onFocus={e => (e.currentTarget.style.borderColor = cat.color)}
-                                            onBlur={e => (e.currentTarget.style.borderColor = "var(--border)")} />
-                                        </div>
-                                        {/* Results */}
-                                        <div className="flex flex-col gap-1 max-h-40 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-                                          {!catalogLoaded && <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Cargando…</p>}
-                                          {catalogLoaded && filteredCat.length === 0 && (
-                                            <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Sin resultados</p>
-                                          )}
-                                          {filteredCat.map(item => (
-                                            <button key={item.id} type="button" onClick={() => addExercise(item)} disabled={savingEx}
-                                              className="flex items-center justify-between px-3 py-2 rounded-lg text-left text-sm cursor-pointer"
-                                              style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
-                                              onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
-                                              onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}>
-                                              <span className="truncate">{item.name}</span>
-                                              <span className="text-[10px] font-bold uppercase ml-2 shrink-0" style={{ color: "var(--text-3)" }}>
-                                                {item.muscleGroup}
-                                              </span>
-                                            </button>
-                                          ))}
-                                        </div>
-                                        <button type="button"
-                                          onClick={() => { setAddExDayId(null); setAddExPlanId(null); setAddExSearch(""); }}
-                                          className="text-xs text-center cursor-pointer" style={{ color: "var(--text-3)" }}>
-                                          Cancelar
-                                        </button>
+                                  {isAddHere ? (
+                                    <div className="rounded-xl p-3 flex flex-col gap-2 mt-1"
+                                      style={{ border: `1px solid ${cat.color}`, background: "var(--bg-panel)" }}>
+                                      <div className="flex gap-2">
+                                        {(["main", "warmup"] as const).map(s => (
+                                          <button key={s} type="button" onClick={() => setAddExSection(s)}
+                                            className="flex-1 py-1.5 rounded-lg text-xs font-bold cursor-pointer"
+                                            style={{
+                                              background: addExSection === s ? (s === "main" ? cat.color : "var(--c-orange)") : "var(--bg)",
+                                              color: addExSection === s ? "#000" : "var(--text-3)",
+                                              border: `1px solid ${addExSection === s ? (s === "main" ? cat.color : "var(--c-orange)") : "var(--border)"}`,
+                                            }}>
+                                            {s === "main"
+                                              ? <><Dumbbell className="h-3 w-3 inline mr-1" />Ejercicio</>
+                                              : <><Flame className="h-3 w-3 inline mr-1" />Calentamiento</>}
+                                          </button>
+                                        ))}
                                       </div>
-                                    ) : dayWithEx && (
+                                      <div className="relative">
+                                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: "var(--text-3)" }} />
+                                        <input autoFocus placeholder="Buscar ejercicio…" value={addExSearch}
+                                          onChange={e => setAddExSearch(e.target.value)}
+                                          className="w-full rounded-lg pl-7 pr-3 py-1.5 text-sm outline-none"
+                                          style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
+                                          onFocus={e => (e.currentTarget.style.borderColor = cat.color)}
+                                          onBlur={e => (e.currentTarget.style.borderColor = "var(--border)")} />
+                                      </div>
+                                      <div className="flex flex-col gap-1 max-h-40 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+                                        {!catalogLoaded && <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Cargando…</p>}
+                                        {catalogLoaded && filteredCat.length === 0 && (
+                                          <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Sin resultados</p>
+                                        )}
+                                        {filteredCat.map(item => (
+                                          <button key={item.id} type="button" onClick={() => addExercise(item)} disabled={savingEx}
+                                            className="flex items-center justify-between px-3 py-2 rounded-lg text-left text-sm cursor-pointer"
+                                            style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
+                                            onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
+                                            onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}>
+                                            <span className="truncate">{item.name}</span>
+                                            <span className="text-[10px] font-bold uppercase ml-2 shrink-0" style={{ color: "var(--text-3)" }}>
+                                              {item.muscleGroup}
+                                            </span>
+                                          </button>
+                                        ))}
+                                      </div>
                                       <button type="button"
-                                        onClick={() => { setAddExPlanId(plan.id); setAddExDayId(day.id); setAddExSection("main"); setAddExSearch(""); }}
-                                        className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold cursor-pointer mt-1"
-                                        style={{ border: `1.5px dashed ${cat.border}`, color: cat.color, background: "transparent" }}
-                                        onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
-                                        onMouseLeave={e => (e.currentTarget.style.borderColor = cat.border)}>
-                                        <Plus className="h-3 w-3" />
-                                        Agregar ejercicio
+                                        onClick={() => { setAddExDayId(null); setAddExPlanId(null); setAddExSearch(""); }}
+                                        className="text-xs text-center cursor-pointer" style={{ color: "var(--text-3)" }}>
+                                        Cancelar
                                       </button>
-                                    )}
-                                  </div>
-                                )}
+                                    </div>
+                                  ) : dayWithEx && (
+                                    <button type="button"
+                                      onClick={() => { setAddExPlanId(plan.id); setAddExDayId(day.id); setAddExSection("main"); setAddExSearch(""); }}
+                                      className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold cursor-pointer mt-1"
+                                      style={{ border: `1.5px dashed ${cat.border}`, color: cat.color, background: "transparent" }}
+                                      onMouseEnter={e => (e.currentTarget.style.borderColor = cat.color)}
+                                      onMouseLeave={e => (e.currentTarget.style.borderColor = cat.border)}>
+                                      <Plus className="h-3 w-3" />
+                                      Agregar ejercicio
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             );
                           })}
