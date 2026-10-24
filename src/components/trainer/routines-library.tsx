@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import {
-  ChevronDown, ChevronUp, Dumbbell, Flame, Plus, Trash2, Search, Users, Check, X, AlertTriangle,
+  ChevronDown, ChevronUp, Dumbbell, Flame, Plus, Trash2, Search, Users, Check, X, AlertTriangle, Pencil,
 } from "lucide-react";
 
 const CAT: Record<string, { color: string; bg: string; border: string; label: string }> = {
@@ -52,6 +52,10 @@ export function RoutinesLibrary({ clients }: Props) {
   // Delete plan
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [deleting, setDeleting]           = useState(false);
+
+  // Inline rename
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+  const [editingName, setEditingName]     = useState("");
 
   useEffect(() => {
     fetch("/api/trainer/plan-library")
@@ -115,6 +119,29 @@ export function RoutinesLibrary({ clients }: Props) {
     } finally {
       setDeleting(false);
       setConfirmDelete(null);
+    }
+  }
+
+  // ── Inline rename ───────────────────────────────────────────────────────────
+  function startEditing(plan: LibraryPlan) {
+    setConfirmDelete(null);
+    setEditingPlanId(plan.id);
+    setEditingName(plan.name);
+  }
+
+  async function savePlanName(planId: string) {
+    const name = editingName.trim();
+    setEditingPlanId(null);
+    if (!name) return;
+    const current = library.find(p => p.id === planId)?.name;
+    if (name === current) return;
+    const res = await fetch(`/api/trainer/plans/${planId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (res.ok) {
+      setLibrary(prev => prev.map(p => p.id === planId ? { ...p, name } : p));
     }
   }
 
@@ -247,34 +274,76 @@ export function RoutinesLibrary({ clients }: Props) {
 
             {/* Plan header */}
             <div className="flex items-center gap-3 px-4 py-4">
-              {/* Icon */}
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+
+              {/* Icon — click expande/colapsa */}
+              <button type="button" onClick={() => togglePlan(plan.id)}
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 cursor-pointer transition-opacity hover:opacity-80"
                 style={{ background: cat.bg, border: `1px solid ${cat.border}` }}>
                 {plan.category === "calentamiento"
                   ? <Flame className="h-4 w-4" style={{ color: cat.color }} />
                   : <Dumbbell className="h-4 w-4" style={{ color: cat.color }} />}
-              </div>
+              </button>
 
-              {/* Name + meta — clickable to expand */}
-              <button type="button" onClick={() => togglePlan(plan.id)} className="flex-1 min-w-0 text-left">
-                <p className="font-extrabold leading-tight" style={{ color: "var(--text)" }}>{plan.name}</p>
-                <div className="flex items-center gap-2 mt-0.5">
+              {/* Nombre — click edita inline */}
+              <div className="flex-1 min-w-0">
+                {editingPlanId === plan.id ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      autoFocus
+                      value={editingName}
+                      onChange={e => setEditingName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") { e.preventDefault(); savePlanName(plan.id); }
+                        if (e.key === "Escape") { e.preventDefault(); setEditingPlanId(null); }
+                      }}
+                      onBlur={() => savePlanName(plan.id)}
+                      className="flex-1 min-w-0 font-extrabold bg-transparent outline-none text-sm pb-0.5"
+                      style={{ color: "var(--text)", borderBottom: `1.5px solid ${cat.color}` }}
+                    />
+                    <button type="button"
+                      onMouseDown={e => e.preventDefault()}
+                      onClick={() => savePlanName(plan.id)}
+                      className="p-1 rounded-lg shrink-0 cursor-pointer"
+                      style={{ color: cat.color }}>
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
+                    <button type="button"
+                      onMouseDown={e => e.preventDefault()}
+                      onClick={() => setEditingPlanId(null)}
+                      className="p-1 rounded-lg shrink-0 cursor-pointer"
+                      style={{ color: "var(--text-3)" }}>
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button"
+                    onClick={() => startEditing(plan)}
+                    className="flex items-center gap-1.5 group w-full text-left"
+                    title="Clic para editar el nombre">
+                    <p className="font-extrabold leading-tight truncate" style={{ color: "var(--text)" }}>
+                      {plan.name}
+                    </p>
+                    <Pencil className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-40 transition-opacity"
+                      style={{ color: "var(--text-3)" }} />
+                  </button>
+                )}
+
+                {/* Meta — click expande */}
+                <button type="button" onClick={() => togglePlan(plan.id)}
+                  className="flex items-center gap-2 mt-0.5 cursor-pointer">
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
                     style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
                   <span className="text-xs" style={{ color: "var(--text-3)" }}>
                     {plan.days.length} día{plan.days.length !== 1 ? "s" : ""}
                   </span>
-                </div>
-              </button>
+                </button>
+              </div>
 
-              {/* Actions */}
+              {/* Acciones: eliminar + expandir */}
               <div className="flex items-center gap-1.5 shrink-0">
-                {/* Delete — two-step confirm */}
                 {isConfirmingDelete ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold" style={{ color: "#ef4444" }}>
-                      ¿Eliminar?
-                    </span>
+                    <span className="text-xs font-semibold" style={{ color: "#ef4444" }}>¿Eliminar?</span>
                     <button type="button" onClick={() => deletePlan(plan.id)} disabled={deleting}
                       className="px-2.5 py-1.5 rounded-lg text-xs font-extrabold cursor-pointer disabled:opacity-50"
                       style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.35)" }}>
@@ -290,7 +359,7 @@ export function RoutinesLibrary({ clients }: Props) {
                   <button type="button"
                     onClick={() => { setConfirmDelete(plan.id); setExpanded(prev => { const n = new Set(prev); n.delete(plan.id); return n; }); }}
                     className="w-8 h-8 flex items-center justify-center rounded-xl cursor-pointer transition-colors"
-                    style={{ color: "var(--text-3)", background: "transparent" }}
+                    style={{ color: "var(--text-3)" }}
                     title="Eliminar rutina"
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#ef4444"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,0.10)"; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-3)"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
@@ -298,7 +367,6 @@ export function RoutinesLibrary({ clients }: Props) {
                   </button>
                 )}
 
-                {/* Expand/collapse */}
                 {!isConfirmingDelete && (
                   <button type="button" onClick={() => togglePlan(plan.id)}
                     className="w-8 h-8 flex items-center justify-center rounded-xl cursor-pointer"
