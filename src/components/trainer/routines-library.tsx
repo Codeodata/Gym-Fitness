@@ -16,10 +16,16 @@ const DAYS_WEEK = [
   { dow: 4, label: "Jue" }, { dow: 5, label: "Vie" },
 ];
 
-type ExerciseItem = { id: string; planDayId: string; section: "warmup" | "main"; sets: number; reps: string; weightKg: string | null; notes: string | null; exerciseName: string; muscleGroup: string; orderIndex: number };
-type DayItem      = { id: string; dayNumber: number; name: string | null; exercises: ExerciseItem[] };
-type PlanDetail   = { days: DayItem[] };
-type LibraryPlan  = { id: string; name: string; category: string; days: { id: string; name: string | null; dayNumber: number; exerciseCount: number }[] };
+const DOW_LABEL: Record<number, string> = { 1: "Lun", 2: "Mar", 3: "Mié", 4: "Jue", 5: "Vie" };
+
+type DayAssignment  = { clientId: string; clientName: string | null; dayOfWeek: number };
+type StudentSlot    = { dayOfWeek: number; startTime: string; type: string };
+type StudentInfo    = { clientId: string; clientName: string | null; slots: StudentSlot[] };
+type ExerciseItem   = { id: string; planDayId: string; section: "warmup" | "main"; sets: number; reps: string; weightKg: string | null; notes: string | null; exerciseName: string; muscleGroup: string; orderIndex: number };
+type DayItem        = { id: string; dayNumber: number; name: string | null; exercises: ExerciseItem[] };
+type PlanDetail     = { days: DayItem[] };
+type LibraryDay     = { id: string; name: string | null; dayNumber: number; exerciseCount: number; assignments: DayAssignment[] };
+type LibraryPlan    = { id: string; name: string; category: string; assignedStudentCount: number; students: StudentInfo[]; days: LibraryDay[] };
 type CatalogItem  = { id: string; name: string; muscleGroup: string };
 type Client       = { id: string; name: string; email: string };
 
@@ -146,6 +152,28 @@ export function RoutinesLibrary({ clients }: Props) {
   }
 
   // ── Exercise add/remove ─────────────────────────────────────────────────────
+  function updateExercise(planId: string, dayId: string, exerciseId: string, patch: { sets?: number; reps?: string; weightKg?: string | null }) {
+    setPlanData(prev => ({
+      ...prev,
+      [planId]: {
+        ...prev[planId]!,
+        days: prev[planId]!.days.map(d =>
+          d.id !== dayId ? d : {
+            ...d,
+            exercises: d.exercises.map(e =>
+              e.id !== exerciseId ? e : {
+                ...e,
+                sets: patch.sets ?? e.sets,
+                reps: patch.reps ?? e.reps,
+                weightKg: patch.weightKg !== undefined ? patch.weightKg : e.weightKg,
+              }
+            ),
+          }
+        ),
+      },
+    }));
+  }
+
   async function removeExercise(planId: string, dayId: string, exerciseId: string) {
     setPlanData(prev => ({
       ...prev,
@@ -330,12 +358,19 @@ export function RoutinesLibrary({ clients }: Props) {
 
                 {/* Meta — click expande */}
                 <button type="button" onClick={() => togglePlan(plan.id)}
-                  className="flex items-center gap-2 mt-0.5 cursor-pointer">
+                  className="flex items-center gap-2 mt-0.5 cursor-pointer flex-wrap">
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
                     style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
                   <span className="text-xs" style={{ color: "var(--text-3)" }}>
                     {plan.days.length} día{plan.days.length !== 1 ? "s" : ""}
                   </span>
+                  {plan.assignedStudentCount > 0 && (
+                    <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md"
+                      style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+                      <Users className="h-3 w-3" />
+                      {plan.assignedStudentCount} alumno{plan.assignedStudentCount !== 1 ? "s" : ""}
+                    </span>
+                  )}
                 </button>
               </div>
 
@@ -386,6 +421,46 @@ export function RoutinesLibrary({ clients }: Props) {
             {/* Expanded */}
             {isOpen && detail && (
               <div style={{ borderTop: `1px solid ${cat.border}` }}>
+
+                {/* Alumnos asignados */}
+                {plan.students.length > 0 && (
+                  <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <Users className="h-3.5 w-3.5" style={{ color: "var(--accent)" }} />
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
+                        Alumnos asignados ({plan.students.length})
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {plan.students.map(s => (
+                        <div key={s.clientId} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                          style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+                          <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-extrabold"
+                            style={{ background: cat.bg, color: cat.color }}>
+                            {s.clientName?.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-sm font-semibold flex-1 min-w-0 truncate" style={{ color: "var(--text)" }}>
+                            {s.clientName}
+                          </span>
+                          <div className="flex items-center gap-1 flex-wrap justify-end">
+                            {s.slots.length === 0 ? (
+                              <span className="text-[11px]" style={{ color: "var(--text-3)" }}>Sin turno</span>
+                            ) : (
+                              s.slots.map((slot, i) => (
+                                <span key={i} className="text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                                  style={{ background: "var(--bg-hover)", border: "1px solid var(--border)", color: "var(--text-2)" }}>
+                                  <span style={{ color: cat.color }}>{DOW_LABEL[slot.dayOfWeek]}</span>
+                                  {" "}{slot.startTime}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {detail.days.map((day, dayIdx) => {
                   const warmup       = day.exercises.filter(e => e.section === "warmup");
                   const main         = day.exercises.filter(e => e.section === "main");
@@ -397,29 +472,56 @@ export function RoutinesLibrary({ clients }: Props) {
                       style={{ borderBottom: dayIdx < detail.days.length - 1 ? "1px solid var(--border)" : "none" }}>
 
                       {/* Day header */}
-                      <div className="flex items-center gap-3 px-4 py-3"
+                      <div className="px-4 py-3"
                         style={{ background: "var(--bg-hover)", borderBottom: "1px solid var(--border)" }}>
-                        <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-extrabold shrink-0"
-                          style={{ background: cat.bg, color: cat.color }}>
-                          D{day.dayNumber}
-                        </span>
-                        <span className="font-bold text-sm flex-1 min-w-0 truncate" style={{ color: "var(--text)" }}>
-                          {day.name ?? `Día ${day.dayNumber}`}
-                        </span>
-                        <span className="text-xs shrink-0 hidden sm:block" style={{ color: "var(--text-3)" }}>
-                          {day.exercises.length} ejercicio{day.exercises.length !== 1 ? "s" : ""}
-                        </span>
-                        <button type="button"
-                          onClick={() => openAssignPanel(plan.id, day.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer shrink-0 transition-all"
-                          style={{
-                            background: isAssigning ? cat.color : cat.bg,
-                            color: isAssigning ? "#000" : cat.color,
-                            border: `1px solid ${cat.border}`,
-                          }}>
-                          <Users className="h-3 w-3" />
-                          Asignar
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-extrabold shrink-0"
+                            style={{ background: cat.bg, color: cat.color }}>
+                            D{day.dayNumber}
+                          </span>
+                          <span className="font-bold text-sm flex-1 min-w-0 truncate" style={{ color: "var(--text)" }}>
+                            {day.name ?? `Día ${day.dayNumber}`}
+                          </span>
+                          <span className="text-xs shrink-0 hidden sm:block" style={{ color: "var(--text-3)" }}>
+                            {day.exercises.length} ejercicio{day.exercises.length !== 1 ? "s" : ""}
+                          </span>
+                          <button type="button"
+                            onClick={() => openAssignPanel(plan.id, day.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer shrink-0 transition-all"
+                            style={{
+                              background: isAssigning ? cat.color : cat.bg,
+                              color: isAssigning ? "#000" : cat.color,
+                              border: `1px solid ${cat.border}`,
+                            }}>
+                            <Users className="h-3 w-3" />
+                            Asignar
+                          </button>
+                        </div>
+
+                        {/* Assigned students for this day */}
+                        {(() => {
+                          const assigned = plan.days.find(d => d.id === day.id)?.assignments ?? [];
+                          if (!assigned.length) return null;
+                          return (
+                            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                              {assigned.slice(0, 5).map((a: DayAssignment) => (
+                                <span key={`${a.clientId}-${a.dayOfWeek}`}
+                                  className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                                  style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", color: "var(--text-2)" }}>
+                                  {a.clientName?.split(" ")[0]}
+                                  <span className="font-extrabold" style={{ color: cat.color }}>
+                                    {DOW_LABEL[a.dayOfWeek]}
+                                  </span>
+                                </span>
+                              ))}
+                              {assigned.length > 5 && (
+                                <span className="text-[11px] font-bold" style={{ color: "var(--text-3)" }}>
+                                  +{assigned.length - 5} más
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       <div className="px-4 py-3 flex flex-col gap-2">
@@ -433,8 +535,9 @@ export function RoutinesLibrary({ clients }: Props) {
                             </div>
                             <div className="flex flex-col gap-1.5">
                               {warmup.map(ex => (
-                                <ExerciseRow key={ex.id} ex={ex} accent="var(--c-orange)"
-                                  onRemove={() => removeExercise(plan.id, day.id, ex.id)} />
+                                <ExerciseRow key={ex.id} ex={ex} accent="var(--c-orange)" planId={plan.id}
+                                  onRemove={() => removeExercise(plan.id, day.id, ex.id)}
+                                  onUpdate={patch => updateExercise(plan.id, day.id, ex.id, patch)} />
                               ))}
                             </div>
                           </div>
@@ -452,8 +555,9 @@ export function RoutinesLibrary({ clients }: Props) {
                             )}
                             <div className="flex flex-col gap-1.5">
                               {main.map(ex => (
-                                <ExerciseRow key={ex.id} ex={ex} accent="var(--accent)"
-                                  onRemove={() => removeExercise(plan.id, day.id, ex.id)} />
+                                <ExerciseRow key={ex.id} ex={ex} accent="var(--accent)" planId={plan.id}
+                                  onRemove={() => removeExercise(plan.id, day.id, ex.id)}
+                                  onUpdate={patch => updateExercise(plan.id, day.id, ex.id, patch)} />
                               ))}
                             </div>
                           </div>
@@ -648,24 +752,108 @@ export function RoutinesLibrary({ clients }: Props) {
   );
 }
 
-function ExerciseRow({ ex, accent, onRemove }: { ex: ExerciseItem; accent: string; onRemove: () => void }) {
+function ExerciseRow({
+  ex, accent, planId, onRemove, onUpdate,
+}: {
+  ex: ExerciseItem;
+  accent: string;
+  planId: string;
+  onRemove: () => void;
+  onUpdate: (patch: { sets?: number; reps?: string; weightKg?: string | null }) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [sets, setSets] = useState(String(ex.sets));
+  const [reps, setReps] = useState(ex.reps);
+  const [weight, setWeight] = useState(ex.weightKg ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    const parsedSets = parseInt(sets, 10);
+    if (!reps.trim() || isNaN(parsedSets) || parsedSets < 1) { setEditing(false); return; }
+    setSaving(true);
+    try {
+      await fetch(`/api/trainer/plans/${planId}/exercises`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planExerciseId: ex.id,
+          sets: parsedSets,
+          reps: reps.trim(),
+          weightKg: weight.trim() || null,
+        }),
+      });
+      onUpdate({ sets: parsedSets, reps: reps.trim(), weightKg: weight.trim() || null });
+    } finally {
+      setSaving(false);
+      setEditing(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+        style={{ background: "var(--bg-hover)", border: `1px solid ${accent}` }}>
+        <span className="flex-1 text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+          {ex.exerciseName}
+        </span>
+        <input
+          type="number" min={1} max={20} value={sets}
+          onChange={e => setSets(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && save()}
+          className="w-10 text-center text-xs font-bold rounded-lg px-1 py-1 outline-none tabular-nums"
+          style={{ background: "var(--bg-panel)", border: `1px solid ${accent}`, color: accent }}
+          title="Series"
+        />
+        <span className="text-xs" style={{ color: "var(--text-3)" }}>×</span>
+        <input
+          type="text" value={reps}
+          onChange={e => setReps(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && save()}
+          className="w-14 text-center text-xs font-bold rounded-lg px-1 py-1 outline-none"
+          style={{ background: "var(--bg-panel)", border: `1px solid ${accent}`, color: accent }}
+          title="Repeticiones"
+        />
+        <input
+          type="text" value={weight} placeholder="kg"
+          onChange={e => setWeight(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && save()}
+          className="w-14 text-center text-xs rounded-lg px-1 py-1 outline-none"
+          style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", color: "var(--text-3)" }}
+          title="Peso (kg)"
+        />
+        <button type="button" onClick={save} disabled={saving}
+          className="p-1 rounded-lg cursor-pointer shrink-0"
+          style={{ color: accent }}>
+          <Check className="h-3.5 w-3.5" />
+        </button>
+        <button type="button" onClick={() => setEditing(false)}
+          className="p-1 rounded-lg cursor-pointer shrink-0"
+          style={{ color: "var(--text-3)" }}>
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-      style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}>
+    <div className="group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer"
+      onClick={() => setEditing(true)}
+      style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}
+      title="Clic para editar">
       <span className="flex-1 text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
         {ex.exerciseName}
       </span>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         <span className="text-xs font-bold tabular-nums" style={{ color: accent }}>{ex.sets}×{ex.reps}</span>
-        {ex.weightKg && <span className="text-xs tabular-nums" style={{ color: "var(--text-3)" }}>{ex.weightKg} kg</span>}
+        {ex.weightKg && (
+          <span className="text-xs tabular-nums px-1.5 py-0.5 rounded-md"
+            style={{ background: "var(--bg-panel)", color: "var(--text-3)", border: "1px solid var(--border)" }}>
+            {ex.weightKg} kg
+          </span>
+        )}
       </div>
-      {ex.notes && (
-        <span className="text-xs truncate max-w-[100px] hidden sm:block" style={{ color: "var(--text-3)" }}>
-          {ex.notes}
-        </span>
-      )}
-      <button type="button" onClick={onRemove}
-        className="p-1 rounded-lg shrink-0 cursor-pointer transition-colors"
+      <button type="button" onClick={e => { e.stopPropagation(); onRemove(); }}
+        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg shrink-0 cursor-pointer transition-opacity"
         style={{ color: "var(--text-3)" }}
         onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
         onMouseLeave={e => (e.currentTarget.style.color = "var(--text-3)")}>
