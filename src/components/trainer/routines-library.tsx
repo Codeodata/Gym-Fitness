@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import {
-  ChevronDown, ChevronUp, Dumbbell, Flame, Plus, Trash2, Search, Users, Check, X, AlertTriangle, Pencil,
+  ChevronDown, ChevronUp, Dumbbell, Flame, Plus, Trash2, Search, Users, Check, X, AlertTriangle, Pencil, UserPlus,
 } from "lucide-react";
 
 const CAT: Record<string, { color: string; bg: string; border: string; label: string }> = {
@@ -60,6 +60,63 @@ export function RoutinesLibrary({ clients }: Props) {
 
   // Unassign student
   const [unassigning, setUnassigning] = useState<string | null>(null); // clientId being removed
+
+  // Agregar alumno (nivel rutina)
+  const [addStudentsPlanId, setAddStudentsPlanId] = useState<string | null>(null);
+  const [selStudents, setSelStudents] = useState<Set<string>>(new Set());
+  const [studentSearch, setStudentSearch] = useState("");
+  const [addingStudents, setAddingStudents] = useState(false);
+
+  function openAddStudents(planId: string) {
+    if (addStudentsPlanId === planId) { setAddStudentsPlanId(null); return; }
+    setAssignPanel(null);
+    setAddingPlanId(null);
+    setAddingDayId(null);
+    setConfirmDelete(null);
+    setAddStudentsPlanId(planId);
+    setSelStudents(new Set());
+    setStudentSearch("");
+  }
+
+  function toggleSelStudent(id: string) {
+    setSelStudents((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }
+
+  async function assignStudentsToPlan(plan: LibraryPlan) {
+    if (addingStudents || selStudents.size === 0) return;
+    setAddingStudents(true);
+    try {
+      // Rutina completa: cada día del plan → un día de la semana (Lun..Vie por orden)
+      const dayMappings = plan.days.map((d, i) => ({ planDayId: d.id, dayOfWeek: (i % 5) + 1 }));
+      const res = await fetch("/api/trainer/bulk-assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dayMappings, clientIds: [...selStudents] }),
+      });
+      if (res.ok) {
+        setLibrary((prev) => prev.map((p) => {
+          if (p.id !== plan.id) return p;
+          const existing = new Set(p.students.map((s) => s.clientId));
+          const toAdd = [...selStudents]
+            .filter((id) => !existing.has(id))
+            .map((id) => ({ clientId: id, clientName: clients.find((c) => c.id === id)?.name ?? null, slots: [] }));
+          const students = [...p.students, ...toAdd].sort((a, b) => (a.clientName ?? "").localeCompare(b.clientName ?? ""));
+          return { ...p, students, assignedStudentCount: students.length };
+        }));
+        const n = selStudents.size;
+        setToast(`${n} alumno${n !== 1 ? "s" : ""} asignado${n !== 1 ? "s" : ""} a ${plan.name}`);
+        setAddStudentsPlanId(null);
+        setSelStudents(new Set());
+        setStudentSearch("");
+      }
+    } finally {
+      setAddingStudents(false);
+    }
+  }
 
   // Delete plan
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -451,15 +508,35 @@ export function RoutinesLibrary({ clients }: Props) {
             {isOpen && detail && (
               <div className="reveal-down" style={{ borderTop: `1px solid ${cat.border}` }}>
 
-                {/* Alumnos asignados */}
-                {plan.students.length > 0 && (
+                {/* ── Alumnos asignados (siempre visible al expandir) ── */}
+                {(() => {
+                  const isAddingStudentsHere = addStudentsPlanId === plan.id;
+                  const filteredStudents = studentSearch.trim()
+                    ? clients.filter((c) => c.name.toLowerCase().includes(studentSearch.toLowerCase()))
+                    : clients;
+                  return (
                   <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)", background: "var(--bg)" }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Users className="h-3.5 w-3.5" style={{ color: "var(--accent)" }} />
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <Users className="h-3.5 w-3.5" style={{ color: cat.color }} />
                       <span className="text-[11px] font-extrabold uppercase tracking-wider flex-1" style={{ color: "var(--text-3)" }}>
                         Alumnos con esta rutina ({plan.students.length})
                       </span>
+                      <button type="button" onClick={() => openAddStudents(plan.id)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                        style={isAddingStudentsHere
+                          ? { background: "var(--bg-hover)", color: "var(--text-3)", border: "1px solid var(--border)" }
+                          : { background: "var(--accent)", color: "var(--accent-fg)" }}>
+                        {isAddingStudentsHere ? <><X className="h-3 w-3" />Cerrar</> : <><UserPlus className="h-3 w-3" />Agregar alumno</>}
+                      </button>
                     </div>
+
+                    {plan.students.length === 0 && !isAddingStudentsHere && (
+                      <p className="text-xs" style={{ color: "var(--text-3)" }}>
+                        Nadie tiene esta rutina todavía. Tocá <span style={{ color: cat.color, fontWeight: 700 }}>Agregar alumno</span>.
+                      </p>
+                    )}
+
+                    {plan.students.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                       {plan.students.map(s => (
                         <div key={s.clientId}
@@ -501,8 +578,67 @@ export function RoutinesLibrary({ clients }: Props) {
                         </div>
                       ))}
                     </div>
+                    )}
+
+                    {isAddingStudentsHere && (
+                      <div className="reveal-down rounded-xl p-3 flex flex-col gap-3 mt-2.5"
+                        style={{ border: `1px solid ${cat.color}`, background: "var(--bg-panel)" }}>
+                        <div className="flex items-center justify-between">
+                          <p className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>Elegí alumnos</p>
+                          {clients.length > 0 && (
+                            <button type="button" onClick={() => setSelStudents(new Set(filteredStudents.map((c) => c.id)))}
+                              className="text-xs font-bold cursor-pointer" style={{ color: cat.color }}>Todos</button>
+                          )}
+                        </div>
+                        {clients.length === 0 ? (
+                          <p className="text-sm py-1" style={{ color: "var(--text-3)" }}>No hay alumnos aprobados.</p>
+                        ) : (
+                          <>
+                            <div className="relative">
+                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "var(--text-3)" }} />
+                              <input autoFocus placeholder="Buscar alumno…" value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)}
+                                className="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-none"
+                                style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
+                                onFocus={(e) => (e.currentTarget.style.borderColor = cat.color)}
+                                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")} />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-52 overflow-y-auto">
+                              {filteredStudents.map((c) => {
+                                const sel = selStudents.has(c.id);
+                                const already = plan.students.some((s) => s.clientId === c.id);
+                                return (
+                                  <button key={c.id} type="button" onClick={() => toggleSelStudent(c.id)}
+                                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl cursor-pointer text-left transition-all"
+                                    style={{ background: sel ? cat.bg : "var(--bg)", border: `1px solid ${sel ? cat.color : "var(--border)"}` }}>
+                                    <div className="w-4 h-4 rounded flex items-center justify-center shrink-0"
+                                      style={{ background: sel ? cat.color : "var(--bg-hover)", border: `1px solid ${sel ? cat.color : "var(--border)"}` }}>
+                                      {sel && <Check className="h-2.5 w-2.5" style={{ color: "#000" }} />}
+                                    </div>
+                                    <span className="flex-1 min-w-0 truncate text-sm font-semibold" style={{ color: "var(--text)" }}>{c.name}</span>
+                                    {already && <span className="text-[9px] font-bold uppercase shrink-0" style={{ color: "var(--text-3)" }}>ya está</span>}
+                                  </button>
+                                );
+                              })}
+                              {filteredStudents.length === 0 && (
+                                <p className="text-xs col-span-full text-center py-2" style={{ color: "var(--text-3)" }}>Sin resultados</p>
+                              )}
+                            </div>
+                            <button type="button" onClick={() => assignStudentsToPlan(plan)} disabled={addingStudents || selStudents.size === 0}
+                              className="w-full py-2.5 rounded-xl text-sm font-extrabold cursor-pointer transition-all disabled:opacity-40"
+                              style={{ background: cat.color, color: "#000" }}>
+                              {addingStudents
+                                ? "Asignando…"
+                                : selStudents.size === 0
+                                  ? "Seleccioná alumnos"
+                                  : `Asignar a ${selStudents.size} alumno${selStudents.size !== 1 ? "s" : ""} →`}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
+                  );
+                })()}
 
                 {detail.days.map((day, dayIdx) => {
                   const warmup       = day.exercises.filter(e => e.section === "warmup");
