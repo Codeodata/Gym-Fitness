@@ -308,7 +308,7 @@ export function RoutinesLibrary({ clients }: Props) {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-xl"
+        <div className="toast-in fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-xl"
           style={{ background: "var(--bg-panel)", border: "1px solid var(--accent)", color: "var(--text)" }}>
           {toast}
           <button type="button" onClick={() => setToast(null)} style={{ color: "var(--text-3)" }}>
@@ -380,7 +380,7 @@ export function RoutinesLibrary({ clients }: Props) {
                     <p className="font-extrabold leading-tight truncate" style={{ color: "var(--text)" }}>
                       {plan.name}
                     </p>
-                    <Pencil className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-40 transition-opacity"
+                    <Pencil className="h-3 w-3 shrink-0 opacity-40 group-hover:opacity-70 transition-opacity"
                       style={{ color: "var(--text-3)" }} />
                   </button>
                 )}
@@ -449,7 +449,7 @@ export function RoutinesLibrary({ clients }: Props) {
 
             {/* Expanded */}
             {isOpen && detail && (
-              <div style={{ borderTop: `1px solid ${cat.border}` }}>
+              <div className="reveal-down" style={{ borderTop: `1px solid ${cat.border}` }}>
 
                 {/* Alumnos asignados */}
                 {plan.students.length > 0 && (
@@ -489,7 +489,7 @@ export function RoutinesLibrary({ clients }: Props) {
                             type="button"
                             disabled={unassigning === s.clientId}
                             onClick={() => unassignStudent(plan.id, s.clientId)}
-                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded-md shrink-0 cursor-pointer transition-opacity disabled:opacity-50"
+                            className="opacity-50 group-hover:opacity-100 p-0.5 rounded-md shrink-0 cursor-pointer transition-opacity disabled:opacity-50"
                             style={{ color: "var(--text-3)" }}
                             title="Quitar de esta rutina"
                             onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
@@ -590,7 +590,7 @@ export function RoutinesLibrary({ clients }: Props) {
 
                         {/* ── Assign panel ────────────────────────────────── */}
                         {isAssigning && (
-                          <div className="rounded-xl p-4 flex flex-col gap-4 mt-1"
+                          <div className="reveal-down rounded-xl p-4 flex flex-col gap-4 mt-1"
                             style={{ border: `1px solid ${cat.color}`, background: "var(--bg)" }}>
 
                             <div>
@@ -704,7 +704,7 @@ export function RoutinesLibrary({ clients }: Props) {
 
                         {/* ── Add exercise button / panel ──────────────────── */}
                         {isAddingHere ? (
-                          <div className="rounded-xl p-3 flex flex-col gap-3 mt-1"
+                          <div className="reveal-down rounded-xl p-3 flex flex-col gap-3 mt-1"
                             style={{ border: `1px solid ${cat.color}`, background: "var(--bg-hover)" }}>
                             <div className="flex gap-2">
                               {(["main", "warmup"] as const).map(s => (
@@ -889,7 +889,8 @@ function ExerciseRow({
         )}
       </div>
       <button type="button" onClick={e => { e.stopPropagation(); onRemove(); }}
-        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg shrink-0 cursor-pointer transition-opacity"
+        title="Quitar ejercicio"
+        className="opacity-50 group-hover:opacity-100 p-1 rounded-lg shrink-0 cursor-pointer transition-opacity"
         style={{ color: "var(--text-3)" }}
         onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
         onMouseLeave={e => (e.currentTarget.style.color = "var(--text-3)")}>
