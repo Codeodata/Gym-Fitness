@@ -18,7 +18,7 @@ export default async function RoutinesPage() {
     .orderBy(schema.user.name);
 
   return (
-    <div className="max-w-5xl pb-20">
+    <div className="max-w-6xl pb-20">
       {/* Page header */}
       <div className="mb-9">
         <h1 className="text-3xl font-extrabold leading-none" style={{ color: "var(--text)" }}>

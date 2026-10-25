@@ -482,9 +482,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
         })()}
       </div>
 
-      {/* Two-column layout: builder + assign */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-      <div className="lg:col-span-2 flex flex-col gap-4">
+      {/* Builder + assign — full-width vertical flow */}
 
       {/* Week table */}
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
@@ -531,7 +529,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
                   )}
                 </button>
 
-                <div className="flex flex-col gap-2 p-2 flex-1">
+                <div className="flex flex-col gap-2 p-2 flex-1 min-h-[132px]">
                   {dayBlocks.map(block => {
                     const cat = CAT[block.planCategory] ?? CAT.musculación!;
                     return (
@@ -738,12 +736,6 @@ export function TemplateWeekBuilder({ clients }: Props) {
           </div>
         )}
       </div>
-      {/* end left column */}
-      </div>
-
-      {/* Right column: assign panel */}
-      <div className="lg:sticky lg:top-6">
-
       {/* Assign section — always visible */}
       <div className="rounded-2xl overflow-hidden" style={{ border: "2px solid var(--accent)", background: "var(--bg-panel)" }}>
 
@@ -798,7 +790,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
                   Todos
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto mb-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 max-h-80 overflow-y-auto mb-5">
                 {clients.map(client => {
                   const sel = selectedClients.has(client.id);
                   return (
@@ -836,7 +828,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
               ) : classSlots.length === 0 ? (
                 <p className="text-sm text-center py-6" style={{ color: "var(--text-3)" }}>No hay turnos configurados.</p>
               ) : (
-                <div className="flex flex-col gap-4 max-h-64 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-80 overflow-y-auto">
                   {DAYS.map(({ dow, label }) => {
                     const daySlots = classSlots.filter(s => s.dayOfWeek === dow);
                     if (!daySlots.length) return null;
@@ -915,10 +907,6 @@ export function TemplateWeekBuilder({ clients }: Props) {
                   : `Asignar ${totalBlocks} bloque${totalBlocks !== 1 ? "s" : ""} a ${selectedClients.size} alumno${selectedClients.size !== 1 ? "s" : ""} →`}
           </button>
         </div>
-      </div>
-      {/* end right column */}
-      </div>
-      {/* end two-column grid */}
       </div>
     </div>
   );
