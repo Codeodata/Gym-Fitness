@@ -6,7 +6,8 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pkg from "pg";
 const { Pool } = pkg;
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const useSSL = process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("localhost") && !process.env.DATABASE_URL.includes("127.0.0.1");
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ...(useSSL ? { ssl: { rejectUnauthorized: false } } : {}) });
 const db = drizzle(pool);
 
 function uid() { return crypto.randomUUID(); }
@@ -24,7 +25,6 @@ async function seed() {
     DELETE FROM workout_log;
     DELETE FROM body_weight;
     DELETE FROM attendance;
-    DELETE FROM client_day_exercise;
     DELETE FROM client_day_block;
     DELETE FROM slot_enrollment;
     DELETE FROM class_slot;
@@ -45,7 +45,7 @@ async function seed() {
   const trainerId = uid();
   await db.execute(`
     INSERT INTO "user" (id, name, email, email_verified, role, approved, created_at, updated_at)
-    VALUES ('${trainerId}', 'Carlos Trainer', 'trainer@gym.com', true, 'trainer', true, now(), now());
+    VALUES ('${trainerId}', 'Trainer', 'trainer@gym.com', true, 'trainer', true, now(), now());
   `);
   await db.execute(`
     INSERT INTO account (id, account_id, provider_id, user_id, password, created_at, updated_at)
