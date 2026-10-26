@@ -27,10 +27,17 @@ export function getDb(): Db {
       const pool = new NeonPool({ connectionString: url });
       _db = drizzleNeon(pool, { schema }) as unknown as Db;
     } else {
-      // Non-Neon cloud DB (e.g. Supabase): use pg with SSL
+      // Cloud DB vía pooler (ej. Supabase Supavisor, modo session, pool_size 15).
+      // En serverless, una página con varias queries en paralelo (ej. Resumen con
+      // Promise.all) abriría muchas conexiones a la vez y revienta el límite
+      // (EMAXCONNSESSION). max:1 por instancia encola las queries en 1 conexión;
+      // idleTimeout corto libera el slot entre requests.
       const pool = new PgPool({
         connectionString: url,
         ssl: { rejectUnauthorized: false },
+        max: 1,
+        idleTimeoutMillis: 10_000,
+        connectionTimeoutMillis: 10_000,
       });
       _db = drizzlePg(pool, { schema });
     }
