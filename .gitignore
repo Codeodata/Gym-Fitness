@@ -49,3 +49,4 @@ next-env.d.ts
 
 # Reference images (only used locally)
 src/imagenes/
+.env*.local

@@ -35,6 +35,12 @@ type TemplateBlock = {
   planCategory: string;
 };
 
+type ClassSlot = { id: string; dayOfWeek: number; startTime: string; type: string };
+type SlotEnrollment = { slotId: string; clientId: string; clientName: string | null };
+type SummaryStudent = { clientId: string; clientName: string | null };
+type SummaryExercise = { planDayId: string; section: "warmup" | "main"; orderIndex: number; sets: number; reps: string; weightKg: string | null; exerciseName: string; muscleGroup: string };
+type WeekSummaryItem = { dayOfWeek: number; planDayId: string; planDayName: string | null; dayNumber: number; planId: string; planName: string; planCategory: string; studentCount: number; students: SummaryStudent[]; exercises: SummaryExercise[] };
+
 type LibraryDay  = { id: string; name: string | null; dayNumber: number; exerciseCount: number };
 type LibraryPlan = { id: string; name: string; category: string; days: LibraryDay[] };
 type Client      = { id: string; name: string; email: string };
@@ -55,7 +61,15 @@ export function TemplateWeekBuilder({ clients }: Props) {
   const [activeDow, setActiveDow] = useState<number | null>(null);
   const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set());
-  const [showClients, setShowClients] = useState(false);
+  const [assignMode, setAssignMode] = useState<"alumnos" | "turnos">("alumnos");
+  const [classSlots, setClassSlots] = useState<ClassSlot[]>([]);
+  const [slotEnrollments, setSlotEnrollments] = useState<SlotEnrollment[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotsFetched, setSlotsFetched] = useState(false);
+  const [weekSummary, setWeekSummary] = useState<WeekSummaryItem[]>([]);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+  const todayDow = ((): number => { const d = new Date().getDay(); return d >= 1 && d <= 5 ? d : 1; })();
+  const [agendaDow, setAgendaDow] = useState<number>(todayDow);
   const [assigning, setAssigning] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -78,6 +92,10 @@ export function TemplateWeekBuilder({ clients }: Props) {
       .then(r => r.json())
       .then((d: CatalogItem[]) => { setCatalog(d); setCatalogLoaded(true); })
       .catch(() => setCatalogLoaded(true));
+    fetch("/api/trainer/weekly-schedule/summary")
+      .then(r => r.json())
+      .then(d => setWeekSummary(d.summary ?? []))
+      .finally(() => setLoadingSummary(false));
   }, []);
 
   function addBlock(plan: LibraryPlan, day: LibraryDay) {
@@ -111,6 +129,51 @@ export function TemplateWeekBuilder({ clients }: Props) {
     setActiveDow(null);
   }
 
+  async function fetchSlots() {
+    if (slotsFetched) return;
+    setLoadingSlots(true);
+    try {
+      const res = await fetch("/api/trainer/class-slots");
+      const data = await res.json() as { slots: ClassSlot[]; enrollments: SlotEnrollment[] };
+      setClassSlots(data.slots);
+      setSlotEnrollments(data.enrollments);
+      setSlotsFetched(true);
+    } finally {
+      setLoadingSlots(false);
+    }
+  }
+
+  function getSlotClientIds(slotId: string) {
+    return slotEnrollments
+      .filter(e => e.slotId === slotId)
+      .map(e => e.clientId)
+      .filter(id => clients.some(c => c.id === id));
+  }
+
+  function isSlotFullySelected(slotId: string) {
+    const ids = getSlotClientIds(slotId);
+    return ids.length > 0 && ids.every(id => selectedClients.has(id));
+  }
+
+  function isSlotPartiallySelected(slotId: string) {
+    const ids = getSlotClientIds(slotId);
+    return ids.some(id => selectedClients.has(id)) && !isSlotFullySelected(slotId);
+  }
+
+  function toggleSlot(slotId: string) {
+    const ids = getSlotClientIds(slotId);
+    const allSelected = isSlotFullySelected(slotId);
+    setSelectedClients(prev => {
+      const next = new Set(prev);
+      if (allSelected) {
+        ids.forEach(id => next.delete(id));
+      } else {
+        ids.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  }
+
   async function assign() {
     const dayMappings = blocks.map(b => ({ planDayId: b.planDayId, dayOfWeek: b.dayOfWeek }));
     if (!dayMappings.length) { setToast("Armá la semana antes de asignar."); return; }
@@ -126,7 +189,6 @@ export function TemplateWeekBuilder({ clients }: Props) {
       setToast(`✓ ${data.created} bloque${data.created !== 1 ? "s" : ""} asignados a ${selectedClients.size} alumno${selectedClients.size !== 1 ? "s" : ""}.`);
       clearTemplate();
       setSelectedClients(new Set());
-      setShowClients(false);
     } finally { setAssigning(false); }
   }
 
@@ -222,12 +284,205 @@ export function TemplateWeekBuilder({ clients }: Props) {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-xl"
+        <div className="toast-in fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold flex items-center gap-3 shadow-xl"
           style={{ background: "var(--bg-panel)", border: "1px solid var(--accent)", color: "var(--text)" }}>
           {toast}
           <button type="button" onClick={() => setToast(null)} style={{ color: "var(--text-3)" }}><X className="h-4 w-4" /></button>
         </div>
       )}
+
+      {/* Agenda del día — existing assignments from DB, day-focused */}
+      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
+        <div className="px-5 py-3 flex items-center gap-2 flex-wrap" style={{ borderBottom: "1px solid var(--border)" }}>
+          <span className="text-xs font-extrabold uppercase tracking-wider" style={{ color: "var(--text)" }}>
+            Agenda del día
+          </span>
+          <span className="text-xs hidden sm:inline" style={{ color: "var(--text-3)" }}>
+            — qué entrena cada alumno, día por día
+          </span>
+        </div>
+
+        {/* Day tabs */}
+        <div className="grid grid-cols-5" style={{ borderBottom: "1px solid var(--border)" }}>
+          {DAYS.map(({ dow, short, label }, idx) => {
+            const count = weekSummary.filter(s => s.dayOfWeek === dow).length;
+            const isActive = agendaDow === dow;
+            const isToday = dow === todayDow;
+            const da = DAY_ACCENT[dow]!;
+            return (
+              <button key={dow} type="button" onClick={() => setAgendaDow(dow)}
+                className="px-2 py-3 text-center cursor-pointer transition-all duration-200"
+                style={{
+                  borderRight: idx < 4 ? "1px solid var(--border)" : "none",
+                  borderTop: `3px solid ${isActive ? da.color : "transparent"}`,
+                  background: isActive ? da.bg : "transparent",
+                }}>
+                <span className="text-xs font-extrabold uppercase tracking-wider block"
+                  style={{ color: isActive ? da.color : "var(--text-3)" }}>{short}</span>
+                <span className="text-[10px] hidden sm:block mt-0.5"
+                  style={{ color: isActive ? da.color : "var(--text-3)", opacity: 0.7 }}>
+                  {isToday ? "Hoy" : label}
+                </span>
+                <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-[10px] font-extrabold mt-1.5"
+                  style={{
+                    background: count > 0 ? (isActive ? da.color : "var(--bg-hover)") : "transparent",
+                    color: count > 0 ? (isActive ? "#000" : "var(--text-3)") : "var(--text-3)",
+                  }}>
+                  {count > 0 ? count : "—"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Day detail */}
+        {loadingSummary ? (
+          <div className="p-5 flex flex-col gap-3">
+            {[0, 1].map(i => (
+              <div key={i} className="h-28 rounded-2xl animate-pulse" style={{ background: "var(--bg-hover)" }} />
+            ))}
+          </div>
+        ) : (() => {
+          const dayItems = weekSummary.filter(s => s.dayOfWeek === agendaDow);
+          if (dayItems.length === 0) {
+            return (
+              <div key={agendaDow} className="soft-fade px-5 py-10 text-center">
+                <p className="text-sm font-semibold" style={{ color: "var(--text-2)" }}>
+                  Nada asignado el {DAYS.find(d => d.dow === agendaDow)?.label.toLowerCase()}
+                </p>
+                <p className="text-xs mt-1" style={{ color: "var(--text-3)" }}>
+                  Armá el template de abajo y asignalo a tus alumnos.
+                </p>
+              </div>
+            );
+          }
+          return (
+            <div key={agendaDow} className="soft-fade p-4 sm:p-5 flex flex-col gap-3" style={{ background: "var(--bg)" }}>
+              {dayItems.map(item => {
+                const cat = CAT[item.planCategory] ?? CAT.musculación!;
+                const warmup = item.exercises.filter(e => e.section === "warmup");
+                const main = item.exercises.filter(e => e.section === "main");
+                return (
+                  <div key={item.planDayId} className="rounded-2xl overflow-hidden"
+                    style={{ border: `1px solid ${cat.border}`, background: "var(--bg-panel)" }}>
+                    {/* Block header */}
+                    <div className="flex items-center gap-3 px-4 py-3"
+                      style={{ background: cat.bg, borderBottom: `1px solid ${cat.border}` }}>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: "var(--bg-panel)", border: `1px solid ${cat.border}` }}>
+                        {item.planCategory === "calentamiento"
+                          ? <Flame className="h-4 w-4" style={{ color: cat.color }} />
+                          : <Dumbbell className="h-4 w-4" style={{ color: cat.color }} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-extrabold leading-tight truncate" style={{ color: "var(--text)" }}>
+                          {item.planDayName ?? `Día ${item.dayNumber}`}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md"
+                            style={{ background: "var(--bg-panel)", color: cat.color }}>{item.planCategory}</span>
+                          <span className="text-xs truncate" style={{ color: "var(--text-3)" }}>{item.planName}</span>
+                        </div>
+                      </div>
+                      <span className="flex items-center gap-1 text-xs font-extrabold px-2.5 py-1 rounded-full shrink-0"
+                        style={{ background: "var(--bg-panel)", color: cat.color, border: `1px solid ${cat.border}` }}>
+                        <Users className="h-3 w-3" />
+                        {item.studentCount}
+                      </span>
+                      <Link href={`/trainer/plans/${item.planId}`}
+                        className="text-xs font-bold px-3 py-1.5 rounded-xl shrink-0 hidden sm:block cursor-pointer"
+                        style={{ background: "var(--bg-panel)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
+                        Editar
+                      </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-px" style={{ background: "var(--border)" }}>
+                      {/* Alumnos */}
+                      <div className="p-4" style={{ background: "var(--bg-panel)" }}>
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <Users className="h-3.5 w-3.5" style={{ color: cat.color }} />
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
+                            Alumnos ({item.students.length})
+                          </span>
+                        </div>
+                        {item.students.length === 0 ? (
+                          <p className="text-xs" style={{ color: "var(--text-3)" }}>Nadie asignado.</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {item.students.map(s => (
+                              <div key={s.clientId} className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full"
+                                style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-extrabold"
+                                  style={{ background: cat.bg, color: cat.color }}>
+                                  {s.clientName?.charAt(0).toUpperCase() ?? "?"}
+                                </div>
+                                <span className="text-xs font-semibold" style={{ color: "var(--text)" }}>
+                                  {s.clientName ?? "Sin nombre"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Ejercicios */}
+                      <div className="p-4" style={{ background: "var(--bg-panel)" }}>
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <Dumbbell className="h-3.5 w-3.5" style={{ color: cat.color }} />
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
+                            Ejercicios ({item.exercises.length})
+                          </span>
+                        </div>
+                        {item.exercises.length === 0 ? (
+                          <p className="text-xs" style={{ color: "var(--text-3)" }}>
+                            Sin ejercicios.{" "}
+                            <Link href={`/trainer/plans/${item.planId}`} className="underline" style={{ color: cat.color }}>
+                              Agregalos
+                            </Link>
+                          </p>
+                        ) : (
+                          <div className="flex flex-col gap-3">
+                            {warmup.length > 0 && (
+                              <div>
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                  <Flame className="h-3 w-3" style={{ color: "var(--c-orange)" }} />
+                                  <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: "var(--c-orange)" }}>
+                                    Entrada en calor
+                                  </span>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  {warmup.map((ex, i) => <SummaryExerciseRow key={i} ex={ex} accent="var(--c-orange)" />)}
+                                </div>
+                              </div>
+                            )}
+                            {main.length > 0 && (
+                              <div>
+                                {warmup.length > 0 && (
+                                  <div className="flex items-center gap-1.5 mb-1.5">
+                                    <Dumbbell className="h-3 w-3" style={{ color: cat.color }} />
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: cat.color }}>
+                                      Trabajo principal
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex flex-col gap-1">
+                                  {main.map((ex, i) => <SummaryExerciseRow key={i} ex={ex} accent={cat.color} />)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Builder + assign — full-width vertical flow */}
 
       {/* Week table */}
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
@@ -269,12 +524,12 @@ export function TemplateWeekBuilder({ clients }: Props) {
                   <span className="text-[10px] hidden sm:block mt-0.5"
                     style={{ color: isActive ? da.color : "var(--text-3)", opacity: 0.7 }}>{label}</span>
                   {dayBlocks.length > 0 && (
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-extrabold mt-1.5"
+                    <span key={dayBlocks.length} className="count-pop inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-extrabold mt-1.5"
                       style={{ background: da.color, color: "#000" }}>{dayBlocks.length}</span>
                   )}
                 </button>
 
-                <div className="flex flex-col gap-2 p-2 flex-1">
+                <div className="flex flex-col gap-2 p-2 flex-1 min-h-[132px]">
                   {dayBlocks.map(block => {
                     const cat = CAT[block.planCategory] ?? CAT.musculación!;
                     return (
@@ -317,7 +572,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
 
         {/* Library panel */}
         {activeDow !== null && (
-          <div className="p-5" style={{ background: "var(--bg)", borderBottom: "1px solid var(--border)" }}>
+          <div key={activeDow} className="reveal-down p-5" style={{ background: "var(--bg)", borderBottom: "1px solid var(--border)" }}>
             <p className="text-xs font-extrabold uppercase tracking-wider mb-4" style={{ color: "var(--text-3)" }}>
               Agregar a{" "}
               <span style={{ color: DAY_ACCENT[activeDow]?.color }}>
@@ -406,7 +661,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
                                   ))}
 
                                   {isAddHere ? (
-                                    <div className="rounded-xl p-3 flex flex-col gap-2 mt-1"
+                                    <div className="reveal-down rounded-xl p-3 flex flex-col gap-2 mt-1"
                                       style={{ border: `1px solid ${cat.color}`, background: "var(--bg-panel)" }}>
                                       <div className="flex gap-2">
                                         {(["main", "warmup"] as const).map(s => (
@@ -481,32 +736,51 @@ export function TemplateWeekBuilder({ clients }: Props) {
           </div>
         )}
       </div>
+      {/* Assign section — always visible */}
+      <div className="rounded-2xl overflow-hidden" style={{ border: "2px solid var(--accent)", background: "var(--bg-panel)" }}>
 
-      {/* Assign section */}
-      {totalBlocks > 0 && (
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
-          <button type="button" onClick={() => setShowClients(v => !v)}
-            className="w-full px-5 py-4 flex items-center justify-between cursor-pointer"
-            style={{ borderBottom: showClients ? "1px solid var(--border)" : "none" }}>
-            <div className="flex items-center gap-3">
-              <Users className="h-4 w-4" style={{ color: "var(--accent)" }} />
-              <span className="text-sm font-extrabold" style={{ color: "var(--text)" }}>
-                Asignar a alumnos
-              </span>
-              {selectedClients.size > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                  style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
-                  {selectedClients.size} seleccionado{selectedClients.size !== 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
-            {showClients
-              ? <ChevronUp className="h-4 w-4" style={{ color: "var(--text-3)" }} />
-              : <ChevronDown className="h-4 w-4" style={{ color: "var(--text-3)" }} />}
-          </button>
+        {/* Header */}
+        <div className="px-5 py-4 flex items-center gap-3" style={{ background: "var(--accent-soft)", borderBottom: "1px solid var(--accent)" }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "var(--accent)" }}>
+            <Users className="h-4 w-4" style={{ color: "var(--accent-fg)" }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-extrabold" style={{ color: "var(--text)" }}>Asignar a alumnos</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
+              {totalBlocks > 0
+                ? `${totalBlocks} bloque${totalBlocks !== 1 ? "s" : ""} en el template — elegí a quién asignarlo`
+                : "Armá el template semanal y después asignalo"}
+            </p>
+          </div>
+          {selectedClients.size > 0 && (
+            <span key={selectedClients.size} className="count-pop text-xs px-2.5 py-1 rounded-full font-extrabold shrink-0"
+              style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
+              {selectedClients.size} seleccionado{selectedClients.size !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
 
-          {showClients && (
-            <div className="p-5">
+        <div className="p-5">
+          {/* Mode tabs */}
+          <div className="flex gap-1 mb-4 p-1 rounded-xl" style={{ background: "var(--bg-hover)" }}>
+            {(["alumnos", "turnos"] as const).map(mode => (
+              <button key={mode} type="button"
+                onClick={() => { setAssignMode(mode); if (mode === "turnos") fetchSlots(); }}
+                className="flex-1 py-2 rounded-lg text-xs font-extrabold cursor-pointer transition-all"
+                style={{
+                  background: assignMode === mode ? "var(--bg-panel)" : "transparent",
+                  color: assignMode === mode ? "var(--text)" : "var(--text-3)",
+                  border: assignMode === mode ? "1px solid var(--border)" : "1px solid transparent",
+                }}>
+                {mode === "alumnos" ? "Por alumno" : "Por turno"}
+              </button>
+            ))}
+          </div>
+
+          {/* Individual mode */}
+          {assignMode === "alumnos" && (
+            <>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
                   Alumnos aprobados
@@ -516,8 +790,7 @@ export function TemplateWeekBuilder({ clients }: Props) {
                   Todos
                 </button>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto mb-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 max-h-80 overflow-y-auto mb-5">
                 {clients.map(client => {
                   const sel = selectedClients.has(client.id);
                   return (
@@ -544,17 +817,112 @@ export function TemplateWeekBuilder({ clients }: Props) {
                   </p>
                 )}
               </div>
+            </>
+          )}
 
-              <button type="button" onClick={assign} disabled={assigning}
-                className="w-full py-3 rounded-xl text-sm font-extrabold cursor-pointer transition-all disabled:opacity-50"
-                style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
-                {assigning
-                  ? "Asignando…"
-                  : `Asignar ${totalBlocks} bloque${totalBlocks !== 1 ? "s" : ""} a ${selectedClients.size} alumno${selectedClients.size !== 1 ? "s" : ""} →`}
-              </button>
+          {/* By class slot mode */}
+          {assignMode === "turnos" && (
+            <div className="mb-5">
+              {loadingSlots ? (
+                <p className="text-sm text-center py-6" style={{ color: "var(--text-3)" }}>Cargando turnos…</p>
+              ) : classSlots.length === 0 ? (
+                <p className="text-sm text-center py-6" style={{ color: "var(--text-3)" }}>No hay turnos configurados.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-80 overflow-y-auto">
+                  {DAYS.map(({ dow, label }) => {
+                    const daySlots = classSlots.filter(s => s.dayOfWeek === dow);
+                    if (!daySlots.length) return null;
+                    return (
+                      <div key={dow}>
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider mb-2" style={{ color: "var(--text-3)" }}>
+                          {label}
+                        </p>
+                        <div className="flex flex-col gap-1.5">
+                          {daySlots.map(slot => {
+                            const slotIds = getSlotClientIds(slot.id);
+                            const fullySelected = isSlotFullySelected(slot.id);
+                            const partiallySelected = isSlotPartiallySelected(slot.id);
+                            const isMus = slot.type === "musculación";
+                            const color = isMus ? "var(--accent)" : "var(--c-blue)";
+                            const bg = isMus ? "var(--accent-soft)" : "var(--c-blue-bg)";
+                            const selectedInSlot = slotIds.filter(id => selectedClients.has(id)).length;
+                            return (
+                              <button key={slot.id} type="button" onClick={() => toggleSlot(slot.id)}
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-left transition-all"
+                                style={{
+                                  background: fullySelected ? bg : partiallySelected ? bg : "var(--bg-hover)",
+                                  border: `1px solid ${fullySelected || partiallySelected ? color : "var(--border)"}`,
+                                  opacity: slotIds.length === 0 ? 0.5 : 1,
+                                }}>
+                                <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+                                  style={{ background: fullySelected ? color : partiallySelected ? bg : "var(--bg-panel)", border: `1px solid ${fullySelected || partiallySelected ? color : "var(--border)"}` }}>
+                                  {fullySelected && <Check className="h-3 w-3" style={{ color: isMus ? "var(--accent-fg)" : "#fff" }} />}
+                                  {partiallySelected && !fullySelected && (
+                                    <div className="w-2 h-2 rounded-sm" style={{ background: color }} />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-extrabold tabular-nums" style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                                      {slot.startTime} hs
+                                    </span>
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                                      style={{ background: bg, color }}>
+                                      {slot.type}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
+                                    {slotIds.length === 0
+                                      ? "Sin alumnos inscriptos"
+                                      : partiallySelected
+                                        ? `${selectedInSlot} de ${slotIds.length} alumno${slotIds.length !== 1 ? "s" : ""} seleccionado${selectedInSlot !== 1 ? "s" : ""}`
+                                        : fullySelected
+                                          ? `${slotIds.length} alumno${slotIds.length !== 1 ? "s" : ""} — todos seleccionados`
+                                          : `${slotIds.length} alumno${slotIds.length !== 1 ? "s" : ""}`}
+                                  </p>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
+
+          {/* Assign button */}
+          <button type="button" onClick={assign}
+            disabled={assigning || totalBlocks === 0 || selectedClients.size === 0}
+            className="w-full py-3 rounded-xl text-sm font-extrabold cursor-pointer transition-all disabled:opacity-40"
+            style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
+            {assigning
+              ? "Asignando…"
+              : totalBlocks === 0
+                ? "Primero armá el template semanal"
+                : selectedClients.size === 0
+                  ? "Seleccioná alumnos o un turno"
+                  : `Asignar ${totalBlocks} bloque${totalBlocks !== 1 ? "s" : ""} a ${selectedClients.size} alumno${selectedClients.size !== 1 ? "s" : ""} →`}
+          </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryExerciseRow({ ex, accent }: { ex: SummaryExercise; accent: string }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+      style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+      <span className="flex-1 text-xs font-semibold truncate" style={{ color: "var(--text)" }}>{ex.exerciseName}</span>
+      <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: accent }}>{ex.sets}×{ex.reps}</span>
+      {ex.weightKg && (
+        <span className="text-[10px] tabular-nums px-1.5 py-0.5 rounded-md shrink-0"
+          style={{ background: "var(--bg-hover)", color: "var(--text-3)", border: "1px solid var(--border)" }}>
+          {ex.weightKg} kg
+        </span>
       )}
     </div>
   );
@@ -566,8 +934,8 @@ function ExerciseRowSimple({ ex, accent, onRemove }: { ex: ExerciseForEdit; acce
       style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
       <span className="flex-1 text-xs font-semibold truncate" style={{ color: "var(--text)" }}>{ex.exerciseName}</span>
       <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: accent }}>{ex.sets}×{ex.reps}</span>
-      <button type="button" onClick={onRemove}
-        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md cursor-pointer shrink-0"
+      <button type="button" onClick={onRemove} title="Quitar ejercicio"
+        className="opacity-50 group-hover:opacity-100 transition-opacity p-1 rounded-md cursor-pointer shrink-0"
         style={{ color: "var(--text-3)" }}
         onMouseEnter={e => (e.currentTarget.style.color = "#ef4444")}
         onMouseLeave={e => (e.currentTarget.style.color = "var(--text-3)")}>

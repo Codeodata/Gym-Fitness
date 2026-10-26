@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   CheckCircle, XCircle, UserX, UserPlus,
-  Mail, Calendar, Dumbbell, Clock,
+  Mail, Calendar, Dumbbell, Clock, Zap, Infinity, Check,
 } from "lucide-react";
 import type { User } from "@/lib/db/schema";
 
@@ -27,11 +27,12 @@ const STATUS_COLOR: Record<Status, { bg: string; text: string }> = {
   inactive: { bg: "rgba(239,68,68,0.12)",  text: "#ef4444"  },
 };
 
-const MEMBERSHIP_LABEL: Record<string, string> = {
-  "2dias":      "2 días / sem",
-  "3dias":      "3 días / sem",
-  "pase_libre": "Pase libre",
+const MEMBERSHIP: Record<string, { label: string; short: string; color: string; bg: string; icon: typeof Calendar }> = {
+  "2dias":      { label: "2 días",     short: "2 días", color: "#60a5fa", bg: "rgba(96,165,250,0.12)",  icon: Calendar },
+  "3dias":      { label: "3 días",     short: "3 días", color: "#c084fc", bg: "rgba(192,132,252,0.12)", icon: Zap      },
+  "pase_libre": { label: "Pase libre", short: "Libre",  color: "#4ade80", bg: "rgba(74,222,128,0.12)",  icon: Infinity },
 };
+const MEMBERSHIP_TYPES = ["2dias", "3dias", "pase_libre"];
 
 function initials(name: string) {
   return name
@@ -48,7 +49,28 @@ function formatDate(d: Date | string) {
 export function ClientsGrid({ clients: initial, status }: Props) {
   const [list, setList] = useState(initial);
   const [loading, setLoading] = useState<string | null>(null);
+  const [memberships, setMemberships] = useState<Record<string, string | null>>(
+    () => Object.fromEntries(initial.map((c) => [c.id, c.membershipType ?? null]))
+  );
+  const [savingMem, setSavingMem] = useState<string | null>(null);
+  const [savedMem, setSavedMem] = useState<string | null>(null);
   const router = useRouter();
+
+  async function setMembership(id: string, type: string) {
+    setSavingMem(id);
+    setMemberships((prev) => ({ ...prev, [id]: type }));
+    try {
+      await fetch("/api/trainer/clients", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, membershipType: type }),
+      });
+      setSavedMem(id);
+      setTimeout(() => setSavedMem((p) => (p === id ? null : p)), 1800);
+    } finally {
+      setSavingMem(null);
+    }
+  }
 
   async function patch(id: string, data: Record<string, unknown>) {
     setLoading(id);
@@ -164,14 +186,42 @@ export function ClientsGrid({ clients: initial, status }: Props) {
                 )}
               </div>
 
-              {/* Membership */}
-              <div className="flex items-center gap-2">
-                <Clock className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--text-3)" }} />
-                <span className="text-xs" style={{ color: "var(--text-2)" }}>
-                  {client.membershipType
-                    ? MEMBERSHIP_LABEL[client.membershipType] ?? client.membershipType
-                    : "Sin membresía"}
-                </span>
+              {/* Membresía — editable */}
+              <div className="flex items-start gap-2 pt-0.5">
+                <Clock className="h-3.5 w-3.5 shrink-0 mt-1.5" style={{ color: "var(--text-3)" }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
+                      Membresía
+                    </span>
+                    {savedMem === client.id && <Check className="h-3 w-3" style={{ color: "#4ade80" }} />}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {MEMBERSHIP_TYPES.map((type) => {
+                      const m = MEMBERSHIP[type]!;
+                      const isActive = memberships[client.id] === type;
+                      const Icon = m.icon;
+                      return (
+                        <button
+                          key={type}
+                          onClick={() => setMembership(client.id, type)}
+                          disabled={savingMem === client.id}
+                          title={m.label}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all"
+                          style={{
+                            background: isActive ? m.bg : "var(--bg-hover)",
+                            border: `1px solid ${isActive ? m.color : "var(--border)"}`,
+                            color: isActive ? m.color : "var(--text-3)",
+                            opacity: savingMem === client.id ? 0.6 : 1,
+                          }}
+                        >
+                          <Icon className="h-3 w-3" />
+                          {m.short}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
 
