@@ -2,11 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, ChevronDown, ChevronUp, Search, X, Check, Flame, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Search, X, Check, Flame, ArrowLeft, Library, Dumbbell } from "lucide-react";
 import Link from "next/link";
 
 type ExerciseOption = { id: string; name: string; muscleGroup: string; difficulty?: string | null };
 type ExerciseForm  = { exerciseId: string; exerciseName: string; section: "warmup" | "main"; sets: number; reps: string; restSeconds: string; notes: string };
+
+type LibraryDay  = { id: string; exerciseCount: number };
+type LibraryItem = { id: string; name: string; category: string; days: LibraryDay[] };
 
 const MUSCLE_LABELS: Record<string, string> = {
   chest: "Pecho", back: "Espalda", shoulders: "Hombros", arms: "Brazos",
@@ -187,6 +190,67 @@ export default function NewRoutinePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // ── Partir de una rutina existente ─────────────────────────────────────────
+  const [library, setLibrary] = useState<LibraryItem[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [loadingTemplate, setLoadingTemplate] = useState<string | null>(null);
+  const [basedOn, setBasedOn] = useState<{ id: string; name: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/trainer/plan-library")
+      .then(r => r.json())
+      .then(d => setLibrary(d.library ?? []))
+      .catch(() => {});
+  }, []);
+
+  async function loadTemplate(item: LibraryItem) {
+    if (loadingTemplate) return;
+    setLoadingTemplate(item.id);
+    setError("");
+    try {
+      const res = await fetch(`/api/trainer/plans/${item.id}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json() as {
+        exercises: { section: "warmup" | "main"; sets: number; reps: string; notes: string | null; exerciseName: string; exerciseId: string; orderIndex: number }[];
+      };
+      const toForm = (section: "warmup" | "main"): ExerciseForm[] =>
+        (data.exercises ?? [])
+          .filter(e => e.section === section)
+          .sort((a, b) => a.orderIndex - b.orderIndex)
+          .map(e => ({
+            exerciseId: e.exerciseId ?? "",
+            exerciseName: e.exerciseName,
+            section,
+            sets: e.sets,
+            reps: e.reps,
+            restSeconds: section === "warmup" ? "0" : "60",
+            notes: e.notes ?? "",
+          }));
+      setWarmup(toForm("warmup"));
+      setExercises(toForm("main"));
+      if (!name.trim()) setName(`${item.name} (copia)`);
+      if (CATEGORIES.some(c => c.id === item.category)) setCategory(item.category as Category);
+      setBasedOn({ id: item.id, name: item.name });
+      setShowTemplates(false);
+      setTemplateSearch("");
+    } catch {
+      setError("No se pudo cargar esa rutina. Intentá de nuevo.");
+    } finally {
+      setLoadingTemplate(null);
+    }
+  }
+
+  function clearBase() {
+    setBasedOn(null);
+    setWarmup([]);
+    setExercises([]);
+  }
+
+  const filteredTemplates = templateSearch.trim()
+    ? library.filter(p => p.name.toLowerCase().includes(templateSearch.toLowerCase()))
+    : library;
+
   function addExercise(ex: ExerciseOption, section: "warmup" | "main") {
     const entry = { ...emptyEx(section), exerciseId: ex.id, exerciseName: ex.name };
     if (section === "warmup") setWarmup(p => [...p, entry]);
@@ -252,12 +316,110 @@ export default function NewRoutinePage() {
         <div>
           <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Nueva rutina</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--text-2)" }}>
-            Ponele nombre, elegí categoría y agregá ejercicios
+            Armala desde cero o partí de una rutina que ya tengas
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Partir de una rutina existente */}
+        <div className="rounded-2xl p-4 flex flex-col gap-3"
+          style={{ background: "var(--bg-panel)", border: `1px solid ${basedOn ? "var(--accent)" : "var(--border)"}` }}>
+          {basedOn ? (
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "var(--accent-soft)" }}>
+                <Library className="h-4 w-4" style={{ color: "var(--accent)" }} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>
+                  Basada en “{basedOn.name}”
+                </p>
+                <p className="text-xs" style={{ color: "var(--text-3)" }}>
+                  Modificá lo que quieras — se guarda como una rutina nueva.
+                </p>
+              </div>
+              <button type="button" onClick={clearBase}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer shrink-0"
+                style={{ background: "var(--bg-hover)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
+                <X className="h-3.5 w-3.5" />
+                Empezar de cero
+              </button>
+            </div>
+          ) : (
+            <>
+              <button type="button" onClick={() => { setShowTemplates(v => !v); setTemplateSearch(""); }}
+                className="flex items-center gap-3 w-full text-left cursor-pointer">
+                <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}>
+                  <Library className="h-4 w-4" style={{ color: "var(--text-2)" }} />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold" style={{ color: "var(--text)" }}>
+                    Partir de una rutina existente
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--text-3)" }}>
+                    {library.length === 0
+                      ? "Todavía no tenés rutinas guardadas — armá esta desde cero."
+                      : "Cargá sus ejercicios como base y editalos antes de guardar."}
+                  </p>
+                </div>
+                {library.length > 0 && (
+                  <ChevronDown className="h-4 w-4 shrink-0 transition-transform"
+                    style={{ color: "var(--text-3)", transform: showTemplates ? "rotate(180deg)" : "none" }} />
+                )}
+              </button>
+
+              {showTemplates && library.length > 0 && (
+                <div className="reveal-down flex flex-col gap-2 pt-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "var(--text-3)" }} />
+                    <input autoFocus placeholder="Buscar rutina…" value={templateSearch}
+                      onChange={e => setTemplateSearch(e.target.value)}
+                      style={{ ...inp, paddingLeft: "36px" }}
+                      onFocus={e => { e.currentTarget.style.borderColor = "var(--accent)"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "var(--border)"; }} />
+                  </div>
+                  <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto">
+                    {filteredTemplates.length === 0 && (
+                      <p className="text-sm text-center py-4" style={{ color: "var(--text-3)" }}>Sin resultados</p>
+                    )}
+                    {filteredTemplates.map(item => {
+                      const cat = CATEGORIES.find(c => c.id === item.category) ?? CATEGORIES[0]!;
+                      const totalEx = item.days.reduce((n, d) => n + (d.exerciseCount ?? 0), 0);
+                      const isLoading = loadingTemplate === item.id;
+                      return (
+                        <button key={item.id} type="button" onClick={() => loadTemplate(item)} disabled={!!loadingTemplate}
+                          className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer disabled:opacity-60"
+                          style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = cat.color; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; }}>
+                          <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ background: cat.bg, border: `1px solid ${cat.border}` }}>
+                            {item.category === "calentamiento"
+                              ? <Flame className="h-3.5 w-3.5" style={{ color: cat.color }} />
+                              : <Dumbbell className="h-3.5 w-3.5" style={{ color: cat.color }} />}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>{item.name}</p>
+                            <p className="text-xs" style={{ color: "var(--text-3)" }}>
+                              <span style={{ color: cat.color }}>{cat.label}</span>
+                              {" · "}{totalEx} ejercicio{totalEx !== 1 ? "s" : ""}
+                            </p>
+                          </div>
+                          <span className="text-xs font-bold shrink-0" style={{ color: isLoading ? "var(--text-3)" : cat.color }}>
+                            {isLoading ? "Cargando…" : "Usar →"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
         {/* Name + category */}
         <div className="rounded-2xl p-5 flex flex-col gap-4"
           style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
