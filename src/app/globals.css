@@ -153,6 +153,15 @@ body { min-height: 100svh; overflow-x: hidden; }
   }
 }
 
+/* ─── Táctil (sin hover): revelar controles que solo aparecían con hover ────── */
+/* En desktop varios botones de editar/eliminar/mover usan opacity-0 +
+   group-hover:opacity-100, así que en iPhone/Android quedaban invisibles
+   ("faltaban" botones). Sin hover disponible, se muestran siempre. */
+@media (hover: none) {
+  .group-hover\:opacity-100 { opacity: 1 !important; }
+  .group-hover\:opacity-70  { opacity: 0.7 !important; }
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700;

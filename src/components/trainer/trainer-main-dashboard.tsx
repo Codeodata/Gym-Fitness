@@ -358,7 +358,7 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
                 <p className="text-sm" style={{ color: "var(--text-3)" }}>No hay clases programadas para hoy.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {todaySlots.map((slot) => (
                   <SlotCard
                     key={slot.id}
