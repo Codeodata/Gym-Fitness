@@ -44,6 +44,7 @@ export async function GET() {
   // Students per (dayOfWeek, planDayId) block
   const studentRows = planDayIds.length === 0 ? [] : await db
     .select({
+      blockId: schema.clientDayBlock.id,
       dayOfWeek: schema.clientDayBlock.dayOfWeek,
       planDayId: schema.clientDayBlock.planDayId,
       clientId: schema.clientDayBlock.clientId,
@@ -57,6 +58,7 @@ export async function GET() {
   // Exercises per planDay
   const exerciseRows = planDayIds.length === 0 ? [] : await db
     .select({
+      id: schema.planExercise.id,
       planDayId: schema.planExercise.planDayId,
       section: schema.planExercise.section,
       orderIndex: schema.planExercise.orderIndex,
@@ -71,10 +73,11 @@ export async function GET() {
     .where(inArray(schema.planExercise.planDayId, planDayIds))
     .orderBy(asc(schema.planExercise.orderIndex));
 
-  const studentsByBlock = new Map<string, { clientId: string; clientName: string | null }[]>();
+  const studentsByBlock = new Map<string, { blockId: string; clientId: string; clientName: string | null }[]>();
   for (const s of studentRows) {
     const key = `${s.dayOfWeek}::${s.planDayId}`;
     (studentsByBlock.get(key) ?? studentsByBlock.set(key, []).get(key)!).push({
+      blockId: s.blockId,
       clientId: s.clientId,
       clientName: s.clientName,
     });

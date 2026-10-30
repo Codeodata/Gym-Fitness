@@ -68,3 +68,31 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ block });
 }
+
+const deleteSchema = z.object({
+  dayOfWeek: z.number().int().min(1).max(5),
+  planDayId: z.string().uuid(),
+});
+
+// Saca una rutina (planDay) de un día: borra los bloques de TODOS los alumnos
+// para ese (dayOfWeek, planDayId). No borra la rutina en sí.
+export async function DELETE(req: NextRequest) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || session.user.role !== "trainer")
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = deleteSchema.safeParse(await req.json());
+  if (!body.success) return NextResponse.json({ error: "Invalid" }, { status: 400 });
+
+  const { dayOfWeek, planDayId } = body.data;
+  const db = getDb();
+  const removed = await db
+    .delete(schema.clientDayBlock)
+    .where(and(
+      eq(schema.clientDayBlock.dayOfWeek, dayOfWeek),
+      eq(schema.clientDayBlock.planDayId, planDayId),
+    ))
+    .returning({ id: schema.clientDayBlock.id });
+
+  return NextResponse.json({ ok: true, removed: removed.length });
+}
