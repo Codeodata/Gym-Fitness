@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, Clock, CalendarCheck, ClipboardList, Flame, Activity, Trophy, ArrowRight, Dumbbell } from "lucide-react";
+import { Bell, Clock, CalendarCheck, ClipboardList, Flame, Activity, Trophy, ArrowRight, Dumbbell, CalendarClock } from "lucide-react";
 import Link from "next/link";
 import { MonthCalendar } from "@/components/trainer/monthly-calendar";
 import { TodayRoutine } from "@/components/client/today-routine";
+import { getMembershipStatus } from "@/lib/membership";
 
 type Slot = { id: string; dayOfWeek: number; startTime: string; type: string };
 type Notification = { id: string; body: string; toId: string | null; sentAt: string; readAt: string | null };
@@ -16,6 +17,7 @@ type Props = {
   sessionsThisMonth: number;
   totalSessions: number;
   streak: number;
+  membershipRenewsAt: string | null;
 };
 
 const DAYS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -37,7 +39,10 @@ const CAT_STYLE: Record<string, { color: string; bg: string }> = {
   calentamiento: { color: "var(--c-orange)", bg: "var(--c-orange-bg)" },
 };
 
-export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessions, streak }: Props) {
+export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessions, streak, membershipRenewsAt }: Props) {
+  const membership = getMembershipStatus(membershipRenewsAt);
+  const memberAccent = membership.state === "overdue" ? "#ef4444" : "var(--warning)";
+  const memberBg = membership.state === "overdue" ? "rgba(239,68,68,0.12)" : "rgba(245,158,11,0.12)";
   const [allSlots, setAllSlots] = useState<Slot[]>([]);
   const [mySlotIds, setMySlotIds] = useState<Set<string>>(new Set());
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -103,6 +108,23 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
           <ClipboardList className="h-4 w-4" /> Mi plan
         </Link>
       </div>
+
+      {/* ── Aviso de renovación de membresía ───────────────────────── */}
+      {membership.alert && (
+        <div className="mb-6 flex items-start gap-3 px-4 py-3.5 rounded-2xl"
+          style={{ background: memberBg, border: `1px solid ${memberAccent}` }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "var(--bg-panel)" }}>
+            <CalendarClock className="h-5 w-5" style={{ color: memberAccent }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold leading-snug" style={{ color: "var(--text)" }}>
+              {membership.state === "overdue" ? "Renová tu membresía" : "Tu plan está por vencer"}
+            </p>
+            <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-2)" }}>{membership.clientMessage}</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Layout: izquierda = contenido, derecha = calendario + avisos ── */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-6 items-start">
@@ -318,13 +340,28 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
                   </span>
                 )}
               </h2>
-              {notifications.length === 0 ? (
+              {notifications.length === 0 && !membership.alert ? (
                 <div className="rounded-2xl p-5 text-center" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
                   <Bell className="h-5 w-5 mx-auto mb-1.5" style={{ color: "var(--text-3)" }} />
                   <p className="text-xs" style={{ color: "var(--text-3)" }}>Sin avisos del gimnasio.</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
+                  {membership.alert && (
+                    <div className="flex items-start gap-3 px-3 py-3 rounded-2xl"
+                      style={{ background: memberBg, border: `1px solid ${memberAccent}` }}>
+                      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                        style={{ background: "var(--bg-panel)" }}>
+                        <CalendarClock className="h-3.5 w-3.5" style={{ color: memberAccent }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold leading-snug" style={{ color: "var(--text)" }}>
+                          {membership.state === "overdue" ? "Renová tu membresía" : "Renovación de plan"}
+                        </p>
+                        <p className="text-[11px] mt-0.5 leading-snug" style={{ color: "var(--text-2)" }}>{membership.clientMessage}</p>
+                      </div>
+                    </div>
+                  )}
                   {notifications.slice(0, 5).map((n) => (
                     <div key={n.id} className="flex items-start gap-3 px-3 py-3 rounded-2xl"
                       style={{

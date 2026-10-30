@@ -432,13 +432,15 @@ export function RoutinesLibrary({ clients }: Props) {
                 ) : (
                   <button type="button"
                     onClick={() => startEditing(plan)}
-                    className="flex items-center gap-1.5 group w-full text-left"
-                    title="Clic para editar el nombre">
+                    className="flex items-center gap-2 w-full text-left"
+                    title="Tocá para editar el nombre">
                     <p className="font-extrabold leading-tight truncate" style={{ color: "var(--text)" }}>
                       {plan.name}
                     </p>
-                    <Pencil className="h-3 w-3 shrink-0 opacity-40 group-hover:opacity-70 transition-opacity"
-                      style={{ color: "var(--text-3)" }} />
+                    <span className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: cat.bg, color: cat.color }}>
+                      <Pencil className="h-3 w-3" />
+                    </span>
                   </button>
                 )}
 
@@ -460,46 +462,49 @@ export function RoutinesLibrary({ clients }: Props) {
                 </button>
               </div>
 
-              {/* Acciones: eliminar + expandir */}
+              {/* Acciones: editar (expandir) + eliminar */}
               <div className="flex items-center gap-1.5 shrink-0">
                 {isConfirmingDelete ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold" style={{ color: "#ef4444" }}>¿Eliminar?</span>
+                    <span className="text-xs font-semibold hidden sm:inline" style={{ color: "#ef4444" }}>¿Eliminar?</span>
                     <button type="button" onClick={() => deletePlan(plan.id)} disabled={deleting}
-                      className="px-2.5 py-1.5 rounded-lg text-xs font-extrabold cursor-pointer disabled:opacity-50"
-                      style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.35)" }}>
-                      {deleting ? "…" : "Sí"}
+                      className="h-9 px-3 rounded-xl text-xs font-extrabold cursor-pointer disabled:opacity-50"
+                      style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.35)", touchAction: "manipulation" }}>
+                      {deleting ? "…" : "Sí, eliminar"}
                     </button>
                     <button type="button" onClick={() => setConfirmDelete(null)}
-                      className="px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer"
-                      style={{ background: "var(--bg-hover)", color: "var(--text-3)", border: "1px solid var(--border)" }}>
+                      className="h-9 px-3 rounded-xl text-xs font-bold cursor-pointer"
+                      style={{ background: "var(--bg-hover)", color: "var(--text-3)", border: "1px solid var(--border)", touchAction: "manipulation" }}>
                       No
                     </button>
                   </div>
                 ) : (
-                  <button type="button"
-                    onClick={() => { setConfirmDelete(plan.id); setExpanded(prev => { const n = new Set(prev); n.delete(plan.id); return n; }); }}
-                    className="w-8 h-8 flex items-center justify-center rounded-xl cursor-pointer transition-colors"
-                    style={{ color: "var(--text-3)" }}
-                    title="Eliminar rutina"
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#ef4444"; (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,0.10)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-3)"; (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
-
-                {!isConfirmingDelete && (
-                  <button type="button" onClick={() => togglePlan(plan.id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-xl cursor-pointer"
-                    style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}>
-                    {loading
-                      ? <span className="text-[10px]" style={{ color: "var(--text-3)" }}>…</span>
-                      : hasError
-                        ? <AlertTriangle className="h-3.5 w-3.5" style={{ color: "#ef4444" }} />
-                        : isOpen
-                          ? <ChevronUp className="h-3.5 w-3.5" style={{ color: "var(--text-3)" }} />
-                          : <ChevronDown className="h-3.5 w-3.5" style={{ color: "var(--text-3)" }} />}
-                  </button>
+                  <>
+                    <button type="button" onClick={() => togglePlan(plan.id)}
+                      className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-extrabold cursor-pointer"
+                      style={{
+                        background: isOpen ? cat.color : cat.bg,
+                        color: isOpen ? "#000" : cat.color,
+                        border: `1px solid ${cat.border}`,
+                        touchAction: "manipulation",
+                      }}
+                      title={isOpen ? "Cerrar edición" : "Editar rutina"}>
+                      {loading
+                        ? <span className="text-[10px]">…</span>
+                        : hasError
+                          ? <AlertTriangle className="h-3.5 w-3.5" style={{ color: "#ef4444" }} />
+                          : <Pencil className="h-3.5 w-3.5" />}
+                      <span>{isOpen ? "Cerrar" : "Editar"}</span>
+                      {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    </button>
+                    <button type="button"
+                      onClick={() => { setConfirmDelete(plan.id); setExpanded(prev => { const n = new Set(prev); n.delete(plan.id); return n; }); }}
+                      className="w-9 h-9 flex items-center justify-center rounded-xl cursor-pointer shrink-0"
+                      style={{ background: "rgba(239,68,68,0.10)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.25)", touchAction: "manipulation" }}
+                      title="Eliminar rutina">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </>
                 )}
               </div>
             </div>

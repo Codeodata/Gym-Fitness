@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, ArrowRight, Users, Send, X, Trash2, CalendarDays, TrendingUp } from "lucide-react";
+import { Bell, ArrowRight, Users, Send, X, Trash2, CalendarDays, CalendarRange } from "lucide-react";
 import Link from "next/link";
 import { MonthCalendar } from "./monthly-calendar";
 
@@ -29,17 +29,17 @@ function StatCard({ label, value, icon: Icon, accent }: {
   label: string; value: number | string; icon: React.ElementType; accent?: string;
 }) {
   return (
-    <div className="stat-card rounded-2xl px-5 py-4 flex items-center gap-4">
-      <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+    <div className="stat-card rounded-2xl p-3 sm:px-5 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+      <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
         style={{ background: accent ? `${accent}18` : "var(--accent-soft)" }}>
-        <Icon className="h-5 w-5" style={{ color: accent ?? "var(--accent)" }} />
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: accent ?? "var(--accent)" }} />
       </div>
-      <div className="min-w-0">
-        <p className="text-2xl font-extrabold tabular-nums leading-none"
+      <div className="min-w-0 w-full">
+        <p className="text-xl sm:text-2xl font-extrabold tabular-nums leading-none"
           style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
           {value}
         </p>
-        <p className="text-xs mt-0.5 font-medium" style={{ color: "var(--text-3)" }}>{label}</p>
+        <p className="text-[11px] sm:text-xs mt-0.5 font-medium leading-tight" style={{ color: "var(--text-3)" }}>{label}</p>
       </div>
     </div>
   );
@@ -280,7 +280,6 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
   }
 
   const todaySlots = slots.filter((s) => s.dayOfWeek === today).sort((a, b) => a.startTime.localeCompare(b.startTime));
-  const todayEnrolled = todaySlots.reduce((acc, s) => acc + enrollments.filter((e) => e.slotId === s.id).length, 0);
   const weekSlots = slots.filter((s) => s.dayOfWeek >= 1 && s.dayOfWeek <= 5);
   const dayLabel = DAYS[today] ?? "Hoy";
 
@@ -330,7 +329,7 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
       <div className="grid grid-cols-3 gap-3 mb-6">
         <StatCard label="Alumnos activos" value={clients.length} icon={Users} />
         <StatCard label={`Clases hoy — ${dayLabel}`} value={todaySlots.length} icon={CalendarDays} accent="var(--c-blue)" />
-        <StatCard label="Inscriptos hoy" value={todayEnrolled} icon={TrendingUp} accent="var(--c-green)" />
+        <StatCard label="Clases por semana" value={slots.length} icon={CalendarRange} accent="var(--c-green)" />
       </div>
 
       {/* ── Layout: izquierda = contenido principal, derecha = calendario + avisos ── */}

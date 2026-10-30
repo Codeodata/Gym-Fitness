@@ -58,8 +58,8 @@ export default async function RoutinesPage() {
               <h2 className="text-lg font-extrabold leading-tight" style={{ color: "var(--text)" }}>
                 Biblioteca de rutinas
               </h2>
-              <p className="text-sm leading-tight truncate" style={{ color: "var(--text-3)" }}>
-                Tocá el nombre para renombrar. Expandí para ver y editar ejercicios.
+              <p className="text-sm leading-tight" style={{ color: "var(--text-3)" }}>
+                Tocá <span style={{ color: "var(--accent)", fontWeight: 700 }}>Editar</span> para cambiar ejercicios y alumnos, o el nombre para renombrar.
               </p>
             </div>
           </div>

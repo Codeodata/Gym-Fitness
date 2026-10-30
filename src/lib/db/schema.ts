@@ -22,6 +22,8 @@ export const user = pgTable("user", {
   approved: boolean("approved").notNull().default(false),
   active: boolean("active").notNull().default(true),
   membershipType: text("membership_type", { enum: ["2dias", "3dias", "pase_libre"] }),
+  membershipRenewsAt: timestamp("membership_renews_at"), // próxima fecha de renovación del plan
+  membershipPaidAt: timestamp("membership_paid_at"),     // último pago registrado por el profe
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

@@ -14,7 +14,7 @@ type Status = "pending" | "active" | "inactive";
 
 type ClientCard = User & { planInfo: PlanInfo };
 
-type Props = { clients: ClientCard[]; status: Status };
+type Props = { clients: ClientCard[]; status: Status; filter?: string };
 
 const STATUS_LABEL: Record<Status, string> = {
   pending:  "Pendiente",
@@ -46,7 +46,7 @@ function formatDate(d: Date | string) {
   return new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-export function ClientsGrid({ clients: initial, status }: Props) {
+export function ClientsGrid({ clients: initial, status, filter }: Props) {
   const [list, setList] = useState(initial);
   const [loading, setLoading] = useState<string | null>(null);
   const [memberships, setMemberships] = useState<Record<string, string | null>>(
@@ -87,13 +87,16 @@ export function ClientsGrid({ clients: initial, status }: Props) {
     }
   }
 
-  if (list.length === 0) return null;
+  const q = (filter ?? "").trim().toLowerCase();
+  const visible = q ? list.filter((c) => c.name.toLowerCase().includes(q)) : list;
+
+  if (visible.length === 0) return null;
 
   const sc = STATUS_COLOR[status];
 
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-      {list.map((client) => {
+      {visible.map((client) => {
         const busy = loading === client.id;
         return (
           <div

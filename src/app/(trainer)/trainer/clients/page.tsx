@@ -2,7 +2,7 @@ export const instant = false;
 import { connection } from "next/server";
 import { getDb, schema } from "@/lib/db";
 import { eq, and, inArray } from "drizzle-orm";
-import { ClientsGrid } from "@/components/trainer/clients-grid";
+import { ClientsView } from "@/components/trainer/clients-view";
 
 export default async function ClientsPage() {
   await connection();
@@ -55,39 +55,11 @@ export default async function ClientsPage() {
         </p>
       </div>
 
-      {pending.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#f59e0b" }}>
-            Esperando aprobación · {pending.length}
-          </h2>
-          <ClientsGrid clients={withPlan(pending)} status="pending" />
-        </section>
-      )}
-
-      <section className="mb-10">
-        <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "var(--text-3)" }}>
-          Activos · {active.length}
-        </h2>
-        {active.length === 0 ? (
-          <div
-            className="rounded-2xl p-10 flex items-center justify-center"
-            style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}
-          >
-            <p className="text-sm" style={{ color: "var(--text-3)" }}>No hay alumnos activos todavía.</p>
-          </div>
-        ) : (
-          <ClientsGrid clients={withPlan(active)} status="active" />
-        )}
-      </section>
-
-      {inactive.length > 0 && (
-        <section>
-          <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#ef4444" }}>
-            Inactivos · {inactive.length}
-          </h2>
-          <ClientsGrid clients={withPlan(inactive)} status="inactive" />
-        </section>
-      )}
+      <ClientsView
+        pending={withPlan(pending)}
+        active={withPlan(active)}
+        inactive={withPlan(inactive)}
+      />
     </div>
   );
 }
