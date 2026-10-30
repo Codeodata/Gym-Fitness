@@ -16,7 +16,7 @@ const NAV = [
   { href: "/trainer/classes",   label: "Turnos",      icon: Clock,           image: "/turnos.jpg",       bgPos: "center" },
   { href: "/trainer/schedule",  label: "Asistencias", icon: CalendarDays,    image: "/asistencia2.jpg",  bgPos: "center" },
   { href: "/trainer/routines",  label: "Rutinas",     icon: ClipboardList,   image: "/trainer-bg2.jpg",  bgPos: "center" },
-  { href: "/trainer/exercises", label: "Ejercicios",  icon: Library,         image: "/fondo.jpg",        bgPos: "center" },
+  { href: "/trainer/exercises", label: "Ejercicios",  icon: Library,         image: "/ejercicios.jpeg",  bgPos: "center" },
   { href: "/trainer/resumen",   label: "Resumen",     icon: BarChart3,       image: "/progreso.jpg",     bgPos: "center" },
 ];
 
