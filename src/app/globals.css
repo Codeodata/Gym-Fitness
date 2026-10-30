@@ -133,9 +133,25 @@ html {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Evita que iOS infle automáticamente el tamaño del texto (difería de Android) */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body { min-height: 100svh; overflow-x: hidden; }
+
+/* ─── iOS Safari: evitar el auto-zoom al enfocar inputs ─────────────────────── */
+/* iOS hace zoom (y NO vuelve) cuando un campo tiene font-size < 16px. Android no.
+   Era la causa de que la app se "rompiera" visualmente en iPhone al tocar un campo.
+   Se fuerza 16px solo en iOS (scope con -webkit-touch-callout) sin afectar el
+   diseño en desktop/Android. !important para ganarle a los font-size inline. */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Barlow Condensed', sans-serif;
