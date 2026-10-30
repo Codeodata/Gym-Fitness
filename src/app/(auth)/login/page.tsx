@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "@/lib/auth-client";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -28,17 +29,19 @@ export default function LoginPage() {
   return (
     <div className="min-h-svh flex" style={{ background: "#080808" }}>
 
-      {/* ── Panel izquierdo: imagen de marca ── */}
-      <div className="hidden lg:flex flex-1 relative overflow-hidden">
-        {/* Imagen completa */}
-        <img
-          src="/fondo loguin2.png"
+      {/* ── Panel izquierdo: imagen de marca (desktop) ── */}
+      <div className="hidden lg:flex flex-1 relative overflow-hidden" style={{ background: "#080808" }}>
+        {/* next/image: Vercel la sirve optimizada (webp/resize); en mobile el panel
+            está oculto, así que no se descarga. */}
+        <Image
+          src="/login-bg.png"
           alt="Claudia Duran Fitness"
-          className="w-full h-full object-contain object-center"
-          style={{ background: "#080808" }}
+          fill
+          sizes="50vw"
+          className="object-contain object-center"
         />
         {/* Borde derecho sutil */}
-        <div className="absolute inset-y-0 right-0 w-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+        <div className="absolute inset-y-0 right-0 w-px z-10" style={{ background: "rgba(255,255,255,0.06)" }} />
       </div>
 
       {/* ── Panel derecho: formulario ── */}

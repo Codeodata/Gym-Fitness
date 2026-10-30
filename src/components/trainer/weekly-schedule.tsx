@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { CheckCircle2, XCircle, Minus, UserCheck, X } from "lucide-react";
+import { Check, UserCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import type { User } from "@/lib/db/schema";
 import Link from "next/link";
 
@@ -22,17 +22,11 @@ type Props = {
 export function WeeklySchedule({ clients, assignments, logs, attendance: initialAtt, weekStart }: Props) {
   const [att, setAtt] = useState<AttRow[]>(initialAtt);
   const [saving, setSaving] = useState<string | null>(null);
-  const [hovering, setHovering] = useState<string | null>(null);
   const [today, setToday] = useState<Date | null>(null);
+  const [selected, setSelected] = useState<number>(0);
   const [dateRangeLabel, setDateRangeLabel] = useState<string | null>(null);
 
-  useEffect(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    setToday(d);
-  }, []);
-
-  // Parse YYYY-MM-DD as local date (not UTC) to avoid timezone shift
+  // Parse YYYY-MM-DD as local date (avoid UTC shift)
   const [wy, wm, wd] = weekStart.split("-").map(Number);
   const start = useMemo(() => new Date(wy!, wm! - 1, wd!), [wy, wm, wd]);
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => {
@@ -42,47 +36,35 @@ export function WeeklySchedule({ clients, assignments, logs, attendance: initial
   }), [start]);
 
   useEffect(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    setToday(d);
+    // default a hoy si está en esta semana, si no al primer día
+    const idx = days.findIndex((x) => x.toDateString() === d.toDateString());
+    setSelected(idx >= 0 ? idx : 0);
+  }, [days]);
+
+  useEffect(() => {
     setDateRangeLabel(
       `${start.toLocaleDateString("es-AR", { day: "2-digit", month: "long" })} — ${days[6]!.toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" })}`
     );
   }, [start, days]);
 
-  function hasLog(clientId: string, day: Date) {
-    return logs.some((l) => {
-      const ld = new Date(l.loggedAt);
-      return l.clientId === clientId && ld.toDateString() === day.toDateString();
-    });
-  }
-
-  function getAtt(clientId: string, day: Date) {
-    return att.find((a) => {
-      const ad = new Date(a.date);
-      return a.clientId === clientId && ad.toDateString() === day.toDateString();
-    });
-  }
-
-  function isPast(day: Date) {
-    if (!today) return false;
-    const d = new Date(day);
-    d.setHours(0, 0, 0, 0);
-    return d <= today;
-  }
+  const sameDay = (iso: string, day: Date) => new Date(iso).toDateString() === day.toDateString();
+  const hasLog = (clientId: string, day: Date) => logs.some((l) => l.clientId === clientId && sameDay(l.loggedAt, day));
+  const getAtt = (clientId: string, day: Date) => att.find((a) => a.clientId === clientId && sameDay(a.date, day));
+  const isPast = (day: Date) => { if (!today) return false; const d = new Date(day); d.setHours(0, 0, 0, 0); return d <= today; };
+  const presentCount = (day: Date) => att.filter((a) => a.present && sameDay(a.date, day)).length;
 
   async function toggleAtt(clientId: string, day: Date) {
     const key = `${clientId}-${day.toDateString()}`;
     setSaving(key);
     const current = getAtt(clientId, day);
     const newPresent = !current?.present;
-
     setAtt((prev) => {
-      const filtered = prev.filter((a) => {
-        const ad = new Date(a.date);
-        return !(a.clientId === clientId && ad.toDateString() === day.toDateString());
-      });
-      if (newPresent) return [...filtered, { clientId, date: day.toISOString(), present: true }];
-      return filtered;
+      const filtered = prev.filter((a) => !(a.clientId === clientId && sameDay(a.date, day)));
+      return newPresent ? [...filtered, { clientId, date: day.toISOString(), present: true }] : filtered;
     });
-
     await fetch("/api/trainer/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -91,37 +73,33 @@ export function WeeklySchedule({ clients, assignments, logs, attendance: initial
     setSaving(null);
   }
 
-  // Summary per client
-  function clientSummary(clientId: string) {
-    const attDays = att.filter((a) => a.clientId === clientId && a.present).length;
-    return { attDays };
-  }
-
-  // Total attendance for the week
+  // Resumen semana (días ya transcurridos)
   const totalPresent = att.filter((a) => a.present).length;
   const totalPossible = clients.length * days.filter((d) => isPast(d)).length;
+  const pct = totalPossible > 0 ? Math.round((totalPresent / totalPossible) * 100) : 0;
+
+  const selDay = days[selected]!;
+  const selPast = isPast(selDay);
+  const selIsToday = today ? selDay.toDateString() === today.toDateString() : false;
+
+  // Alumnos ordenados: presentes primero, luego por nombre
+  const dayClients = [...clients].sort((a, b) => {
+    const pa = (getAtt(a.id, selDay)?.present || hasLog(a.id, selDay)) ? 0 : 1;
+    const pb = (getAtt(b.id, selDay)?.present || hasLog(b.id, selDay)) ? 0 : 1;
+    return pa - pb || a.name.localeCompare(b.name);
+  });
 
   return (
-    <div className="max-w-full">
-      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Semana actual</h1>
-          {dateRangeLabel && (
-            <p className="text-sm mt-1" style={{ color: "var(--text-2)" }}>{dateRangeLabel}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl px-4 py-2 text-center" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
-            <p className="text-xl font-extrabold" style={{ color: "var(--accent)" }}>{totalPresent}</p>
-            <p className="text-xs" style={{ color: "var(--text-3)" }}>asistencias</p>
-          </div>
-          <div className="rounded-xl px-4 py-2 text-center" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
-            <p className="text-xl font-extrabold" style={{ color: "var(--text)" }}>
-              {totalPossible > 0 ? Math.round((totalPresent / totalPossible) * 100) : 0}%
-            </p>
-            <p className="text-xs" style={{ color: "var(--text-3)" }}>cumplimiento</p>
-          </div>
-        </div>
+    <div className="max-w-3xl">
+      {/* Header + resumen semanal */}
+      <div className="mb-5">
+        <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Asistencias</h1>
+        {dateRangeLabel && <p className="text-sm mt-0.5" style={{ color: "var(--text-2)" }}>{dateRangeLabel}</p>}
+      </div>
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <StatMini label="Asistencias" value={String(totalPresent)} color="var(--accent)" />
+        <StatMini label="Cumplimiento" value={`${pct}%`} color="var(--text)" />
+        <StatMini label="Alumnos" value={String(clients.length)} color="var(--text)" />
       </div>
 
       {clients.length === 0 ? (
@@ -129,157 +107,137 @@ export function WeeklySchedule({ clients, assignments, logs, attendance: initial
           <p className="text-sm" style={{ color: "var(--text-3)" }}>No hay alumnos activos todavía.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl" style={{ border: "1px solid var(--border)" }}>
-          <table className="w-full min-w-[600px]" style={{ borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "var(--bg-panel)", borderBottom: "1px solid var(--border)" }}>
-                <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wider w-40" style={{ color: "var(--text-3)" }}>
-                  Alumno
-                </th>
-                <th className="text-center px-2 py-3 text-xs font-bold uppercase tracking-wider w-20" style={{ color: "var(--text-3)" }}>
-                  Plan
-                </th>
-                {days.map((d, i) => {
-                  const isToday = today ? d.toDateString() === today.toDateString() : false;
-                  return (
-                    <th
-                      key={i}
-                      className="text-center px-2 py-3 text-xs font-bold uppercase tracking-wider"
-                      style={{ color: isToday ? "var(--accent)" : "var(--text-3)", minWidth: "52px" }}
-                    >
-                      <div>{DAY_NAMES[i]}</div>
-                      <div className="text-xs font-normal" style={{ color: isToday ? "var(--accent)" : "var(--text-3)" }}>
-                        {d.getDate()}
-                      </div>
-                    </th>
-                  );
-                })}
-                <th className="text-center px-2 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
-                  Sem.
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {clients.map((client, ci) => {
-                const assignment = assignments.find((a) => a.clientId === client.id);
-                const { attDays } = clientSummary(client.id);
+        <>
+          {/* Selector de día */}
+          <div className="rounded-2xl overflow-hidden mb-4" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
+            <div className="grid grid-cols-7">
+              {days.map((d, i) => {
+                const isToday = today ? d.toDateString() === today.toDateString() : false;
+                const isSel = selected === i;
+                const cnt = presentCount(d);
                 return (
-                  <tr
-                    key={client.id}
+                  <button key={i} type="button" onClick={() => setSelected(i)}
+                    className="px-1 py-2.5 text-center cursor-pointer transition-all"
                     style={{
-                      background: ci % 2 === 0 ? "var(--bg)" : "var(--bg-subtle)",
-                      borderBottom: "1px solid var(--border)",
-                    }}
-                  >
-                    {/* Client */}
-                    <td className="px-4 py-3">
-                      <Link href={`/trainer/clients/${client.id}`} className="flex items-center gap-2 group">
-                        <div
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                          style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-                        >
-                          {client.name[0]?.toUpperCase()}
-                        </div>
-                        <span className="text-sm font-semibold truncate max-w-[100px] group-hover:text-lime-400 transition-colors"
-                          style={{ color: "var(--text)" }}>
-                          {client.name.split(" ")[0]}
-                        </span>
-                      </Link>
-                    </td>
-                    {/* Plan */}
-                    <td className="px-2 py-3 text-center">
-                      {assignment?.planName ? (
-                        <span className="text-xs px-2 py-0.5 rounded-md font-semibold"
-                          style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-                          {assignment.daysPerWeek === 5 ? "Pase libre" : `${assignment.daysPerWeek}d/sem`}
-                        </span>
-                      ) : (
-                        <span className="text-xs" style={{ color: "var(--text-3)" }}>—</span>
-                      )}
-                    </td>
-                    {/* Days */}
-                    {days.map((day, di) => {
-                      const key = `${client.id}-${day.toDateString()}`;
-                      const logged = hasLog(client.id, day);
-                      const attRow = getAtt(client.id, day);
-                      const present = attRow?.present ?? false;
-                      const past = isPast(day);
-                      const isToday = today ? day.toDateString() === today.toDateString() : false;
-                      const isSaving = saving === key;
-                      const isHovering = hovering === key;
-                      const canRemove = past && (present || logged);
-
-                      return (
-                        <td key={di} className="px-2 py-3 text-center">
-                          <button
-                            onClick={() => past ? toggleAtt(client.id, day) : undefined}
-                            disabled={!past || isSaving}
-                            onMouseEnter={() => past && setHovering(key)}
-                            onMouseLeave={() => setHovering(null)}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto transition-all"
-                            style={{
-                              cursor: past ? "pointer" : "default",
-                              background: isHovering && canRemove
-                                ? "rgba(239,68,68,0.15)"
-                                : logged ? "var(--accent-soft)"
-                                : present ? "#0f2a1a"
-                                : isToday ? "rgba(196,241,53,0.08)"
-                                : "transparent",
-                              border: isHovering && canRemove
-                                ? "1px solid #ef4444"
-                                : isToday ? "1px solid rgba(196,241,53,0.25)"
-                                : "1px solid transparent",
-                              touchAction: "manipulation",
-                            }}
-                            title={
-                              !past ? "Día futuro"
-                              : present || logged ? "Quitar asistencia"
-                              : "Marcar asistencia"
-                            }
-                          >
-                            {isSaving ? (
-                              <div className="w-3 h-3 rounded-full border border-current animate-spin" style={{ borderTopColor: "transparent", color: "var(--text-3)" }} />
-                            ) : isHovering && canRemove ? (
-                              <X className="h-3.5 w-3.5" style={{ color: "#ef4444" }} />
-                            ) : logged ? (
-                              <CheckCircle2 className="h-4 w-4" style={{ color: "var(--accent)" }} />
-                            ) : present ? (
-                              <UserCheck className="h-4 w-4" style={{ color: "var(--success)" }} />
-                            ) : past ? (
-                              <Minus className="h-3 w-3" style={{ color: "var(--border-strong)" }} />
-                            ) : null}
-                          </button>
-                        </td>
-                      );
-                    })}
-                    {/* Week summary */}
-                    <td className="px-2 py-3 text-center">
-                      <span className="text-sm font-extrabold" style={{ color: attDays > 0 ? "var(--accent)" : "var(--text-3)" }}>
-                        {attDays}
-                      </span>
-                    </td>
-                  </tr>
+                      borderRight: i < 6 ? "1px solid var(--border)" : "none",
+                      borderTop: `3px solid ${isSel ? "var(--accent)" : "transparent"}`,
+                      background: isSel ? "var(--accent-soft)" : "transparent",
+                      touchAction: "manipulation",
+                    }}>
+                    <span className="block text-[11px] font-extrabold uppercase tracking-wider"
+                      style={{ color: isSel ? "var(--accent)" : isToday ? "var(--accent)" : "var(--text-3)" }}>
+                      {DAY_NAMES[i]}
+                    </span>
+                    <span className="block text-sm font-bold tabular-nums leading-tight mt-0.5"
+                      style={{ color: isSel ? "var(--text)" : "var(--text-2)" }}>{d.getDate()}</span>
+                    <span className="inline-flex items-center justify-center min-w-4 h-4 mt-1 rounded-full text-[9px] font-extrabold px-1"
+                      style={{ background: cnt > 0 ? (isSel ? "var(--accent)" : "var(--bg-hover)") : "transparent", color: cnt > 0 ? (isSel ? "#000" : "var(--text-3)") : "transparent" }}>
+                      {cnt > 0 ? cnt : ""}
+                    </span>
+                  </button>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 mt-4">
-        {[
-          { icon: <CheckCircle2 className="h-3.5 w-3.5" style={{ color: "var(--accent)" }} />, label: "Registrado por el alumno" },
-          { icon: <UserCheck className="h-3.5 w-3.5" style={{ color: "var(--success)" }} />, label: "Asistencia marcada manualmente" },
-          { icon: <Minus className="h-3 w-3" style={{ color: "var(--text-3)" }} />, label: "Sin registro — click para marcar" },
-          { icon: <X className="h-3 w-3" style={{ color: "#ef4444" }} />, label: "Hover sobre asistencia marcada para quitar" },
-        ].map((item, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            {item.icon}
-            <span className="text-xs" style={{ color: "var(--text-3)" }}>{item.label}</span>
+            </div>
           </div>
-        ))}
-      </div>
+
+          {/* Día seleccionado */}
+          <div className="flex items-center justify-between mb-3 px-1">
+            <button type="button" onClick={() => setSelected((s) => Math.max(0, s - 1))} disabled={selected === 0}
+              className="w-8 h-8 flex items-center justify-center rounded-xl cursor-pointer disabled:opacity-30"
+              style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", color: "var(--text-2)" }}>
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <p className="text-sm font-extrabold capitalize" style={{ color: "var(--text)" }}>
+              {DAY_FULL[selected]} {selDay.getDate()}{selIsToday ? " · Hoy" : ""}
+            </p>
+            <button type="button" onClick={() => setSelected((s) => Math.min(6, s + 1))} disabled={selected === 6}
+              className="w-8 h-8 flex items-center justify-center rounded-xl cursor-pointer disabled:opacity-30"
+              style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", color: "var(--text-2)" }}>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          {!selPast ? (
+            <div className="rounded-2xl p-8 text-center" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+              <p className="text-sm" style={{ color: "var(--text-3)" }}>Día futuro — todavía no se puede marcar asistencia.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {dayClients.map((client) => {
+                const assignment = assignments.find((a) => a.clientId === client.id);
+                const logged = hasLog(client.id, selDay);
+                const present = getAtt(client.id, selDay)?.present ?? false;
+                const key = `${client.id}-${selDay.toDateString()}`;
+                const isSaving = saving === key;
+                const attended = present || logged;
+                return (
+                  <div key={client.id} className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl"
+                    style={{ background: "var(--bg-panel)", border: `1px solid ${attended ? "var(--accent)" : "var(--border)"}` }}>
+                    <Link href={`/trainer/clients/${client.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                        style={{ background: attended ? "var(--accent-soft)" : "var(--bg-hover)", color: attended ? "var(--accent)" : "var(--text-3)" }}>
+                        {client.name[0]?.toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>{client.name}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {assignment?.planName ? (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+                              {assignment.daysPerWeek === 5 ? "Pase libre" : `${assignment.daysPerWeek}d/sem`}
+                            </span>
+                          ) : <span className="text-[10px]" style={{ color: "var(--text-3)" }}>Sin plan</span>}
+                          {logged && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold" style={{ color: "var(--accent)" }}>
+                              <Check className="h-2.5 w-2.5" /> Se registró
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* Toggle presente */}
+                    <button type="button" onClick={() => toggleAtt(client.id, selDay)} disabled={isSaving}
+                      className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-extrabold cursor-pointer shrink-0 transition-all"
+                      style={present
+                        ? { background: "var(--success)", color: "#03130a" }
+                        : { background: "var(--bg-hover)", color: "var(--text-3)", border: "1px solid var(--border-strong)" }}
+                      title={present ? "Quitar asistencia" : "Marcar presente"}>
+                      {isSaving
+                        ? <div className="w-3.5 h-3.5 rounded-full border-2 border-current animate-spin" style={{ borderTopColor: "transparent" }} />
+                        : <UserCheck className="h-4 w-4" />}
+                      {present ? "Presente" : "Marcar"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Leyenda */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4">
+            <Legend icon={<UserCheck className="h-3.5 w-3.5" style={{ color: "var(--success)" }} />} label="Presente (marcado por vos)" />
+            <Legend icon={<Check className="h-3.5 w-3.5" style={{ color: "var(--accent)" }} />} label="Se registró (el alumno cargó su rutina)" />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function StatMini({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="rounded-2xl px-3 py-3 text-center" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+      <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color, fontFamily: "'Barlow Condensed', sans-serif" }}>{value}</p>
+      <p className="text-[11px] mt-1 font-medium" style={{ color: "var(--text-3)" }}>{label}</p>
+    </div>
+  );
+}
+
+function Legend({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {icon}
+      <span className="text-xs" style={{ color: "var(--text-3)" }}>{label}</span>
     </div>
   );
 }
