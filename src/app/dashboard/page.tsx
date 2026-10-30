@@ -16,6 +16,12 @@ export default async function DashboardPage() {
   const db = getDb();
   const clientId = session.user.id;
 
+  const [me] = await db
+    .select({ membershipRenewsAt: schema.user.membershipRenewsAt })
+    .from(schema.user)
+    .where(eq(schema.user.id, clientId))
+    .limit(1);
+
   const [assignment] = await db
     .select({
       id: schema.planAssignment.id,
@@ -71,6 +77,7 @@ export default async function DashboardPage() {
           sessionsThisMonth={logsThisMonth.length}
           totalSessions={allLogs.length}
           streak={streak}
+          membershipRenewsAt={me?.membershipRenewsAt ? new Date(me.membershipRenewsAt).toISOString() : null}
         />
       </main>
     </div>

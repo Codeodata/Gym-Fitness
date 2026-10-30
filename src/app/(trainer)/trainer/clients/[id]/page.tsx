@@ -4,6 +4,7 @@ import { getDb, schema } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { MembershipPicker } from "@/components/trainer/membership-picker";
+import { MembershipRenewal } from "@/components/trainer/membership-renewal";
 import { WeeklyScheduleBuilder } from "@/components/trainer/weekly-schedule-builder";
 import { ArrowLeft, Calendar, Mail, Activity } from "lucide-react";
 import Link from "next/link";
@@ -67,6 +68,15 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <MembershipPicker
           clientId={id}
           current={client.membershipType as "2dias" | "3dias" | "pase_libre" | null}
+        />
+      </div>
+
+      {/* Renovación de membresía */}
+      <div className="mb-6">
+        <MembershipRenewal
+          clientId={id}
+          renewsAt={client.membershipRenewsAt ? new Date(client.membershipRenewsAt).toISOString() : null}
+          paidAt={client.membershipPaidAt ? new Date(client.membershipPaidAt).toISOString() : null}
         />
       </div>
 
