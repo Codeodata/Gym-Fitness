@@ -4,7 +4,16 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";
 import { and, count, countDistinct, eq, gte } from "drizzle-orm";
+import { getMembershipStatus } from "@/lib/membership";
 import { ResumenDashboard } from "@/components/trainer/resumen-dashboard";
+
+function mondayOf(d: Date): Date {
+  const x = new Date(d);
+  const day = x.getDay();
+  x.setDate(x.getDate() + (day === 0 ? -6 : 1 - day));
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
 
 export default async function ResumenPage() {
   await connection();
@@ -14,9 +23,15 @@ export default async function ResumenPage() {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
-  const twoWeeksAgo = new Date(now);
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 13);
-  twoWeeksAgo.setHours(0, 0, 0, 0);
+
+  // Últimas 8 semanas (lunes a lunes); weeks[7] = semana actual
+  const thisMonday = mondayOf(now);
+  const weeks = Array.from({ length: 8 }, (_, i) => {
+    const ws = new Date(thisMonday);
+    ws.setDate(thisMonday.getDate() - (7 - i) * 7);
+    return ws;
+  });
+  const eightWeeksAgo = weeks[0]!;
 
   const isClient = eq(schema.user.role, "client");
 
@@ -29,11 +44,13 @@ export default async function ResumenPage() {
     sessionsWeekR,
     totalSlotsR,
     membershipRows,
+    renewalRows,
     categoryRows,
     topPlansRows,
     slotRows,
     enrollmentRows,
-    activityRows,
+    attendanceRows,
+    workoutRows,
   ] = await Promise.all([
     db.select({ value: count() }).from(schema.user).where(and(isClient, eq(schema.user.active, true), eq(schema.user.approved, true))),
     db.select({ value: count() }).from(schema.user).where(and(isClient, eq(schema.user.approved, false))),
@@ -43,6 +60,7 @@ export default async function ResumenPage() {
     db.select({ value: count() }).from(schema.workoutLog).where(gte(schema.workoutLog.loggedAt, weekAgo)),
     db.select({ value: count() }).from(schema.classSlot),
     db.select({ membership: schema.user.membershipType, value: count() }).from(schema.user).where(isClient).groupBy(schema.user.membershipType),
+    db.select({ renewsAt: schema.user.membershipRenewsAt }).from(schema.user).where(and(isClient, eq(schema.user.active, true), eq(schema.user.approved, true))),
     db.select({ category: schema.plan.category, value: count() }).from(schema.plan).groupBy(schema.plan.category),
     db
       .select({
@@ -55,19 +73,30 @@ export default async function ResumenPage() {
       .innerJoin(schema.planDay, eq(schema.clientDayBlock.planDayId, schema.planDay.id))
       .innerJoin(schema.plan, eq(schema.planDay.planId, schema.plan.id))
       .groupBy(schema.planDay.planId, schema.plan.name, schema.plan.category),
-    db.select({ dayOfWeek: schema.classSlot.dayOfWeek, type: schema.classSlot.type }).from(schema.classSlot),
+    db.select({ dayOfWeek: schema.classSlot.dayOfWeek, type: schema.classSlot.type, maxCapacity: schema.classSlot.maxCapacity }).from(schema.classSlot),
     db
       .select({ dayOfWeek: schema.classSlot.dayOfWeek })
       .from(schema.slotEnrollment)
       .innerJoin(schema.classSlot, eq(schema.slotEnrollment.slotId, schema.classSlot.id)),
-    db.select({ loggedAt: schema.workoutLog.loggedAt }).from(schema.workoutLog).where(gte(schema.workoutLog.loggedAt, twoWeeksAgo)),
+    db.select({ date: schema.attendance.date }).from(schema.attendance).where(gte(schema.attendance.date, eightWeeksAgo)),
+    db.select({ loggedAt: schema.workoutLog.loggedAt }).from(schema.workoutLog).where(gte(schema.workoutLog.loggedAt, eightWeeksAgo)),
   ]);
 
-  // Membresías
+  // Membresías por tipo
   const memBuckets = { "2dias": 0, "3dias": 0, pase_libre: 0, sin_plan: 0 };
   for (const r of membershipRows) {
     const k = (r.membership ?? "sin_plan") as keyof typeof memBuckets;
     memBuckets[k] = (memBuckets[k] ?? 0) + Number(r.value);
+  }
+
+  // Estado de renovación de membresías
+  const renewal = { overdue: 0, soon: 0, ok: 0, none: 0 };
+  for (const r of renewalRows) {
+    const s = getMembershipStatus(r.renewsAt, now).state;
+    if (s === "overdue") renewal.overdue++;
+    else if (s === "due" || s === "soon") renewal.soon++;
+    else if (s === "ok") renewal.ok++;
+    else renewal.none++;
   }
 
   // Rutinas por categoría
@@ -83,26 +112,27 @@ export default async function ResumenPage() {
     .sort((a, b) => b.students - a.students)
     .slice(0, 5);
 
-  // Ocupación por día (Lun–Vie)
-  const occupancy = [1, 2, 3, 4, 5].map((dow) => ({
-    dow,
-    slots: slotRows.filter((s) => s.dayOfWeek === dow).length,
-    enrolled: enrollmentRows.filter((e) => e.dayOfWeek === dow).length,
-  }));
+  // Ocupación por día (Lun–Vie) con capacidad
+  const occupancy = [1, 2, 3, 4, 5].map((dow) => {
+    const slots = slotRows.filter((s) => s.dayOfWeek === dow);
+    const capacity = slots.reduce((a, s) => a + (s.maxCapacity ?? 0), 0);
+    const enrolled = enrollmentRows.filter((e) => e.dayOfWeek === dow).length;
+    return { dow, slots: slots.length, enrolled, capacity, pct: capacity > 0 ? Math.round((enrolled / capacity) * 100) : 0 };
+  });
+  const totalCapacity = slotRows.reduce((a, s) => a + (s.maxCapacity ?? 0), 0);
+  const totalEnrolled = enrollmentRows.length;
+  const occupancyPct = totalCapacity > 0 ? Math.round((totalEnrolled / totalCapacity) * 100) : 0;
 
-  // Actividad (sesiones registradas, últimos 14 días)
-  const dayCounts = new Map<string, number>();
-  for (const r of activityRows) {
-    const key = new Date(r.loggedAt).toISOString().slice(0, 10);
-    dayCounts.set(key, (dayCounts.get(key) ?? 0) + 1);
-  }
-  const activity: { label: string; count: number }[] = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    activity.push({ label: `${d.getDate()}`, count: dayCounts.get(key) ?? 0 });
-  }
+  // Seguimiento — últimas 8 semanas, dos series separadas
+  const tracking = weeks.map((ws) => {
+    const we = new Date(ws);
+    we.setDate(ws.getDate() + 7);
+    const asistencias = attendanceRows.filter((r) => r.date >= ws && r.date < we).length;
+    const entrenamientos = workoutRows.filter((r) => r.loggedAt >= ws && r.loggedAt < we).length;
+    return { label: `${ws.getDate()}/${ws.getMonth() + 1}`, asistencias, entrenamientos };
+  });
+  const attendanceThisMonth = attendanceRows.filter((r) => r.date >= startOfMonth).length;
+  const workoutsThisMonth = workoutRows.filter((r) => r.loggedAt >= startOfMonth).length;
 
   return (
     <ResumenDashboard
@@ -117,12 +147,15 @@ export default async function ResumenPage() {
           sessionsThisWeek: Number(sessionsWeekR[0]?.value ?? 0),
           totalSlots: Number(totalSlotsR[0]?.value ?? 0),
           totalEnrollments: enrollmentRows.length,
+          occupancyPct,
         },
         memberships: memBuckets,
+        renewal,
         categories: catBuckets,
         topPlans,
         occupancy,
-        activity,
+        tracking,
+        trackingTotals: { asistencias: attendanceThisMonth, entrenamientos: workoutsThisMonth },
       }}
     />
   );
