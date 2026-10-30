@@ -1,13 +1,21 @@
 export const instant = false;
 import { connection } from "next/server";
 import { getDb, schema } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { MembershipPicker } from "@/components/trainer/membership-picker";
 import { MembershipRenewal } from "@/components/trainer/membership-renewal";
+import { ClientHistory } from "@/components/trainer/client-history";
 import { WeeklyScheduleBuilder } from "@/components/trainer/weekly-schedule-builder";
 import { ArrowLeft, Calendar, Mail, Activity } from "lucide-react";
 import Link from "next/link";
+
+function mondayOf(d: Date): Date {
+  const x = new Date(d);
+  x.setDate(x.getDate() + (x.getDay() === 0 ? -6 : 1 - x.getDay()));
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
@@ -24,6 +32,28 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     .select({ id: schema.workoutLog.id })
     .from(schema.workoutLog)
     .where(eq(schema.workoutLog.clientId, id));
+
+  // Historial — asistencias marcadas (todas) y entrenamientos registrados (8 semanas)
+  const now = new Date();
+  const thisMonday = mondayOf(now);
+  const weekStarts = Array.from({ length: 8 }, (_, i) => {
+    const ws = new Date(thisMonday);
+    ws.setDate(thisMonday.getDate() - (7 - i) * 7);
+    return ws;
+  });
+  const [attRows, workoutRows] = await Promise.all([
+    db.select({ date: schema.attendance.date }).from(schema.attendance).where(eq(schema.attendance.clientId, id)),
+    db.select({ loggedAt: schema.workoutLog.loggedAt }).from(schema.workoutLog)
+      .where(and(eq(schema.workoutLog.clientId, id), gte(schema.workoutLog.loggedAt, weekStarts[0]!))),
+  ]);
+  const historyWeeks = weekStarts.map((ws) => {
+    const we = new Date(ws); we.setDate(ws.getDate() + 7);
+    return {
+      label: `${ws.getDate()}/${ws.getMonth() + 1}`,
+      asistencias: attRows.filter((r) => r.date >= ws && r.date < we).length,
+      entrenamientos: workoutRows.filter((r) => r.loggedAt >= ws && r.loggedAt < we).length,
+    };
+  });
 
   return (
     <div className="max-w-3xl">
@@ -77,6 +107,15 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           clientId={id}
           renewsAt={client.membershipRenewsAt ? new Date(client.membershipRenewsAt).toISOString() : null}
           paidAt={client.membershipPaidAt ? new Date(client.membershipPaidAt).toISOString() : null}
+        />
+      </div>
+
+      {/* Historial */}
+      <div className="mb-6">
+        <ClientHistory
+          attendanceTotal={attRows.length}
+          workoutTotal={sessionCount.length}
+          weeks={historyWeeks}
         />
       </div>
 
