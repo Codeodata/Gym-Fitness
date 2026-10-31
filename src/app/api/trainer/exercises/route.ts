@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";
 import { z } from "zod";
@@ -30,5 +31,6 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid", details: parsed.error }, { status: 400 });
 
   const [created] = await getDb().insert(schema.exercise).values(parsed.data).returning();
+  revalidateTag("exercises", { expire: 0 });
   return NextResponse.json(created, { status: 201 });
 }

@@ -1,7 +1,6 @@
 export const instant = false;
 import { connection } from "next/server";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 import { getDb, schema } from "@/lib/db";
 import { and, count, countDistinct, eq, gte } from "drizzle-orm";
 import { getMembershipStatus } from "@/lib/membership";
@@ -17,7 +16,7 @@ function mondayOf(d: Date): Date {
 
 export default async function ResumenPage() {
   await connection();
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   const db = getDb();
 
   const now = new Date();

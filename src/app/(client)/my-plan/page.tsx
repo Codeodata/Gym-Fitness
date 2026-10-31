@@ -1,12 +1,11 @@
 export const instant = false;
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 import { getDb, schema } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { PlanView } from "@/components/client/plan-view";
 
 export default async function MyPlanPage() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   const db = getDb();
 
   const [assignment] = await db

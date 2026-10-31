@@ -22,17 +22,6 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const db = getDb();
 
-  const client = await db.query.user?.findFirst?.({
-    where: eq(schema.user.id, id),
-  }) ?? (await db.select().from(schema.user).where(eq(schema.user.id, id)).limit(1))[0];
-
-  if (!client || client.role !== "client") notFound();
-
-  const sessionCount = await db
-    .select({ id: schema.workoutLog.id })
-    .from(schema.workoutLog)
-    .where(eq(schema.workoutLog.clientId, id));
-
   // Historial — asistencias marcadas (todas) y entrenamientos registrados (8 semanas)
   const now = new Date();
   const thisMonday = mondayOf(now);
@@ -41,11 +30,18 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     ws.setDate(thisMonday.getDate() - (7 - i) * 7);
     return ws;
   });
-  const [attRows, workoutRows] = await Promise.all([
+
+  const [clientResult, sessionCountResult, attRows, workoutRows] = await Promise.all([
+    db.select().from(schema.user).where(eq(schema.user.id, id)).limit(1),
+    db.select({ id: schema.workoutLog.id }).from(schema.workoutLog).where(eq(schema.workoutLog.clientId, id)),
     db.select({ date: schema.attendance.date }).from(schema.attendance).where(eq(schema.attendance.clientId, id)),
     db.select({ loggedAt: schema.workoutLog.loggedAt }).from(schema.workoutLog)
       .where(and(eq(schema.workoutLog.clientId, id), gte(schema.workoutLog.loggedAt, weekStarts[0]!))),
   ]);
+
+  const client = clientResult[0];
+  if (!client || client.role !== "client") notFound();
+  const sessionCount = sessionCountResult;
   const historyWeeks = weekStarts.map((ws) => {
     const we = new Date(ws); we.setDate(ws.getDate() + 7);
     return {

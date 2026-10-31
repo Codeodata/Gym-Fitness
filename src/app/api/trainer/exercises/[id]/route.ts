@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";
 import { eq } from "drizzle-orm";
@@ -27,6 +28,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     .where(eq(schema.exercise.id, id))
     .returning();
 
+  revalidateTag("exercises", { expire: 0 });
   return NextResponse.json(updated);
 }
 
@@ -36,5 +38,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
   const { id } = await params;
   await getDb().delete(schema.exercise).where(eq(schema.exercise.id, id));
+  revalidateTag("exercises", { expire: 0 });
   return NextResponse.json({ ok: true });
 }

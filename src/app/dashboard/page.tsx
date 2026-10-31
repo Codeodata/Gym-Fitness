@@ -1,14 +1,13 @@
 export const instant = false;
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 import { redirect } from "next/navigation";
 import { getDb, schema } from "@/lib/db";
-import { eq, and, gte, desc } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
 import { ClientDashboard } from "@/components/client/client-dashboard";
 import { ClientNav } from "@/components/client/client-nav";
 
 export default async function DashboardPage() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) redirect("/login");
   if (session.user.role === "trainer") redirect("/trainer/dashboard");
   if (!session.user.approved) redirect("/my-plan");
@@ -16,48 +15,49 @@ export default async function DashboardPage() {
   const db = getDb();
   const clientId = session.user.id;
 
-  const [me] = await db
-    .select({ membershipRenewsAt: schema.user.membershipRenewsAt })
-    .from(schema.user)
-    .where(eq(schema.user.id, clientId))
-    .limit(1);
+  const [meRow, assignmentRow, totalRow, recentLogs] = await Promise.all([
+    db
+      .select({ membershipRenewsAt: schema.user.membershipRenewsAt })
+      .from(schema.user)
+      .where(eq(schema.user.id, clientId))
+      .limit(1),
+    db
+      .select({
+        id: schema.planAssignment.id,
+        trainerNotes: schema.planAssignment.trainerNotes,
+        planName: schema.plan.name,
+        daysPerWeek: schema.plan.daysPerWeek,
+        category: schema.plan.category,
+      })
+      .from(schema.planAssignment)
+      .innerJoin(schema.plan, eq(schema.planAssignment.planId, schema.plan.id))
+      .where(and(
+        eq(schema.planAssignment.clientId, clientId),
+        eq(schema.planAssignment.active, true),
+      ))
+      .limit(1),
+    db
+      .select({ total: count() })
+      .from(schema.workoutLog)
+      .where(eq(schema.workoutLog.clientId, clientId)),
+    db
+      .select({ id: schema.workoutLog.id, loggedAt: schema.workoutLog.loggedAt })
+      .from(schema.workoutLog)
+      .where(eq(schema.workoutLog.clientId, clientId))
+      .orderBy(desc(schema.workoutLog.loggedAt))
+      .limit(400),
+  ]);
 
-  const [assignment] = await db
-    .select({
-      id: schema.planAssignment.id,
-      trainerNotes: schema.planAssignment.trainerNotes,
-      planName: schema.plan.name,
-      daysPerWeek: schema.plan.daysPerWeek,
-      category: schema.plan.category,
-    })
-    .from(schema.planAssignment)
-    .innerJoin(schema.plan, eq(schema.planAssignment.planId, schema.plan.id))
-    .where(and(
-      eq(schema.planAssignment.clientId, clientId),
-      eq(schema.planAssignment.active, true),
-    ))
-    .limit(1);
+  const [me] = meRow;
+  const [assignment] = assignmentRow;
+  const totalSessions = Number(totalRow[0]?.total ?? 0);
 
-  // Sessions this month
   const monthStart = new Date();
   monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
-  const logsThisMonth = await db
-    .select({ id: schema.workoutLog.id })
-    .from(schema.workoutLog)
-    .where(and(
-      eq(schema.workoutLog.clientId, clientId),
-      gte(schema.workoutLog.loggedAt, monthStart),
-    ));
+  const sessionsThisMonth = recentLogs.filter((l) => l.loggedAt >= monthStart).length;
 
-  // Total sessions
-  const allLogs = await db
-    .select({ id: schema.workoutLog.id, loggedAt: schema.workoutLog.loggedAt })
-    .from(schema.workoutLog)
-    .where(eq(schema.workoutLog.clientId, clientId))
-    .orderBy(desc(schema.workoutLog.loggedAt));
-
-  // Streak
-  const uniqueDays = [...new Set(allLogs.map((l) => new Date(l.loggedAt).toDateString()))];
+  // Streak (recentLogs is ordered desc, limited to 400 — enough for any realistic streak)
+  const uniqueDays = [...new Set(recentLogs.map((l) => new Date(l.loggedAt).toDateString()))];
   let streak = 0;
   const checkDate = new Date(); checkDate.setHours(0, 0, 0, 0);
   for (const dayStr of uniqueDays) {
@@ -74,8 +74,8 @@ export default async function DashboardPage() {
         <ClientDashboard
           userName={session.user.name}
           plan={assignment ?? null}
-          sessionsThisMonth={logsThisMonth.length}
-          totalSessions={allLogs.length}
+          sessionsThisMonth={sessionsThisMonth}
+          totalSessions={totalSessions}
           streak={streak}
           membershipRenewsAt={me?.membershipRenewsAt ? new Date(me.membershipRenewsAt).toISOString() : null}
         />

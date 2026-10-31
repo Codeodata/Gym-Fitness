@@ -1,13 +1,12 @@
 export const instant = false;
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 import { TrainerNav } from "@/components/trainer/trainer-nav";
 import { getDb, schema } from "@/lib/db";
 import { and, count, eq } from "drizzle-orm";
 
 export default async function TrainerLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) redirect("/login");
   if (session.user.role !== "trainer") redirect("/dashboard");
 

@@ -1,11 +1,10 @@
 export const instant = false;
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 import { ClientNav } from "@/components/client/client-nav";
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) redirect("/login");
   if (session.user.role === "trainer") redirect("/trainer/dashboard");
   if (!session.user.approved) {
