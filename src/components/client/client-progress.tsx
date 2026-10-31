@@ -110,71 +110,173 @@ function WeightChart({ weights }: { weights: Weight[] }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Activity heatmap
+   Weekly bars — sesiones por semana (últimas 12)
+───────────────────────────────────────────────────────────────── */
+function WeeklyBars({ logs }: { logs: Log[] }) {
+  const now = new Date();
+  // Monday of current week
+  const curMonday = new Date(now);
+  curMonday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  curMonday.setHours(0, 0, 0, 0);
+
+  const weeks = Array.from({ length: 12 }, (_, i) => {
+    const wStart = new Date(curMonday);
+    wStart.setDate(curMonday.getDate() - (11 - i) * 7);
+    const wEnd = new Date(wStart);
+    wEnd.setDate(wStart.getDate() + 7);
+    const count = logs.filter((l) => {
+      const d = new Date(l.loggedAt);
+      return d >= wStart && d < wEnd;
+    }).length;
+    const isCurrent = i === 11;
+    const label = isCurrent
+      ? "Actual"
+      : wStart.toLocaleDateString("es-AR", { day: "2-digit", month: "short" });
+    return { count, isCurrent, label };
+  });
+
+  const max = Math.max(...weeks.map((w) => w.count), 1);
+
+  return (
+    <div>
+      <div className="flex items-end gap-1 h-12">
+        {weeks.map((w, i) => (
+          <div key={i} title={`${w.count} sesión${w.count !== 1 ? "es" : ""}`}
+            className="flex-1 flex items-end"
+            style={{ height: "100%" }}>
+            <div
+              className="w-full rounded-t-md"
+              style={{
+                height: `${w.count > 0 ? Math.max((w.count / max) * 48, 4) : 2}px`,
+                background: w.isCurrent
+                  ? "var(--accent)"
+                  : w.count > 0
+                    ? "var(--text-3)"
+                    : "var(--bg-hover)",
+                opacity: w.count > 0 ? (w.isCurrent ? 1 : 0.45) : 0.2,
+                transition: "height 500ms cubic-bezier(.4,0,.2,1)",
+              }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-1 mt-1.5">
+        {weeks.map((w, i) => (
+          <div key={i} className="flex-1 text-center">
+            {(i === 0 || i === 5 || i === 11) && (
+              <span className="text-[8px]"
+                style={{ color: w.isCurrent ? "var(--accent)" : "var(--text-3)", fontWeight: w.isCurrent ? 800 : 500 }}>
+                {w.label}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Activity heatmap — 12 semanas, intensidad por cantidad
 ───────────────────────────────────────────────────────────────── */
 function Heatmap({ logs }: { logs: Log[] }) {
-  const now      = new Date();
-  const logDates = new Set(logs.map((l) => new Date(l.loggedAt).toDateString()));
+  const [hovered, setHovered] = useState<string | null>(null);
+  const now = new Date();
 
+  // Count sessions per day
+  const dayCounts = new Map<string, number>();
+  for (const l of logs) {
+    const k = new Date(l.loggedAt).toDateString();
+    dayCounts.set(k, (dayCounts.get(k) ?? 0) + 1);
+  }
+
+  // Build 12 weeks, Monday-first
   const weeks: Date[][] = [];
-  const cur = new Date(now);
-  cur.setDate(now.getDate() - 27);
-  cur.setDate(cur.getDate() - cur.getDay() + 1);
+  const start = new Date(now);
+  start.setDate(now.getDate() - ((now.getDay() + 6) % 7) - 11 * 7);
+  const cur = new Date(start);
   while (cur <= now) {
     const week: Date[] = [];
     for (let d = 0; d < 7; d++) { week.push(new Date(cur)); cur.setDate(cur.getDate() + 1); }
     weeks.push(week);
   }
 
+  // Month labels
   const monthLabels: { label: string; wi: number }[] = [];
   weeks.forEach((week, wi) => {
     const m = week[0]!.toLocaleDateString("es-AR", { month: "short" });
     if (!monthLabels.length || monthLabels.at(-1)!.label !== m) monthLabels.push({ label: m, wi });
   });
 
+  function cellBg(count: number, future: boolean) {
+    if (future || count === 0) return "var(--bg-hover)";
+    if (count === 1) return "var(--accent)";
+    return "var(--c-lime)";
+  }
+  function cellOpacity(count: number, future: boolean) {
+    if (future) return 0.12;
+    if (count === 0) return 0.35;
+    return 1;
+  }
+
+  const GAP = 3;
+
   return (
-    <div className="overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-      <div style={{ display: "inline-flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", gap: "3px", paddingLeft: "18px", marginBottom: "3px", height: "12px" }}>
-          {weeks.map((_, wi) => {
-            const ml = monthLabels.find((m) => m.wi === wi);
-            return (
-              <div key={wi} style={{ width: "13px", fontSize: "8px", color: "var(--text-3)", fontWeight: 700, whiteSpace: "nowrap" }}>
-                {ml?.label ?? ""}
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ display: "flex" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginRight: "3px" }}>
-            {["L","M","X","J","V","S","D"].map((d, i) => (
-              <div key={i} style={{ width: "14px", height: "13px", fontSize: "8px", color: "var(--text-3)", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "2px" }}>
-                {i % 2 === 0 ? d : ""}
-              </div>
-            ))}
-          </div>
-          {weeks.map((week, wi) => (
-            <div key={wi} style={{ display: "flex", flexDirection: "column", gap: "3px", marginRight: "3px" }}>
-              {week.map((day, di) => {
-                const has    = logDates.has(day.toDateString());
-                const future = day > now;
-                const today  = day.toDateString() === now.toDateString();
-                return (
-                  <div key={di}
-                    title={`${day.toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}${has ? " · Entrenamiento" : ""}`}
-                    style={{
-                      width: "13px", height: "13px", borderRadius: "3px",
-                      background: has ? "var(--accent)" : "var(--bg-hover)",
-                      opacity: future ? 0.15 : has ? 1 : 0.45,
-                      outline: today ? "2px solid var(--accent)" : "none",
-                      outlineOffset: "1px",
-                    }}
-                  />
-                );
-              })}
+    <div style={{ width: "100%" }}>
+      {/* Month labels */}
+      <div style={{ display: "flex", gap: `${GAP}px`, paddingLeft: "22px", marginBottom: "4px" }}>
+        {weeks.map((_, wi) => {
+          const ml = monthLabels.find((m) => m.wi === wi);
+          return (
+            <div key={wi} style={{ flex: 1, fontSize: "9px", color: "var(--text-3)", fontWeight: 700, overflow: "hidden" }}>
+              {ml?.label ?? ""}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ display: "flex", gap: `${GAP}px`, width: "100%" }}>
+        {/* Day labels */}
+        <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px`, flexShrink: 0, width: "18px" }}>
+          {["L","M","X","J","V","S","D"].map((d, i) => (
+            <div key={i} style={{ aspectRatio: "1", fontSize: "9px", color: "var(--text-3)", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "2px", fontWeight: 700 }}>
+              {i % 2 === 0 ? d : ""}
             </div>
           ))}
         </div>
+
+        {/* Weeks — flex: 1 distribuye el ancho, celdas capped a 18px */}
+        {weeks.map((week, wi) => (
+          <div key={wi} style={{ flex: 1, display: "flex", flexDirection: "column", gap: `${GAP}px`, alignItems: "center" }}>
+            {week.map((day, di) => {
+              const k      = day.toDateString();
+              const count  = dayCounts.get(k) ?? 0;
+              const future = day > now;
+              const isToday = k === now.toDateString();
+              const isHov  = hovered === k && !future;
+              return (
+                <div
+                  key={di}
+                  title={`${day.toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "short" })}${count > 0 ? ` · ${count} sesión${count !== 1 ? "es" : ""}` : ""}`}
+                  onMouseEnter={() => !future && setHovered(k)}
+                  onMouseLeave={() => setHovered(null)}
+                  style={{
+                    width: "min(18px, 100%)",
+                    aspectRatio: "1",
+                    borderRadius: "5px",
+                    background: cellBg(count, future),
+                    opacity: cellOpacity(count, future),
+                    outline: isToday ? "2px solid var(--accent)" : "none",
+                    outlineOffset: "1px",
+                    transform: isHov ? "scale(1.3)" : "scale(1)",
+                    transition: "transform 100ms ease",
+                    cursor: count > 0 ? "pointer" : "default",
+                  }}
+                />
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -299,7 +401,7 @@ function ExerciseChart({ entries, color }: { entries: ExEntry[]; color: string }
               {new Date(pts[hovered]!.date).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
             </span>
             {pts[hovered]!.isPR && (
-              <span className="block font-extrabold mt-0.5" style={{ color: "var(--c-yellow)" }}>★ PR</span>
+              <span className="block font-extrabold mt-0.5" style={{ color: "var(--c-yellow)" }}>★ Mejor marca</span>
             )}
           </div>
         )}
@@ -477,7 +579,7 @@ function ExerciseSection({ entries }: { entries: ExEntry[] }) {
                   {isPR && (
                     <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md"
                       style={{ background: "var(--c-yellow-bg)", color: "var(--c-yellow)" }}>
-                      PR
+                      ★ Mejor marca
                     </span>
                   )}
                 </div>
@@ -690,6 +792,91 @@ function WeightHistory({ weights }: { weights: Weight[] }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   Muscle group frequency bars
+───────────────────────────────────────────────────────────────── */
+function MuscleGroupFrequency({ entries }: { entries: ExEntry[] }) {
+  const byGroup = new Map<string, Set<string>>();
+  for (const e of entries) {
+    const dateKey = new Date(e.loggedAt).toDateString();
+    if (!byGroup.has(e.muscleGroup)) byGroup.set(e.muscleGroup, new Set());
+    byGroup.get(e.muscleGroup)!.add(dateKey);
+  }
+  if (byGroup.size === 0) return null;
+
+  const sorted = [...byGroup.entries()]
+    .map(([g, dates]) => ({ group: g, count: dates.size }))
+    .sort((a, b) => b.count - a.count);
+  const max = sorted[0]?.count ?? 1;
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
+        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
+          Grupos musculares
+        </p>
+        <span className="text-xs font-bold px-2 py-0.5 rounded-lg"
+          style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+          sesiones
+        </span>
+      </div>
+      <div className="px-5 py-4 flex flex-col gap-3.5">
+        {sorted.map(({ group, count }) => {
+          const col = MG_COLOR[group] ?? "var(--accent)";
+          const pct = (count / max) * 100;
+          return (
+            <div key={group}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-semibold" style={{ color: col }}>
+                  {MG_LABEL[group] ?? group}
+                </span>
+                <span className="text-sm font-extrabold tabular-nums"
+                  style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  {count}
+                </span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-hover)" }}>
+                <div
+                  className="h-2 rounded-full"
+                  style={{ width: `${pct}%`, background: col, transition: "width 600ms cubic-bezier(.4,0,.2,1)" }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Weekly goal ring (SVG circle progress)
+───────────────────────────────────────────────────────────────── */
+function WeekRing({ done, goal }: { done: number; goal: number }) {
+  const r = 26;
+  const circ = 2 * Math.PI * r;
+  const pct = Math.min(done / Math.max(goal, 1), 1);
+  const dash = pct * circ;
+  return (
+    <svg width="68" height="68" viewBox="0 0 68 68" className="shrink-0">
+      <circle cx="34" cy="34" r={r} fill="none" stroke="var(--bg-hover)" strokeWidth="5" />
+      <circle
+        cx="34" cy="34" r={r} fill="none"
+        stroke={done >= goal ? "var(--success)" : "var(--accent)"}
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeDasharray={`${dash} ${circ}`}
+        transform="rotate(-90 34 34)"
+        style={{ transition: "stroke-dasharray 600ms cubic-bezier(.4,0,.2,1)" }}
+      />
+      <text x="34" y="34" textAnchor="middle" dominantBaseline="central"
+        style={{ fill: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif", fontSize: "17px", fontWeight: 800 }}>
+        {done}
+      </text>
+    </svg>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
    Main export
 ───────────────────────────────────────────────────────────────── */
 type Tab = "entreno" | "peso";
@@ -718,6 +905,20 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
+  // This week's sessions
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7)); // Monday
+  weekStart.setHours(0, 0, 0, 0);
+  const thisWeek = logs.filter((l) => new Date(l.loggedAt) >= weekStart).length;
+  // Estimate weekly goal from exercise frequency (last 4 weeks)
+  const weeklyGoal = Math.max(
+    2,
+    Math.round(logs.filter((l) => {
+      const d = new Date(l.loggedAt);
+      return (now.getTime() - d.getTime()) < 28 * 86400000;
+    }).length / 4)
+  );
+
   const curW  = weights[0] ? parseFloat(weights[0].weightKg) : null;
   const prevW = weights[1] ? parseFloat(weights[1].weightKg) : null;
   const wDiff = curW && prevW ? curW - prevW : null;
@@ -732,6 +933,7 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
 
       {/* Stats strip */}
       <div className="grid grid-cols-3 gap-3">
+        {/* Streak */}
         <div className="rounded-2xl p-4 flex flex-col gap-1.5"
           style={{ background: streak > 0 ? "var(--accent-soft)" : "var(--bg-panel)", border: `1px solid ${streak > 0 ? "var(--accent)" : "var(--border)"}` }}>
           <Flame className="h-4 w-4" style={{ color: streak > 0 ? "var(--accent)" : "var(--text-3)" }} />
@@ -743,6 +945,7 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
             {streak === 1 ? "día seguido" : "días seguidos"}
           </p>
         </div>
+        {/* This month */}
         <div className="rounded-2xl p-4 flex flex-col gap-1.5"
           style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
           <Activity className="h-4 w-4" style={{ color: "var(--c-blue)" }} />
@@ -752,6 +955,7 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
           </p>
           <p className="text-[11px] font-semibold leading-tight" style={{ color: "var(--text-3)" }}>este mes</p>
         </div>
+        {/* Total */}
         <div className="rounded-2xl p-4 flex flex-col gap-1.5"
           style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
           <Trophy className="h-4 w-4" style={{ color: "var(--c-yellow)" }} />
@@ -760,6 +964,49 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
             {logs.length}
           </p>
           <p className="text-[11px] font-semibold leading-tight" style={{ color: "var(--text-3)" }}>totales</p>
+        </div>
+      </div>
+
+      {/* Weekly goal ring card */}
+      <div className="rounded-2xl px-5 py-4 flex items-center gap-5"
+        style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+        <WeekRing done={thisWeek} goal={weeklyGoal} />
+        <div className="flex-1 min-w-0">
+          <p className="font-extrabold text-base leading-none"
+            style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+            {thisWeek} de {weeklyGoal} esta semana
+          </p>
+          <p className="text-xs mt-1" style={{ color: "var(--text-3)" }}>
+            {thisWeek >= weeklyGoal
+              ? "¡Meta semanal cumplida!"
+              : `${weeklyGoal - thisWeek} sesión${weeklyGoal - thisWeek !== 1 ? "es" : ""} para completar la semana`}
+          </p>
+          {/* Mini dots: Mon–Sat */}
+          <div className="flex gap-1.5 mt-2">
+            {Array.from({ length: 6 }, (_, i) => {
+              const dayStart = new Date(weekStart);
+              dayStart.setDate(weekStart.getDate() + i);
+              const dayEnd = new Date(dayStart); dayEnd.setDate(dayStart.getDate() + 1);
+              const trained = logs.some((l) => {
+                const d = new Date(l.loggedAt);
+                return d >= dayStart && d < dayEnd;
+              });
+              const isToday = dayStart.toDateString() === now.toDateString();
+              return (
+                <div key={i} className="w-5 h-5 rounded-md flex items-center justify-center"
+                  style={{
+                    background: trained ? "var(--accent)" : "var(--bg-hover)",
+                    outline: isToday ? "2px solid var(--accent)" : "none",
+                    outlineOffset: "1px",
+                  }}>
+                  <span className="text-[8px] font-extrabold"
+                    style={{ color: trained ? "var(--accent-fg)" : "var(--text-3)" }}>
+                    {["L","M","X","J","V","S"][i]}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -788,31 +1035,50 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
         <div className="flex flex-col gap-5">
           <ExerciseSection entries={exerciseLogs} />
 
-          <div className="rounded-2xl p-5 flex flex-col gap-4" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between">
+          <MuscleGroupFrequency entries={exerciseLogs} />
+
+          <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+            {/* Header */}
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
               <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
-                Actividad · últimas 4 semanas
+                Actividad
               </p>
               <span className="text-xs font-bold px-2 py-0.5 rounded-lg"
                 style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-                {logs.filter((l) => {
-                  const d = new Date(l.loggedAt);
-                  const ws = new Date(); ws.setDate(ws.getDate() - ws.getDay() + 1); ws.setHours(0,0,0,0);
-                  return d >= ws;
-                }).length} esta semana
+                {thisWeek} esta semana
               </span>
             </div>
-            <Heatmap logs={logs} />
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "var(--bg-hover)", opacity: 0.45 }} />
-                <span className="text-xs" style={{ color: "var(--text-3)" }}>Sin entreno</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "var(--accent)" }} />
-                <span className="text-xs" style={{ color: "var(--text-3)" }}>Entrenamiento</span>
+
+            {/* Weekly bars — tendencia 12 semanas */}
+            <div className="px-5 pt-4 pb-3" style={{ borderBottom: "1px solid var(--border)" }}>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider mb-3" style={{ color: "var(--text-3)" }}>
+                Sesiones por semana
+              </p>
+              <WeeklyBars logs={logs} />
+            </div>
+
+            {/* Heatmap */}
+            <div className="px-5 pt-4 pb-3" style={{ borderBottom: "1px solid var(--border)" }}>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider mb-3" style={{ color: "var(--text-3)" }}>
+                Últimas 12 semanas
+              </p>
+              <Heatmap logs={logs} />
+              <div className="flex items-center gap-4 mt-3">
+                <div className="flex items-center gap-1.5">
+                  <div style={{ width: "11px", height: "11px", borderRadius: "3px", background: "var(--bg-hover)", opacity: 0.35 }} />
+                  <span className="text-[10px]" style={{ color: "var(--text-3)" }}>Sin entreno</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div style={{ width: "11px", height: "11px", borderRadius: "3px", background: "var(--accent)" }} />
+                  <span className="text-[10px]" style={{ color: "var(--text-3)" }}>1 sesión</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div style={{ width: "11px", height: "11px", borderRadius: "3px", background: "var(--c-lime)" }} />
+                  <span className="text-[10px]" style={{ color: "var(--text-3)" }}>2+ sesiones</span>
+                </div>
               </div>
             </div>
+
           </div>
 
           <SessionTimeline logs={sorted} />

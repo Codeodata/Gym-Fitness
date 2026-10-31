@@ -5,6 +5,7 @@ import { Bell, Clock, CalendarCheck, ClipboardList, Flame, Activity, Trophy, Arr
 import Link from "next/link";
 import { MonthCalendar } from "@/components/trainer/monthly-calendar";
 import { TodayRoutine } from "@/components/client/today-routine";
+import { WeekPlan } from "@/components/client/week-plan";
 import { getMembershipStatus } from "@/lib/membership";
 
 type Slot = { id: string; dayOfWeek: number; startTime: string; type: string };
@@ -83,7 +84,6 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
 
   const mySlots = allSlots.filter((s) => mySlotIds.has(s.id));
   const todaySlots = mySlots.filter((s) => s.dayOfWeek === today);
-  const weekSlots = mySlots.filter((s) => s.dayOfWeek >= 1 && s.dayOfWeek <= 5);
   const unreadCount = notifications.filter((n) => !n.readAt).length;
   const catStyle = plan ? (CAT_STYLE[plan.category] ?? CAT_STYLE.musculación!) : null;
 
@@ -275,52 +275,18 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
             )}
           </section>
 
-          {/* Esta semana con colores por día */}
-          {!loading && weekSlots.length > 0 && (
+          {/* Esta semana — plan completo */}
+          {plan && (
             <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
                   Esta semana
                 </h2>
-                <Link href="/my-schedule" className="text-xs font-bold" style={{ color: "var(--accent)" }}>
-                  Gestionar →
+                <Link href="/my-plan" className="text-xs font-bold" style={{ color: "var(--accent)" }}>
+                  Ver en detalle →
                 </Link>
               </div>
-              <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
-                <div className="grid grid-cols-5">
-                  {[1, 2, 3, 4, 5].map((dow, i) => {
-                    const dc = DAY_COLOR[dow]!;
-                    const daySlots = weekSlots.filter((s) => s.dayOfWeek === dow);
-                    const isToday = dow === today;
-                    return (
-                      <div key={dow} className="flex flex-col"
-                        style={{ borderRight: i < 4 ? "1px solid var(--border)" : "none" }}>
-                        <div className="px-2 py-3 text-center" style={{
-                          borderBottom: "1px solid var(--border)",
-                          borderTop: `2px solid ${isToday ? dc.text : "transparent"}`,
-                          background: isToday ? dc.bg : "transparent",
-                        }}>
-                          <p className="text-sm font-extrabold"
-                            style={{ color: isToday ? dc.text : "var(--text-3)", fontFamily: "'Barlow Condensed', sans-serif" }}>
-                            {DAY_SHORT[dow]}
-                          </p>
-                        </div>
-                        <div className="px-2 py-3 flex flex-col gap-1.5 items-center">
-                          {daySlots.length === 0
-                            ? <span className="text-[10px]" style={{ color: "var(--text-3)" }}>—</span>
-                            : daySlots.map((s) => (
-                              <div key={s.id} className="w-full text-center px-1 py-1 rounded-lg text-[10px] font-bold"
-                                style={{ background: TYPE_BG[s.type] ?? "var(--accent-soft)", color: TYPE_COLOR[s.type] ?? "var(--accent)" }}>
-                                {s.startTime}
-                              </div>
-                            ))
-                          }
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <WeekPlan />
             </section>
           )}
 

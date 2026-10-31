@@ -36,7 +36,7 @@ const MUSCLE_LABELS: Record<string, string> = {
 };
 
 function BlockCard({ block }: { block: Block }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const warmup = block.exercises.filter((e) => e.section === "warmup");
   const main = block.exercises.filter((e) => e.section === "main");
   const color = CAT_COLOR[block.planCategory] ?? "var(--accent)";
