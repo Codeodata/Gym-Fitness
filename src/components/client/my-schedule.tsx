@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Check, Calendar, Zap, Infinity, Lock, Clock } from "lucide-react";
 
-type Slot = { id: string; dayOfWeek: number; startTime: string; type: string };
+type Slot = { id: string; dayOfWeek: number; startTime: string; type: string; maxCapacity: number | null };
 type MembershipType = "2dias" | "3dias" | "pase_libre" | null;
 
 const DAYS = [
@@ -36,6 +36,7 @@ const TYPE_BG_ACTIVE: Record<string, string> = {
 export function MySchedule() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [mySlotIds, setMySlotIds] = useState<Set<string>>(new Set());
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [membership, setMembership] = useState<MembershipType>(null);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
@@ -44,9 +45,10 @@ export function MySchedule() {
   useEffect(() => {
     fetch("/api/client/class-slots")
       .then((r) => r.json())
-      .then((d: { slots: Slot[]; mySlotIds: string[]; membershipType: MembershipType }) => {
+      .then((d: { slots: Slot[]; mySlotIds: string[]; membershipType: MembershipType; enrolledCounts?: Record<string, number> }) => {
         setSlots(d.slots);
         setMySlotIds(new Set(d.mySlotIds));
+        setCounts(d.enrolledCounts ?? {});
         setMembership(d.membershipType);
         setLoading(false);
       });
@@ -68,6 +70,7 @@ export function MySchedule() {
         isEnrolled ? next.delete(slotId) : next.add(slotId);
         return next;
       });
+      setCounts((prev) => ({ ...prev, [slotId]: Math.max(0, (prev[slotId] ?? 0) + (isEnrolled ? -1 : 1)) }));
     } else {
       const data = await res.json() as { message?: string };
       setError(data.message ?? "No se pudo actualizar.");
@@ -230,9 +233,13 @@ export function MySchedule() {
                     ) : (
                       daySlots.map((slot) => {
                         const isEnrolled = mySlotIds.has(slot.id);
+                        const enrolled = counts[slot.id] ?? 0;
+                        const cap = slot.maxCapacity;
+                        const spotsLeft = cap !== null ? Math.max(0, cap - enrolled) : null;
                         const dayAlreadyTaken = !isEnrolled && !isPaseLibre && enrolledDays.has(slot.dayOfWeek);
                         const overLimit = !isEnrolled && limit !== null && mySlotIds.size >= limit;
-                        const canEnroll = isEnrolled || (!dayAlreadyTaken && !overLimit);
+                        const isFull = !isEnrolled && spotsLeft !== null && spotsLeft <= 0;
+                        const canEnroll = isEnrolled || (!dayAlreadyTaken && !overLimit && !isFull);
                         const isLoading = toggling === slot.id;
                         const typeAccent = TYPE_ACCENT[slot.type] ?? "var(--accent)";
                         const bg = isEnrolled ? (TYPE_BG_ACTIVE[slot.type] ?? "var(--accent-soft)") : "var(--bg-panel)";
@@ -244,8 +251,8 @@ export function MySchedule() {
                             key={slot.id}
                             onClick={() => canEnroll ? toggleSlot(slot.id) : undefined}
                             disabled={!canEnroll || isLoading}
-                            title={dayAlreadyTaken ? "Ya tenés un turno este día." : undefined}
-                            className="w-full flex flex-col items-center gap-2 px-2 py-3 rounded-xl"
+                            title={isFull ? "Turno lleno." : dayAlreadyTaken ? "Ya tenés un turno este día." : undefined}
+                            className="w-full flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl"
                             style={{
                               background: bg,
                               border: `1.5px solid ${isEnrolled ? typeAccent : "var(--border)"}`,
@@ -277,6 +284,11 @@ export function MySchedule() {
                                   : <span className="text-sm font-bold leading-none" style={{ color: "var(--text-3)" }}>+</span>
                               }
                             </div>
+                            {/* Estado / lugares libres */}
+                            <span className="text-[9px] font-bold leading-none text-center"
+                              style={{ color: isEnrolled ? typeAccent : isFull ? "#ef4444" : spotsLeft !== null && spotsLeft <= 2 ? "var(--warning)" : "var(--text-3)" }}>
+                              {isEnrolled ? "Reservado" : isFull ? "Lleno" : spotsLeft !== null ? `${spotsLeft} libre${spotsLeft !== 1 ? "s" : ""}` : "Reservar"}
+                            </span>
                           </button>
                         );
                       })

@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import {
   ClipboardList, TrendingUp, LogOut,
-  Clock, LayoutDashboard, Sun, Moon, Menu, X,
+  Clock, LayoutDashboard, Sun, Moon, Menu, X, Video,
 } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
@@ -13,8 +13,9 @@ import Link from "next/link";
 const NAV = [
   { href: "/dashboard",   label: "Inicio",   icon: LayoutDashboard, image: "/trainer-bg.jpg" },
   { href: "/my-schedule", label: "Turnos",   icon: Clock,           image: "/turnos.jpg" },
-  { href: "/my-plan",     label: "Mi Plan",  icon: ClipboardList,   image: "/miplan.jpg" },
-  { href: "/progress",    label: "Progreso", icon: TrendingUp,      image: "/progreso.jpg" },
+  { href: "/my-plan",     label: "Mi Plan",    icon: ClipboardList, image: "/asistencia2.jpg" },
+  { href: "/biblioteca",  label: "Biblioteca", icon: Video,         image: "/ejercicios.jpeg" },
+  { href: "/progress",    label: "Progreso",   icon: TrendingUp,    image: "/progreso.jpg" },
 ];
 
 export function ClientNav({ userName }: { userName: string }) {

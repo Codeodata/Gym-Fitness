@@ -118,7 +118,7 @@ function Heatmap({ logs }: { logs: Log[] }) {
 
   const weeks: Date[][] = [];
   const cur = new Date(now);
-  cur.setDate(now.getDate() - 83);
+  cur.setDate(now.getDate() - 27);
   cur.setDate(cur.getDate() - cur.getDay() + 1);
   while (cur <= now) {
     const week: Date[] = [];
@@ -692,12 +692,12 @@ function WeightHistory({ weights }: { weights: Weight[] }) {
 /* ─────────────────────────────────────────────────────────────────
    Main export
 ───────────────────────────────────────────────────────────────── */
-type Tab = "ejercicios" | "actividad" | "sesiones" | "peso";
+type Tab = "entreno" | "peso";
 
 export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
   const router  = useRouter();
   const refresh = useCallback(() => router.refresh(), [router]);
-  const [tab, setTab] = useState<Tab>("ejercicios");
+  const [tab, setTab] = useState<Tab>("entreno");
 
   const sorted = [...logs].sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
 
@@ -723,10 +723,8 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
   const wDiff = curW && prevW ? curW - prevW : null;
 
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "ejercicios", label: "Ejercicios", icon: <Dumbbell className="h-4 w-4" /> },
-    { id: "actividad",  label: "Actividad",  icon: <Activity className="h-4 w-4" /> },
-    { id: "sesiones",   label: "Sesiones",   icon: <Trophy className="h-4 w-4" /> },
-    { id: "peso",       label: "Peso",       icon: <Scale className="h-4 w-4" /> },
+    { id: "entreno", label: "Entrenamiento", icon: <Dumbbell className="h-4 w-4" /> },
+    { id: "peso",    label: "Peso corporal", icon: <Scale className="h-4 w-4" /> },
   ];
 
   return (
@@ -771,7 +769,7 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all"
+            className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-2.5 rounded-xl font-bold cursor-pointer transition-all"
             style={{
               background: tab === t.id ? "var(--bg-raised)" : "transparent",
               color: tab === t.id ? "var(--text)" : "var(--text-3)",
@@ -780,47 +778,45 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
             }}
           >
             {t.icon}
-            <span className="hidden sm:inline">{t.label}</span>
+            <span className="text-[11px] sm:text-sm leading-none">{t.label}</span>
           </button>
         ))}
       </div>
 
       {/* Tab content */}
-      {tab === "ejercicios" && (
-        <ExerciseSection entries={exerciseLogs} />
-      )}
+      {tab === "entreno" && (
+        <div className="flex flex-col gap-5">
+          <ExerciseSection entries={exerciseLogs} />
 
-      {tab === "actividad" && (
-        <div className="rounded-2xl p-5 flex flex-col gap-4" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
-              Últimas 12 semanas
-            </p>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-lg"
-              style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-              {logs.filter((l) => {
-                const d = new Date(l.loggedAt);
-                const ws = new Date(); ws.setDate(ws.getDate() - ws.getDay() + 1); ws.setHours(0,0,0,0);
-                return d >= ws;
-              }).length} esta semana
-            </span>
-          </div>
-          <Heatmap logs={logs} />
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "var(--bg-hover)", opacity: 0.45 }} />
-              <span className="text-xs" style={{ color: "var(--text-3)" }}>Sin entreno</span>
+          <div className="rounded-2xl p-5 flex flex-col gap-4" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
+                Actividad · últimas 4 semanas
+              </p>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-lg"
+                style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+                {logs.filter((l) => {
+                  const d = new Date(l.loggedAt);
+                  const ws = new Date(); ws.setDate(ws.getDate() - ws.getDay() + 1); ws.setHours(0,0,0,0);
+                  return d >= ws;
+                }).length} esta semana
+              </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "var(--accent)" }} />
-              <span className="text-xs" style={{ color: "var(--text-3)" }}>Entrenamiento</span>
+            <Heatmap logs={logs} />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "var(--bg-hover)", opacity: 0.45 }} />
+                <span className="text-xs" style={{ color: "var(--text-3)" }}>Sin entreno</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "var(--accent)" }} />
+                <span className="text-xs" style={{ color: "var(--text-3)" }}>Entrenamiento</span>
+              </div>
             </div>
           </div>
+
+          <SessionTimeline logs={sorted} />
         </div>
-      )}
-
-      {tab === "sesiones" && (
-        <SessionTimeline logs={sorted} />
       )}
 
       {tab === "peso" && (
