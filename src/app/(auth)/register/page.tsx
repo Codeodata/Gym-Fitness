@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [renewsAt, setRenewsAt] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -20,7 +21,12 @@ export default function RegisterPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await signUp.email({ name, email, password });
+      const res = await signUp.email({
+        name,
+        email,
+        password,
+        membershipRenewsAt: renewsAt ? new Date(`${renewsAt}T00:00:00`) : undefined,
+      });
       if (res.error) { setError(res.error.message ?? "Error al registrarte"); return; }
       setDone(true);
     } catch {
@@ -88,6 +94,23 @@ export default function RegisterPage() {
               />
             </div>
           ))}
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium" style={{ color: "var(--text-2)" }}>Fecha de renovación de tu plan</label>
+            <input
+              type="date"
+              value={renewsAt}
+              onChange={(e) => setRenewsAt(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+              style={{ background: "var(--bg-panel)", border: "1px solid var(--border-strong)", color: "var(--text)" }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border-strong)")}
+            />
+            <span className="text-xs" style={{ color: "var(--text-3)" }}>
+              Cuándo vence o renovás tu plan. La profe lo ve en tu ficha.
+            </span>
+          </div>
 
           {error && (
             <p className="text-sm px-3 py-2 rounded-lg" style={{ background: "#2a0a0a", color: "var(--destructive)" }}>

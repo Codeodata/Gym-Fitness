@@ -26,9 +26,12 @@ export const auth = betterAuth({
   },
   user: {
     additionalFields: {
-      role: { type: "string", defaultValue: "client" },
-      approved: { type: "boolean", defaultValue: false },
-      active: { type: "boolean", defaultValue: true },
+      // No settable desde el cliente: el valor lo fija el servidor / el profe.
+      role: { type: "string", defaultValue: "client", input: false },
+      approved: { type: "boolean", defaultValue: false, input: false },
+      active: { type: "boolean", defaultValue: true, input: false },
+      // Fecha de renovación del plan: la carga el alumno al registrarse.
+      membershipRenewsAt: { type: "date", required: false, input: true },
     },
   },
 });
