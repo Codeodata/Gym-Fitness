@@ -17,7 +17,7 @@ const NAV = [
   { href: "/trainer/schedule",  label: "Asistencias", icon: CalendarDays,    image: "/asistencia2.jpg",  bgPos: "center" },
   { href: "/trainer/routines",  label: "Rutinas",     icon: ClipboardList,   image: "/trainer-bg2.jpg",  bgPos: "center" },
   { href: "/trainer/exercises", label: "Ejercicios",  icon: Library,         image: "/ejercicios.jpeg",  bgPos: "center" },
-  { href: "/trainer/stretches", label: "Estiramientos", icon: PersonStanding, image: "/progreso.jpg",    bgPos: "center" },
+  { href: "/trainer/stretches", label: "Estiramientos", icon: PersonStanding, image: "/estiramientos.png", bgPos: "35% center" },
   { href: "/trainer/resumen",   label: "Resumen",     icon: BarChart3,       image: "/progreso.jpg",     bgPos: "center" },
 ];
 
