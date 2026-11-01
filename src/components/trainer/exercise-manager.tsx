@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
-import { Plus, Pencil, Check, X, ImageIcon, Trash2, Video } from "lucide-react";
+import { Plus, Pencil, Check, X, ImageIcon, Trash2, Video, PlayCircle } from "lucide-react";
 import type { Exercise } from "@/lib/db/schema";
+import { VideoModal } from "@/components/client/video-modal";
 
 const MUSCLE_GROUPS = [
   { value: "chest", label: "Pecho" },
@@ -30,6 +31,7 @@ export function ExerciseManager({ initialExercises, isStretchMode = false }: { i
   const [newEx, setNewEx] = useState({ name: "", muscleGroup: "chest" as string, description: "", imageUrl: "", videoUrl: "", difficulty: "intermediate" });
   const [filterGroup, setFilterGroup] = useState("all");
   const [saving, setSaving] = useState(false);
+  const [activeVideo, setActiveVideo] = useState<{ url: string; title: string; poster?: string } | null>(null);
 
   const title = isStretchMode ? "Estiramientos" : "Biblioteca de ejercicios";
   const newLabel = isStretchMode ? "Nuevo estiramiento" : "Nuevo ejercicio";
@@ -260,6 +262,17 @@ export function ExerciseManager({ initialExercises, isStretchMode = false }: { i
                     {ex.description && (
                       <p className="text-xs mt-2 line-clamp-2" style={{ color: "var(--text-3)" }}>{ex.description}</p>
                     )}
+                    {ex.videoUrl ? (
+                      <button
+                        onClick={() => setActiveVideo({ url: ex.videoUrl!, title: ex.name, poster: ex.imageUrl ?? undefined })}
+                        className="mt-3 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold w-full"
+                        style={{ background: "var(--accent-soft)", color: "var(--accent)", cursor: "pointer", touchAction: "manipulation" }}
+                      >
+                        <PlayCircle className="h-4 w-4" /> Ver video
+                      </button>
+                    ) : (
+                      <p className="mt-3 text-center py-2 text-xs" style={{ color: "var(--text-3)" }}>Sin video</p>
+                    )}
                     <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: "1px solid var(--border)" }}>
                       <button
                         onClick={() => { setEditId(ex.id); setEditData({}); }}
@@ -289,6 +302,8 @@ export function ExerciseManager({ initialExercises, isStretchMode = false }: { i
           <p className="text-sm">Sin {plural} en esta categoría.</p>
         </div>
       )}
+
+      <VideoModal video={activeVideo} onClose={() => setActiveVideo(null)} />
     </div>
   );
 }
