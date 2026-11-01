@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import {
   Users, ClipboardList, LayoutDashboard,
-  LogOut, CalendarDays, Library, Clock, Menu, X, Sun, Moon, BarChart3,
+  LogOut, CalendarDays, Library, Clock, Menu, X, Sun, Moon, BarChart3, PersonStanding,
 } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ const NAV = [
   { href: "/trainer/schedule",  label: "Asistencias", icon: CalendarDays,    image: "/asistencia2.jpg",  bgPos: "center" },
   { href: "/trainer/routines",  label: "Rutinas",     icon: ClipboardList,   image: "/trainer-bg2.jpg",  bgPos: "center" },
   { href: "/trainer/exercises", label: "Ejercicios",  icon: Library,         image: "/ejercicios.jpeg",  bgPos: "center" },
+  { href: "/trainer/stretches", label: "Estiramientos", icon: PersonStanding, image: "/progreso.jpg",    bgPos: "center" },
   { href: "/trainer/resumen",   label: "Resumen",     icon: BarChart3,       image: "/progreso.jpg",     bgPos: "center" },
 ];
 

@@ -15,6 +15,13 @@
       "when": 1793367368827,
       "tag": "0001_exotic_aqueduct",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793494831752,
+      "tag": "0002_uneven_ken_ellis",
+      "breakpoints": true
     }
   ]
 }

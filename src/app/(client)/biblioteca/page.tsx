@@ -1,5 +1,6 @@
 export const instant = false;
 import { unstable_cache } from "next/cache";
+import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { ExerciseLibrary } from "@/components/client/exercise-library";
 
@@ -16,6 +17,7 @@ const getExercises = unstable_cache(
         videoUrl: schema.exercise.videoUrl,
       })
       .from(schema.exercise)
+      .where(eq(schema.exercise.isStretch, false))
       .orderBy(schema.exercise.muscleGroup, schema.exercise.name),
   ["exercises-library"],
   { tags: ["exercises"] },

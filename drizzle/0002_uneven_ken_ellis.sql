@@ -1,0 +1,1 @@
+ALTER TABLE "exercise" ADD COLUMN "is_stretch" boolean DEFAULT false NOT NULL;

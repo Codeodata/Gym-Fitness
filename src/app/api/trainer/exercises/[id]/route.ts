@@ -11,7 +11,9 @@ const Body = z.object({
   description: z.string().nullable().optional(),
   muscleGroup: z.enum(["chest","back","shoulders","arms","legs","core","cardio","full_body"]).optional(),
   imageUrl: z.string().url().nullable().optional(),
+  videoUrl: z.string().url().nullable().optional(),
   difficulty: z.enum(["beginner","intermediate","advanced"]).optional(),
+  isStretch: z.boolean().optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Plus, Pencil, Check, X, ImageIcon, Trash2 } from "lucide-react";
+import { Plus, Pencil, Check, X, ImageIcon, Trash2, Video } from "lucide-react";
 import type { Exercise } from "@/lib/db/schema";
 
 const MUSCLE_GROUPS = [
@@ -22,36 +22,46 @@ const DIFFICULTIES = [
 
 type ExerciseRow = Exercise & { difficulty?: string | null };
 
-export function ExerciseManager({ initialExercises }: { initialExercises: ExerciseRow[] }) {
+export function ExerciseManager({ initialExercises, isStretchMode = false }: { initialExercises: ExerciseRow[]; isStretchMode?: boolean }) {
   const [exercises, setExercises] = useState<ExerciseRow[]>(initialExercises);
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<ExerciseRow>>({});
   const [showNew, setShowNew] = useState(false);
-  const [newEx, setNewEx] = useState({ name: "", muscleGroup: "chest" as string, description: "", imageUrl: "", difficulty: "intermediate" });
+  const [newEx, setNewEx] = useState({ name: "", muscleGroup: "chest" as string, description: "", imageUrl: "", videoUrl: "", difficulty: "intermediate" });
   const [filterGroup, setFilterGroup] = useState("all");
   const [saving, setSaving] = useState(false);
+
+  const title = isStretchMode ? "Estiramientos" : "Biblioteca de ejercicios";
+  const newLabel = isStretchMode ? "Nuevo estiramiento" : "Nuevo ejercicio";
+  const singular = isStretchMode ? "estiramiento" : "ejercicio";
+  const plural = isStretchMode ? "estiramientos" : "ejercicios";
 
   const filtered = filterGroup === "all" ? exercises : exercises.filter((e) => e.muscleGroup === filterGroup);
 
   async function saveEdit(id: string) {
     setSaving(true);
+    const patch: Record<string, unknown> = { ...editData };
+    if ("imageUrl" in patch) patch.imageUrl = patch.imageUrl || null;
+    if ("videoUrl" in patch) patch.videoUrl = patch.videoUrl || null;
     const res = await fetch(`/api/trainer/exercises/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...editData,
-        imageUrl: editData.imageUrl || null,
-      }),
+      body: JSON.stringify(patch),
     });
     const updated = await res.json() as ExerciseRow;
-    setExercises((prev) => prev.map((e) => e.id === id ? { ...e, ...updated } : e));
+    // Si cambió de categoría (estiramiento ↔ ejercicio), sale de esta lista.
+    setExercises((prev) =>
+      updated.isStretch === isStretchMode
+        ? prev.map((e) => e.id === id ? { ...e, ...updated } : e)
+        : prev.filter((e) => e.id !== id),
+    );
     setEditId(null);
     setEditData({});
     setSaving(false);
   }
 
   async function deleteEx(id: string) {
-    if (!confirm("¿Eliminar ejercicio? Los planes que lo usen pueden quedar inconsistentes.")) return;
+    if (!confirm(`¿Eliminar ${singular}? Los planes que lo usen pueden quedar inconsistentes.`)) return;
     await fetch(`/api/trainer/exercises/${id}`, { method: "DELETE" });
     setExercises((prev) => prev.filter((e) => e.id !== id));
   }
@@ -62,11 +72,11 @@ export function ExerciseManager({ initialExercises }: { initialExercises: Exerci
     const res = await fetch("/api/trainer/exercises", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...newEx, imageUrl: newEx.imageUrl || null }),
+      body: JSON.stringify({ ...newEx, imageUrl: newEx.imageUrl || null, videoUrl: newEx.videoUrl || null, isStretch: isStretchMode }),
     });
     const created = await res.json() as ExerciseRow;
     setExercises((prev) => [...prev, created]);
-    setNewEx({ name: "", muscleGroup: "chest", description: "", imageUrl: "", difficulty: "intermediate" });
+    setNewEx({ name: "", muscleGroup: "chest", description: "", imageUrl: "", videoUrl: "", difficulty: "intermediate" });
     setShowNew(false);
     setSaving(false);
   }
@@ -82,9 +92,9 @@ export function ExerciseManager({ initialExercises }: { initialExercises: Exerci
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Biblioteca de ejercicios</h1>
+          <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>{title}</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-2)" }}>
-            {exercises.length} ejercicios · Editá imágenes, descripciones y dificultad
+            {exercises.length} {plural} · Editá video, descripción y dificultad
           </p>
         </div>
         <button
@@ -92,7 +102,7 @@ export function ExerciseManager({ initialExercises }: { initialExercises: Exerci
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold btn-accent cursor-pointer"
           style={{ touchAction: "manipulation" }}
         >
-          <Plus className="h-4 w-4" /> Nuevo ejercicio
+          <Plus className="h-4 w-4" /> {newLabel}
         </button>
       </div>
 
@@ -128,9 +138,9 @@ export function ExerciseManager({ initialExercises }: { initialExercises: Exerci
       {/* New exercise form */}
       {showNew && (
         <div className="rounded-2xl p-5 mb-4 flex flex-col gap-3" style={{ background: "var(--bg-panel)", border: "1px solid var(--accent)" }}>
-          <h3 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: "var(--accent)" }}>Nuevo ejercicio</h3>
+          <h3 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: "var(--accent)" }}>{newLabel}</h3>
           <div className="grid sm:grid-cols-2 gap-3">
-            <input placeholder="Nombre del ejercicio *" value={newEx.name} onChange={(e) => setNewEx({ ...newEx, name: e.target.value })} style={inp()} />
+            <input placeholder={`Nombre del ${singular} *`} value={newEx.name} onChange={(e) => setNewEx({ ...newEx, name: e.target.value })} style={inp()} />
             <select value={newEx.muscleGroup} onChange={(e) => setNewEx({ ...newEx, muscleGroup: e.target.value })} style={{ ...inp(), cursor: "pointer" }}>
               {MUSCLE_GROUPS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
             </select>
@@ -138,6 +148,7 @@ export function ExerciseManager({ initialExercises }: { initialExercises: Exerci
               {DIFFICULTIES.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
             </select>
             <input placeholder="URL de imagen (opcional)" value={newEx.imageUrl} onChange={(e) => setNewEx({ ...newEx, imageUrl: e.target.value })} style={inp()} />
+            <input placeholder="URL de video (opcional)" value={newEx.videoUrl} onChange={(e) => setNewEx({ ...newEx, videoUrl: e.target.value })} style={{ ...inp(), gridColumn: "1 / -1" }} />
             <textarea placeholder="Descripción (opcional)" value={newEx.description} onChange={(e) => setNewEx({ ...newEx, description: e.target.value })} rows={2} style={{ ...inp(), resize: "vertical", gridColumn: "1 / -1" }} />
           </div>
           <div className="flex gap-2 justify-end">
@@ -194,6 +205,15 @@ export function ExerciseManager({ initialExercises }: { initialExercises: Exerci
                         style={{ ...inp({ fontSize: "13px", padding: "6px 10px 6px 28px" }) }}
                       />
                     </div>
+                    <div className="relative">
+                      <Video className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: "var(--text-3)" }} />
+                      <input
+                        placeholder="URL de video"
+                        value={editData.videoUrl ?? ex.videoUrl ?? ""}
+                        onChange={(e) => setEditData({ ...editData, videoUrl: e.target.value || null })}
+                        style={{ ...inp({ fontSize: "13px", padding: "6px 10px 6px 28px" }) }}
+                      />
+                    </div>
                     <textarea
                       placeholder="Descripción"
                       value={editData.description ?? ex.description ?? ""}
@@ -201,6 +221,14 @@ export function ExerciseManager({ initialExercises }: { initialExercises: Exerci
                       rows={2}
                       style={{ ...inp({ fontSize: "13px", padding: "6px 10px", resize: "none" }) }}
                     />
+                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer" style={{ color: "var(--text-2)" }}>
+                      <input
+                        type="checkbox"
+                        checked={editData.isStretch ?? ex.isStretch}
+                        onChange={(e) => setEditData({ ...editData, isStretch: e.target.checked })}
+                      />
+                      Es estiramiento
+                    </label>
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={() => { setEditId(null); setEditData({}); }}
@@ -258,7 +286,7 @@ export function ExerciseManager({ initialExercises }: { initialExercises: Exerci
 
       {filtered.length === 0 && (
         <div className="text-center py-16" style={{ color: "var(--text-3)" }}>
-          <p className="text-sm">Sin ejercicios en esta categoría.</p>
+          <p className="text-sm">Sin {plural} en esta categoría.</p>
         </div>
       )}
     </div>

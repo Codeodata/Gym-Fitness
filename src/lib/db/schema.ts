@@ -82,6 +82,7 @@ export const exercise = pgTable("exercise", {
   imageUrl: text("image_url"),
   videoUrl: text("video_url"),
   difficulty: text("difficulty", { enum: ["beginner", "intermediate", "advanced"] }).default("intermediate"),
+  isStretch: boolean("is_stretch").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

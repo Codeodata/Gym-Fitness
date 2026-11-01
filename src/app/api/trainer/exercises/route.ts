@@ -3,15 +3,19 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session || session.user.role !== "trainer") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const exercises = await getDb()
-    .select()
-    .from(schema.exercise)
-    .orderBy(schema.exercise.muscleGroup, schema.exercise.name);
+  const stretchParam = new URL(req.url).searchParams.get("stretch");
+  const db = getDb();
+  const base = db.select().from(schema.exercise);
+  const query = stretchParam === null
+    ? base
+    : base.where(eq(schema.exercise.isStretch, stretchParam === "true"));
+  const exercises = await query.orderBy(schema.exercise.muscleGroup, schema.exercise.name);
   return NextResponse.json(exercises);
 }
 
@@ -20,7 +24,9 @@ const CreateBody = z.object({
   description: z.string().nullable().optional(),
   muscleGroup: z.enum(["chest","back","shoulders","arms","legs","core","cardio","full_body"]),
   imageUrl: z.string().url().nullable().optional(),
+  videoUrl: z.string().url().nullable().optional(),
   difficulty: z.enum(["beginner","intermediate","advanced"]).default("intermediate"),
+  isStretch: z.boolean().optional(),
 });
 
 export async function POST(req: Request) {

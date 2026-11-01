@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import {
   ClipboardList, TrendingUp, LogOut,
-  Clock, LayoutDashboard, Sun, Moon, Menu, X, Video,
+  Clock, LayoutDashboard, Sun, Moon, Menu, X, Video, PersonStanding,
 } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ const NAV = [
   { href: "/my-schedule", label: "Turnos",   icon: Clock,           image: "/turnos.jpg" },
   { href: "/my-plan",     label: "Mi Plan",    icon: ClipboardList, image: "/asistencia2.jpg" },
   { href: "/biblioteca",  label: "Biblioteca", icon: Video,         image: "/ejercicios.jpeg" },
+  { href: "/estiramientos", label: "Estiramientos", icon: PersonStanding, image: "/progreso.jpg" },
   { href: "/progress",    label: "Progreso",   icon: TrendingUp,    image: "/progreso.jpg" },
 ];
 
