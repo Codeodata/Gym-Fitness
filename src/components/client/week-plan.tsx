@@ -23,19 +23,13 @@ type Exercise = {
   sets: number;
   reps: string;
   weightKg: string | null;
-  section: string;
 };
 
-type PlanDay = {
-  id: string;
-  name: string | null;
-  dayNumber: number;
-  dow: number | null;
-  exercises: Exercise[];
-};
+type Block = { id: string; planDayName: string | null; planName: string; exercises: Exercise[] };
+type Day = { dow: number; blocks: Block[]; singles: Exercise[] };
 
 export function WeekPlan() {
-  const [days, setDays] = useState<PlanDay[]>([]);
+  const [days, setDays] = useState<Day[]>([]);
   const [loading, setLoading] = useState(true);
 
   const todayDow = (() => { const d = new Date().getDay(); return d === 0 ? 7 : d; })();
@@ -59,12 +53,15 @@ export function WeekPlan() {
   return (
     <div className="flex flex-col gap-2.5">
       {days.map((day) => {
-        const isToday = day.dow !== null && day.dow === todayDow;
-        const dayTitle = day.name || `Día ${day.dayNumber}`;
-        const muscleGroups = [...new Set(day.exercises.map((e) => e.muscleGroup))];
+        const isToday = day.dow === todayDow;
+        const exercises = [...day.blocks.flatMap((b) => b.exercises), ...day.singles];
+        const muscleGroups = [...new Set(exercises.map((e) => e.muscleGroup))];
+        // Título del día: nombre del primer bloque si hay uno solo, si no el día de la semana
+        const firstBlockName = day.blocks[0]?.planDayName ?? day.blocks[0]?.planName ?? null;
+        const subtitle = day.blocks.length === 1 && firstBlockName ? firstBlockName : null;
 
         return (
-          <div key={day.id} className="rounded-2xl overflow-hidden"
+          <div key={day.dow} className="rounded-2xl overflow-hidden"
             style={{
               border: `1px solid ${isToday ? "var(--accent)" : "var(--border)"}`,
               background: "var(--bg-panel)",
@@ -77,24 +74,19 @@ export function WeekPlan() {
                 background: isToday ? "var(--accent-soft)" : "transparent",
               }}>
 
-              {/* Letter badge */}
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                 style={{ background: isToday ? "var(--accent)" : "var(--bg-hover)" }}>
-                {day.dow !== null
-                  ? <span className="text-sm font-extrabold leading-none"
-                      style={{ color: isToday ? "var(--accent-fg)" : "var(--text-3)", fontFamily: "'Barlow Condensed', sans-serif" }}>
-                      {DOW_LETTER[day.dow]}
-                    </span>
-                  : <Dumbbell className="h-3.5 w-3.5" style={{ color: "var(--text-3)" }} />
-                }
+                <span className="text-sm font-extrabold leading-none"
+                  style={{ color: isToday ? "var(--accent-fg)" : "var(--text-3)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  {DOW_LETTER[day.dow]}
+                </span>
               </div>
 
-              {/* Name + chips */}
               <div className="flex-1 min-w-0">
                 <p className="font-extrabold text-sm leading-tight"
                   style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
-                  {day.dow !== null ? DOW_FULL[day.dow] : dayTitle}
-                  {day.dow !== null && day.name ? <span className="font-normal" style={{ color: "var(--text-3)" }}> · {day.name}</span> : null}
+                  {DOW_FULL[day.dow]}
+                  {subtitle ? <span className="font-normal" style={{ color: "var(--text-3)" }}> · {subtitle}</span> : null}
                 </p>
                 {muscleGroups.length > 0 && (
                   <div className="flex gap-1 mt-1 flex-wrap">
@@ -121,16 +113,13 @@ export function WeekPlan() {
 
             {/* Exercise rows — compact single-line */}
             <div className="px-4 py-2">
-              {day.exercises.map((ex, i) => {
+              {exercises.map((ex, i) => {
                 const col = MG_COLOR[ex.muscleGroup] ?? "var(--accent)";
                 return (
                   <div key={ex.id} className="flex items-center gap-2 py-1.5"
                     style={{ borderTop: i > 0 ? "1px solid var(--border)" : "none" }}>
-                    {/* Colored dot */}
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: col }} />
-                    {/* Exercise name */}
                     <p className="flex-1 text-sm truncate" style={{ color: "var(--text)" }}>{ex.name}</p>
-                    {/* Metrics */}
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs font-extrabold tabular-nums"
                         style={{ color: "var(--text-2)", fontFamily: "'Barlow Condensed', sans-serif" }}>
