@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Flame, Dumbbell, PlayCircle, CalendarDays } from "lucide-react";
+import { Flame, Dumbbell, PlayCircle, CalendarDays, CheckCircle, CalendarCheck } from "lucide-react";
 import { VideoModal, type ActiveVideo } from "./video-modal";
 
 const DAY_NAMES = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
@@ -33,6 +33,7 @@ type Ex = {
 
 type Block = {
   id: string;
+  planDayId: string | null;
   planDayName: string | null;
   planName: string;
   planCategory: string;
@@ -131,6 +132,12 @@ export function MyPlanWeek() {
   const [loading, setLoading] = useState(true);
   const [video, setVideo] = useState<ActiveVideo | null>(null);
 
+  // Registro de sesión
+  const [openLogDow, setOpenLogDow] = useState<number | null>(null);
+  const [weights, setWeights] = useState<Record<string, string>>({}); // planExerciseId → kg
+  const [loggingDow, setLoggingDow] = useState<number | null>(null);
+  const [loggedDows, setLoggedDows] = useState<Set<number>>(new Set());
+
   const jsDay = new Date().getDay();
   const todayDow = jsDay === 0 || jsDay === 6 ? null : jsDay;
 
@@ -140,6 +147,33 @@ export function MyPlanWeek() {
       .then((d) => setDays(d.days ?? []))
       .finally(() => setLoading(false));
   }, []);
+
+  async function logSession(day: Day) {
+    setLoggingDow(day.dow);
+    try {
+      const exercises = day.blocks.flatMap((b) =>
+        b.exercises.map((ex) => ({
+          planExerciseId: ex.id,
+          setsDone: ex.sets,
+          repsDone: ex.reps,
+          weightKg: weights[ex.id]?.trim() || null,
+          notes: null as string | null,
+        }))
+      );
+      const planDayId = day.blocks[0]?.planDayId ?? null;
+      const res = await fetch("/api/client/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planDayId, exercises }),
+      });
+      if (res.ok) {
+        setLoggedDows((prev) => new Set(prev).add(day.dow));
+        setOpenLogDow(null);
+      }
+    } finally {
+      setLoggingDow(null);
+    }
+  }
 
   if (loading) return (
     <div className="rounded-2xl p-6 flex items-center justify-center"
@@ -207,6 +241,65 @@ export function MyPlanWeek() {
                   {day.singles.map((ex) => <ExerciseRow key={ex.id} ex={ex} onPlay={setVideo} />)}
                 </div>
               </div>
+            )}
+
+            {/* Registrar sesión del día */}
+            {loggedDows.has(day.dow) ? (
+              <div className="flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold"
+                style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+                <CheckCircle className="h-4 w-4" /> Sesión registrada
+              </div>
+            ) : openLogDow === day.dow ? (
+              <div className="rounded-2xl p-4 flex flex-col gap-3"
+                style={{ background: "var(--bg-panel)", border: "1px solid var(--accent)" }}>
+                <p className="text-xs font-bold" style={{ color: "var(--text-2)" }}>
+                  Anotá el peso que usaste (opcional) y confirmá la sesión.
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {day.blocks.flatMap((b) => b.exercises).filter((e) => e.section !== "warmup").map((ex) => (
+                    <div key={ex.id} className="flex items-center gap-2">
+                      <p className="flex-1 text-sm truncate" style={{ color: "var(--text)" }}>{ex.name}</p>
+                      <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: "var(--text-3)" }}>
+                        {ex.sets}×{ex.reps}
+                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <input
+                          type="number" inputMode="decimal" min={0} step="0.5"
+                          placeholder="kg"
+                          value={weights[ex.id] ?? ""}
+                          onChange={(e) => setWeights((p) => ({ ...p, [ex.id]: e.target.value }))}
+                          className="w-16 px-2 py-1.5 rounded-lg text-sm text-center font-bold outline-none"
+                          style={{ background: "var(--bg-hover)", border: "1px solid var(--border)", color: "var(--text)" }}
+                        />
+                        <span className="text-xs" style={{ color: "var(--text-3)" }}>kg</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setOpenLogDow(null)}
+                    disabled={loggingDow === day.dow}
+                    className="flex-1 h-10 rounded-xl text-sm font-bold"
+                    style={{ background: "var(--bg-hover)", color: "var(--text-3)", cursor: "pointer" }}>
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => logSession(day)}
+                    disabled={loggingDow === day.dow}
+                    className="flex-1 h-10 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2"
+                    style={{ background: "var(--accent)", color: "var(--accent-fg)", cursor: "pointer" }}>
+                    {loggingDow === day.dow ? "Guardando…" : <><CheckCircle className="h-4 w-4" /> Confirmar sesión</>}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setOpenLogDow(day.dow)}
+                className="flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-extrabold"
+                style={{ background: "var(--accent)", color: "var(--accent-fg)", cursor: "pointer", touchAction: "manipulation" }}>
+                <CalendarCheck className="h-4 w-4" /> Registrar sesión
+              </button>
             )}
           </div>
         );

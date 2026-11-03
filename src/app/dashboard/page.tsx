@@ -2,7 +2,7 @@ export const instant = false;
 import { getSession } from "@/lib/get-session";
 import { redirect } from "next/navigation";
 import { getDb, schema } from "@/lib/db";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, desc, count } from "drizzle-orm";
 import { ClientDashboard } from "@/components/client/client-dashboard";
 import { ClientNav } from "@/components/client/client-nav";
 
@@ -15,27 +15,27 @@ export default async function DashboardPage() {
   const db = getDb();
   const clientId = session.user.id;
 
-  const [meRow, assignmentRow, totalRow, recentLogs] = await Promise.all([
+  const [meRow, routineBlocks, singleDays, totalRow, recentLogs] = await Promise.all([
     db
       .select({ membershipRenewsAt: schema.user.membershipRenewsAt })
       .from(schema.user)
       .where(eq(schema.user.id, clientId))
       .limit(1),
+    // Rutina del alumno = bloques por día (modelo nuevo), con su plan para resumen
     db
       .select({
-        id: schema.planAssignment.id,
-        trainerNotes: schema.planAssignment.trainerNotes,
+        dayOfWeek: schema.clientDayBlock.dayOfWeek,
         planName: schema.plan.name,
-        daysPerWeek: schema.plan.daysPerWeek,
         category: schema.plan.category,
       })
-      .from(schema.planAssignment)
-      .innerJoin(schema.plan, eq(schema.planAssignment.planId, schema.plan.id))
-      .where(and(
-        eq(schema.planAssignment.clientId, clientId),
-        eq(schema.planAssignment.active, true),
-      ))
-      .limit(1),
+      .from(schema.clientDayBlock)
+      .innerJoin(schema.planDay, eq(schema.clientDayBlock.planDayId, schema.planDay.id))
+      .innerJoin(schema.plan, eq(schema.planDay.planId, schema.plan.id))
+      .where(eq(schema.clientDayBlock.clientId, clientId)),
+    db
+      .select({ dayOfWeek: schema.clientDayExercise.dayOfWeek })
+      .from(schema.clientDayExercise)
+      .where(eq(schema.clientDayExercise.clientId, clientId)),
     db
       .select({ total: count() })
       .from(schema.workoutLog)
@@ -49,7 +49,20 @@ export default async function DashboardPage() {
   ]);
 
   const [me] = meRow;
-  const [assignment] = assignmentRow;
+  // Resumen de la rutina a partir del modelo nuevo (client_day_block / client_day_exercise)
+  const trainingDows = new Set<number>([
+    ...routineBlocks.map((b) => b.dayOfWeek),
+    ...singleDays.map((s) => s.dayOfWeek),
+  ]);
+  const planNames = [...new Set(routineBlocks.map((b) => b.planName))];
+  const categories = [...new Set(routineBlocks.map((b) => b.category))];
+  const assignment = trainingDows.size > 0 ? {
+    id: "routine",
+    trainerNotes: null,
+    planName: planNames.length === 1 ? planNames[0]! : "Rutina semanal",
+    daysPerWeek: trainingDows.size,
+    category: categories.length === 1 ? categories[0]! : "musculación",
+  } : null;
   const totalSessions = Number(totalRow[0]?.total ?? 0);
 
   const monthStart = new Date();

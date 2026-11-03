@@ -152,11 +152,11 @@ export const workoutLog = pgTable("workout_log", {
   clientId: text("client_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  // nullable: la rutina del alumno vive en client_day_block (ya no hay plan_assignment).
+  // Una sesión registrada puede no tener un plan_assignment ni un único plan_day.
   assignmentId: uuid("assignment_id")
-    .notNull()
     .references(() => planAssignment.id),
   planDayId: uuid("plan_day_id")
-    .notNull()
     .references(() => planDay.id),
   loggedAt: timestamp("logged_at").notNull().defaultNow(),
   notes: text("notes"),

@@ -81,6 +81,7 @@ export async function GET() {
         .filter((b) => b.dayOfWeek === dow)
         .map((b) => ({
           id: b.id,
+          planDayId: b.planDayId,
           planDayName: b.planDayName,
           planName: b.planName,
           planCategory: b.planCategory,
