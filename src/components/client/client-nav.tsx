@@ -86,9 +86,9 @@ export function ClientNav({ userName }: { userName: string }) {
         {/* Logo */}
         <div className="px-5 py-6 flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center"
-            style={{ background: "#000", boxShadow: "0 0 20px rgba(236,72,153,0.35)" }}
+            style={{ background: "#000", boxShadow: "0 0 20px rgba(244,114,182,0.35)" }}
           >
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" style={{ mixBlendMode: "lighten" }} />
+            <img src="/logo2.png" alt="Logo" className="w-full h-full object-contain" style={{ mixBlendMode: "lighten" }} />
           </div>
           <div className="flex-1 min-w-0">
             <p
@@ -124,8 +124,8 @@ export function ClientNav({ userName }: { userName: string }) {
                   className="nav-item-enter flex items-center gap-3 px-2 py-2 rounded-2xl text-sm"
                   style={{
                     animationDelay: `${i * 55}ms`,
-                    background: active ? "rgba(236,72,153,0.15)" : "transparent",
-                    border: active ? "1px solid rgba(236,72,153,0.3)" : "1px solid transparent",
+                    background: active ? "rgba(244,114,182,0.15)" : "transparent",
+                    border: active ? "1px solid rgba(244,114,182,0.3)" : "1px solid transparent",
                     transition: "background 180ms, border-color 180ms",
                     fontWeight: active ? 700 : 500,
                     color: active ? "#fff" : "rgba(255,255,255,0.55)",
@@ -148,7 +148,7 @@ export function ClientNav({ userName }: { userName: string }) {
                       className={active ? "nav-indicator rounded-full flex items-center justify-center" : "rounded-full flex items-center justify-center"}
                       style={
                         active
-                          ? { width: 44, height: 44, background: "var(--accent)", boxShadow: "0 0 22px rgba(236,72,153,0.55), 0 0 4px rgba(236,72,153,0.8)" }
+                          ? { width: 44, height: 44, background: "var(--accent)", boxShadow: "0 0 22px rgba(244,114,182,0.55), 0 0 4px rgba(244,114,182,0.8)" }
                           : { width: 36, height: 36, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.12)" }
                       }
                     >

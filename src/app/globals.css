@@ -36,8 +36,8 @@
   --border-strong: #2a2a2a;
 
   /* Accent — rosa */
-  --accent: #ec4899;
-  --accent-hover: #f472b6;
+  --accent: #f472b6;
+  --accent-hover: #f9a8d4;
   --accent-soft: #3a0f28;
   --accent-fg: #0a0a0a;
 
@@ -194,8 +194,8 @@ html { caret-color: var(--accent); }
 
 /* ─── Nav animations ──────────────────────────────────────────────────────── */
 @keyframes neon-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px #ec4899, 0 0 18px rgba(236,72,153,0.45), 0 0 40px rgba(236,72,153,0.2); }
-  50%       { opacity: 0.6; box-shadow: 0 0 3px #ec4899, 0 0 8px rgba(236,72,153,0.2); }
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px #f472b6, 0 0 18px rgba(244,114,182,0.45), 0 0 40px rgba(244,114,182,0.2); }
+  50%       { opacity: 0.6; box-shadow: 0 0 3px #f472b6, 0 0 8px rgba(244,114,182,0.2); }
 }
 
 @keyframes indicator-pop {
@@ -220,8 +220,8 @@ html { caret-color: var(--accent); }
 }
 
 @keyframes nav-glow {
-  0%, 100% { box-shadow: 0 0 18px rgba(236,72,153,0.45), 0 0 4px rgba(236,72,153,0.85); }
-  50%      { box-shadow: 0 0 30px rgba(236,72,153,0.7), 0 0 7px rgba(236,72,153,0.95); }
+  0%, 100% { box-shadow: 0 0 18px rgba(244,114,182,0.45), 0 0 4px rgba(244,114,182,0.85); }
+  50%      { box-shadow: 0 0 30px rgba(244,114,182,0.7), 0 0 7px rgba(244,114,182,0.95); }
 }
 
 .nav-active-glow {
@@ -242,10 +242,10 @@ html { caret-color: var(--accent); }
 .btn-accent {
   background: var(--accent);
   color: var(--accent-fg);
-  box-shadow: 0 0 20px rgba(236,72,153,0.2);
+  box-shadow: 0 0 20px rgba(244,114,182,0.2);
   transition: box-shadow 150ms, background 150ms;
 }
-.btn-accent:hover { background: var(--accent-hover); box-shadow: 0 0 28px rgba(236,72,153,0.35); }
+.btn-accent:hover { background: var(--accent-hover); box-shadow: 0 0 28px rgba(244,114,182,0.35); }
 
 /* Stat cards */
 .stat-card {

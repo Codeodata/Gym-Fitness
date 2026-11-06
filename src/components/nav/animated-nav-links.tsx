@@ -44,7 +44,7 @@ export function AnimatedNavLinks({
                         width: 44,
                         height: 44,
                         background: "var(--accent)",
-                        boxShadow: "0 0 22px rgba(236,72,153,0.55), 0 0 4px rgba(236,72,153,0.8)",
+                        boxShadow: "0 0 22px rgba(244,114,182,0.55), 0 0 4px rgba(244,114,182,0.8)",
                       }
                     : {
                         width: 36,
