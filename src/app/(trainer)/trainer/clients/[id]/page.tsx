@@ -121,11 +121,19 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         />
       </div>
 
-      {/* Weekly schedule */}
+      {/* Rutina de la semana (solo lectura — se edita desde Rutinas) */}
+      <div className="mb-3 flex items-center justify-end">
+        <Link href="/trainer/routines"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-bold"
+          style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
+          Editar rutina en Rutinas →
+        </Link>
+      </div>
       <WeeklyScheduleBuilder
         clientId={id}
         clientGender={client.gender as "chica" | "chico" | null}
         clientFrequency={client.membershipType as "2dias" | "3dias" | "pase_libre" | null}
+        readOnly
       />
     </div>
   );

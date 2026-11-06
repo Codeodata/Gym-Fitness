@@ -1,16 +1,60 @@
 export const instant = false;
-import { ClassSchedule } from "@/components/trainer/class-schedule";
+import { connection } from "next/server";
+import { getDb, schema } from "@/lib/db";
+import { eq, and, gte, lt } from "drizzle-orm";
+import { TurnosTabs } from "@/components/trainer/turnos-tabs";
 
-export default function ClassesPage() {
+export default async function ClassesPage() {
+  await connection();
+  const db = getDb();
+
+  // Semana actual (Lun–Dom) para la vista de Asistencias.
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Dom
+  const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() + diffToMon);
+  weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+
+  const clients = await db
+    .select()
+    .from(schema.user)
+    .where(and(eq(schema.user.role, "client"), eq(schema.user.approved, true)));
+
+  const assignments = await db
+    .select({
+      clientId: schema.planAssignment.clientId,
+      planId: schema.planAssignment.planId,
+      planName: schema.plan.name,
+      daysPerWeek: schema.plan.daysPerWeek,
+    })
+    .from(schema.planAssignment)
+    .leftJoin(schema.plan, eq(schema.planAssignment.planId, schema.plan.id))
+    .where(eq(schema.planAssignment.active, true));
+
+  const logs = await db
+    .select({ clientId: schema.workoutLog.clientId, loggedAt: schema.workoutLog.loggedAt })
+    .from(schema.workoutLog)
+    .where(and(gte(schema.workoutLog.loggedAt, weekStart), lt(schema.workoutLog.loggedAt, weekEnd)));
+
+  const attendanceRows = await db
+    .select()
+    .from(schema.attendance)
+    .where(and(gte(schema.attendance.date, weekStart), lt(schema.attendance.date, weekEnd)));
+
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Turnos</h1>
-        <p className="mt-1 text-sm" style={{ color: "var(--text-2)" }}>
-          Asigná alumnos a cada turno semanal — hacé clic en cualquier turno para gestionar
-        </p>
-      </div>
-      <ClassSchedule />
-    </div>
+    <TurnosTabs
+      clients={clients}
+      assignments={assignments}
+      logs={logs.map((l) => ({ clientId: l.clientId, loggedAt: l.loggedAt.toISOString() }))}
+      attendance={attendanceRows.map((a) => ({
+        clientId: a.clientId,
+        date: a.date.toISOString(),
+        present: a.present,
+      }))}
+      weekStart={`${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, "0")}-${String(weekStart.getDate()).padStart(2, "0")}`}
+    />
   );
 }

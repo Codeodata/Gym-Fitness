@@ -62,10 +62,12 @@ export function WeeklyScheduleBuilder({
   clientId,
   clientGender = null,
   clientFrequency = null,
+  readOnly = false,
 }: {
   clientId: string;
   clientGender?: Gender;
   clientFrequency?: Frequency;
+  readOnly?: boolean;
 }) {
   const [dayExercises, setDayExercises] = useState<DayExercise[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -100,6 +102,7 @@ export function WeeklyScheduleBuilder({
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 2400); return () => clearTimeout(t); } }, [toast]);
 
   function openDay(dow: number) {
+    if (readOnly) return;
     setActiveDow(prev => (prev === dow ? null : dow));
     setSelected(new Set());
     setExSearch("");
@@ -198,14 +201,18 @@ export function WeeklyScheduleBuilder({
             Semana del alumno
           </h2>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
-            Tocá un día para agregar ejercicios, o asigná una plantilla como punto de partida.
+            {readOnly
+              ? "Vista de solo lectura. Editá la rutina desde la sección Rutinas."
+              : "Tocá un día para agregar ejercicios, o asigná una plantilla como punto de partida."}
           </p>
         </div>
-        <button type="button" onClick={() => setShowTemplates(v => !v)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shrink-0 cursor-pointer"
-          style={{ background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent)", touchAction: "manipulation" }}>
-          <Sparkles className="h-3.5 w-3.5" /> Asignar plantilla
-        </button>
+        {!readOnly && (
+          <button type="button" onClick={() => setShowTemplates(v => !v)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shrink-0 cursor-pointer"
+            style={{ background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent)", touchAction: "manipulation" }}>
+            <Sparkles className="h-3.5 w-3.5" /> Asignar plantilla
+          </button>
+        )}
       </div>
 
       {/* Panel de plantillas */}
@@ -293,28 +300,35 @@ export function WeeklyScheduleBuilder({
                         {ex.notes && (
                           <p className="text-[9px] italic mt-0.5 leading-tight pr-10" style={{ color: "var(--text-3)" }}>{ex.notes}</p>
                         )}
-                        <div className="absolute top-1.5 right-1.5 flex gap-1">
-                          <button onClick={() => setEditing(ex.id)}
-                            className="w-5 h-5 flex items-center justify-center rounded-lg cursor-pointer"
-                            style={{ background: "var(--bg-panel)", color: "var(--text-3)" }}>
-                            <Pencil className="w-2.5 h-2.5" />
-                          </button>
-                          <button onClick={() => removeExercise(ex.id)}
-                            className="w-5 h-5 flex items-center justify-center rounded-lg cursor-pointer"
-                            style={{ background: "rgba(239,68,68,0.18)", color: "#ef4444" }}>
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
+                        {!readOnly && (
+                          <div className="absolute top-1.5 right-1.5 flex gap-1">
+                            <button onClick={() => setEditing(ex.id)}
+                              className="w-5 h-5 flex items-center justify-center rounded-lg cursor-pointer"
+                              style={{ background: "var(--bg-panel)", color: "var(--text-3)" }}>
+                              <Pencil className="w-2.5 h-2.5" />
+                            </button>
+                            <button onClick={() => removeExercise(ex.id)}
+                              className="w-5 h-5 flex items-center justify-center rounded-lg cursor-pointer"
+                              style={{ background: "rgba(239,68,68,0.18)", color: "#ef4444" }}>
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
                 ))}
 
-                <button onClick={() => openDay(dow)}
-                  className="w-full flex items-center justify-center rounded-xl cursor-pointer mt-auto"
-                  style={{ height: 34, border: `1.5px dashed ${isActive ? da.color : "var(--border)"}`, color: isActive ? da.color : "var(--text-3)" }}>
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
+                {!readOnly && (
+                  <button onClick={() => openDay(dow)}
+                    className="w-full flex items-center justify-center rounded-xl cursor-pointer mt-auto"
+                    style={{ height: 34, border: `1.5px dashed ${isActive ? da.color : "var(--border)"}`, color: isActive ? da.color : "var(--text-3)" }}>
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {readOnly && dayExs.length === 0 && (
+                  <p className="text-[10px] text-center py-2 mt-auto" style={{ color: "var(--text-3)" }}>Descanso</p>
+                )}
               </div>
             </div>
           );
@@ -322,7 +336,7 @@ export function WeeklyScheduleBuilder({
       </div>
 
       {/* Picker multi-selección para el día activo */}
-      {activeDow !== null && (
+      {!readOnly && activeDow !== null && (
         <div className="p-5" style={{ background: "var(--bg)" }}>
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
