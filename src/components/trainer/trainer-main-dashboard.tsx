@@ -12,8 +12,8 @@ type Notification = { id: string; body: string; toId: string | null; sentAt: str
 
 const DAYS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const DAY_SHORT = ["", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-const TYPE_COLOR: Record<string, string> = { musculación: "var(--accent)", funcional: "var(--c-blue)" };
-const TYPE_BG: Record<string, string> = { musculación: "var(--accent-soft)", funcional: "var(--c-blue-bg)" };
+const TYPE_COLOR: Record<string, string> = { musculación: "var(--c-lime)", funcional: "var(--c-blue)" };
+const TYPE_BG: Record<string, string> = { musculación: "var(--c-lime-bg)", funcional: "var(--c-blue-bg)" };
 
 const DAY_COLOR: Record<number, { text: string; bg: string; border: string }> = {
   1: { text: "var(--c-blue)",   bg: "var(--c-blue-bg)",   border: "rgba(96,165,250,0.3)"  },

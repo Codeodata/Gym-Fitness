@@ -23,8 +23,8 @@ type Props = {
 
 const DAYS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const DAY_SHORT = ["", "Lun", "Mar", "Mié", "Jue", "Vie"];
-const TYPE_COLOR: Record<string, string> = { musculación: "var(--accent)", funcional: "var(--c-blue)" };
-const TYPE_BG: Record<string, string> = { musculación: "var(--accent-soft)", funcional: "var(--c-blue-bg)" };
+const TYPE_COLOR: Record<string, string> = { musculación: "var(--c-lime)", funcional: "var(--c-blue)" };
+const TYPE_BG: Record<string, string> = { musculación: "var(--c-lime-bg)", funcional: "var(--c-blue-bg)" };
 
 const DAY_COLOR: Record<number, { text: string; bg: string }> = {
   1: { text: "var(--c-blue)",   bg: "var(--c-blue-bg)"   },

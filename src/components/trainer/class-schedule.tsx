@@ -16,7 +16,7 @@ const DAYS = [
 ];
 
 const TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  musculación: { bg: "var(--accent-soft)", text: "var(--accent)", border: "var(--accent)" },
+  musculación: { bg: "var(--c-lime-bg)", text: "var(--c-lime)", border: "var(--c-lime)" },
   funcional: { bg: "var(--c-blue-bg)", text: "var(--c-blue)", border: "var(--c-blue)" },
 };
 

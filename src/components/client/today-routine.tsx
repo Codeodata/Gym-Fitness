@@ -25,7 +25,7 @@ type Block = {
 const DAY_NAMES = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 const CAT_COLOR: Record<string, string> = {
-  musculación:   "var(--accent)",
+  musculación:   "var(--c-lime)",
   calentamiento: "var(--c-orange, #fb923c)",
   funcional:     "#60a5fa",
 };
