@@ -95,7 +95,7 @@ export function ClientNav({ userName }: { userName: string }) {
               className="text-sm font-extrabold uppercase tracking-widest"
               style={{ color: "#fff", fontFamily: "'Barlow Condensed', sans-serif" }}
             >
-              Gym Fitness
+              Claudia Duran Fitness
             </p>
             <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
               {userName}
@@ -227,7 +227,7 @@ export function ClientNav({ userName }: { userName: string }) {
           className="font-extrabold text-sm uppercase tracking-widest flex-1"
           style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}
         >
-          Gym Fitness
+          Claudia Duran Fitness
         </span>
         <button onClick={toggleTheme} className="p-2 rounded-xl cursor-pointer" style={{ color: "var(--text-3)", touchAction: "manipulation" }}>
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

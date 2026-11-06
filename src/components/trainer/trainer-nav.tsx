@@ -87,7 +87,7 @@ export function TrainerNav({ userName, pendingCount = 0 }: { userName: string; p
           <div className="flex-1 min-w-0">
             <p className="text-base font-extrabold uppercase tracking-widest"
               style={{ fontFamily: "'Barlow Condensed', sans-serif", color: "#fff" }}>
-              Gym Fitness
+              Claudia Duran Fitness
             </p>
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Panel entrenador</p>
           </div>
@@ -202,7 +202,7 @@ export function TrainerNav({ userName, pendingCount = 0 }: { userName: string; p
           className="font-extrabold text-sm uppercase tracking-widest flex-1"
           style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}
         >
-          Gym Fitness
+          Claudia Duran Fitness
         </span>
         <button onClick={toggleTheme} className="p-2 rounded-xl cursor-pointer" style={{ color: "var(--text-3)", touchAction: "manipulation" }}>
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
