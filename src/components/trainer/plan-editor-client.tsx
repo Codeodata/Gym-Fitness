@@ -43,6 +43,12 @@ type ExerciseCatalogItem = {
   id: string;
   name: string;
   muscleGroup: string;
+  isStretch?: boolean;
+};
+
+const MUSCLE_LABELS: Record<string, string> = {
+  chest: "Pecho", back: "Espalda", shoulders: "Hombros", arms: "Brazos",
+  legs: "Piernas", core: "Core", cardio: "Cardio", full_body: "Cuerpo completo",
 };
 
 type Client = { id: string; name: string; email: string };
@@ -71,6 +77,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
   // Per-day add panel state
   const [addingToDayId, setAddingToDayId] = useState<string | null>(null);
   const [addSection, setAddSection] = useState<"main" | "warmup">("main");
+  const [addMuscle, setAddMuscle] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [addingExercise, setAddingExercise] = useState(false);
 
@@ -285,19 +292,31 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
               : d
           )
         );
-        setAddingToDayId(null);
+        // El panel queda abierto para agregar varios seguidos (se cierra con "Listo").
       }
     } finally {
       setAddingExercise(false);
     }
   }
 
-  // ── Filtered catalog ───────────────────────────────────────────
-  const filteredCatalog = searchQuery.trim()
-    ? catalog.filter((e) =>
-        e.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : catalog.slice(0, 20);
+  // ── Catálogo del panel de agregar ──────────────────────────────
+  // Entrada en calor → estiramientos + cardio (ya filtrados). Ejercicio → el resto.
+  const warmupMode = addSection === "warmup";
+  const addAccent = warmupMode ? "#fb923c" : "var(--accent)";
+  const baseCatalog = catalog.filter((e) =>
+    warmupMode ? (e.isStretch || e.muscleGroup === "cardio") : !e.isStretch,
+  );
+  const addMuscleGroups = [...new Set(baseCatalog.map((e) => e.muscleGroup))];
+  const filteredCatalog = baseCatalog.filter((e) => {
+    if (addMuscle && e.muscleGroup !== addMuscle) return false;
+    if (searchQuery.trim() && !e.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
+  const groupedCatalog = filteredCatalog.reduce<Record<string, ExerciseCatalogItem[]>>((acc, e) => {
+    const label = MUSCLE_LABELS[e.muscleGroup] ?? e.muscleGroup;
+    (acc[label] ??= []).push(e);
+    return acc;
+  }, {});
 
   return (
     <div className="flex flex-col gap-4">
@@ -640,7 +659,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                   {/* Section toggle */}
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setAddSection("main")}
+                      onClick={() => { setAddSection("main"); setAddMuscle(null); setSearchQuery(""); }}
                       className="flex-1 py-1.5 rounded-lg text-xs font-bold"
                       style={{
                         background: addSection === "main" ? "var(--accent)" : "var(--bg-panel)",
@@ -652,7 +671,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                       Ejercicio
                     </button>
                     <button
-                      onClick={() => setAddSection("warmup")}
+                      onClick={() => { setAddSection("warmup"); setAddMuscle(null); setSearchQuery(""); }}
                       className="flex-1 py-1.5 rounded-lg text-xs font-bold"
                       style={{
                         background: addSection === "warmup" ? "var(--c-orange)" : "var(--bg-panel)",
@@ -661,73 +680,91 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                       }}
                     >
                       <Flame className="h-3 w-3 inline mr-1" />
-                      Calentamiento
+                      Entrada en calor
                     </button>
                   </div>
 
-                  {/* Search */}
+                  {/* Chips por músculo — seleccionar tocando, sin teclado */}
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setAddMuscle(null)}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer"
+                      style={{
+                        background: !addMuscle ? addAccent : "var(--bg-panel)",
+                        color: !addMuscle ? "#0a0a0a" : "var(--text-3)",
+                        border: `1px solid ${!addMuscle ? addAccent : "var(--border)"}`,
+                      }}
+                    >
+                      Todos
+                    </button>
+                    {addMuscleGroups.map((mg) => {
+                      const sel = addMuscle === mg;
+                      return (
+                        <button
+                          key={mg}
+                          onClick={() => setAddMuscle(sel ? null : mg)}
+                          className="px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer"
+                          style={{
+                            background: sel ? addAccent : "var(--bg-panel)",
+                            color: sel ? "#0a0a0a" : "var(--text-3)",
+                            border: `1px solid ${sel ? addAccent : "var(--border)"}`,
+                          }}
+                        >
+                          {MUSCLE_LABELS[mg] ?? mg}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Buscador opcional (no abre el teclado solo) */}
                   <div className="relative">
                     <Search
                       className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5"
                       style={{ color: "var(--text-3)" }}
                     />
                     <input
-                      autoFocus
-                      placeholder="Buscar ejercicio…"
+                      placeholder="Buscar (opcional)…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-none"
-                      style={{
-                        background: "var(--bg-panel)",
-                        border: "1px solid var(--border)",
-                        color: "var(--text)",
-                      }}
-                      onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+                      style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", color: "var(--text)" }}
                     />
                   </div>
 
-                  {/* Results */}
-                  <div
-                    className="flex flex-col gap-1 max-h-48 overflow-y-auto"
-                    style={{ scrollbarWidth: "none" }}
-                  >
+                  {/* Lista agrupada por músculo, tocable */}
+                  <div className="flex flex-col gap-2 max-h-64 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
                     {filteredCatalog.length === 0 && (
                       <p className="text-xs text-center py-3" style={{ color: "var(--text-3)" }}>
                         {catalogLoaded ? "Sin resultados" : "Cargando…"}
                       </p>
                     )}
-                    {filteredCatalog.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => addExercise(item)}
-                        disabled={addingExercise}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm font-semibold transition-colors"
-                        style={{
-                          background: "var(--bg-panel)",
-                          color: "var(--text)",
-                          border: "1px solid var(--border)",
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-                      >
-                        <span className="flex-1 truncate">{item.name}</span>
-                        <span
-                          className="text-[10px] font-bold uppercase"
-                          style={{ color: "var(--text-3)" }}
-                        >
-                          {item.muscleGroup}
-                        </span>
-                      </button>
+                    {Object.entries(groupedCatalog).map(([group, items]) => (
+                      <div key={group}>
+                        <p className="text-[10px] font-extrabold uppercase tracking-widest mb-1 px-1" style={{ color: "var(--text-3)" }}>{group}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                          {items.map((item) => (
+                            <button
+                              key={item.id}
+                              onClick={() => addExercise(item)}
+                              disabled={addingExercise}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm font-semibold"
+                              style={{ background: "var(--bg-panel)", color: "var(--text)", border: "1px solid var(--border)" }}
+                            >
+                              <Plus className="h-3.5 w-3.5 shrink-0" style={{ color: addAccent }} />
+                              <span className="flex-1 truncate">{item.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
 
                   <button
                     onClick={() => setAddingToDayId(null)}
-                    className="text-xs text-center"
-                    style={{ color: "var(--text-3)" }}
+                    className="text-xs text-center font-bold py-1"
+                    style={{ color: "var(--accent)" }}
                   >
-                    Cancelar
+                    Listo
                   </button>
                 </div>
               ) : (

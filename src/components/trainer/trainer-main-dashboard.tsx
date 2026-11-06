@@ -327,6 +327,39 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
         </button>
       </div>
 
+      {/* ── Nuevos registros (banner destacado) ────────────── */}
+      {registrations.length > 0 && (
+        <div className="mb-6 rounded-2xl overflow-hidden"
+          style={{ background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.4)" }}>
+          <div className="px-4 py-3 flex items-center gap-2.5" style={{ borderBottom: "1px solid rgba(245,158,11,0.22)" }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(245,158,11,0.2)" }}>
+              <UserPlus className="h-4 w-4" style={{ color: "#f59e0b" }} />
+            </div>
+            <h2 className="text-sm font-extrabold flex-1 min-w-0" style={{ color: "#f59e0b" }}>
+              {registrations.length} nuevo{registrations.length !== 1 ? "s" : ""} registro{registrations.length !== 1 ? "s" : ""} para aprobar
+            </h2>
+            <Link href="/trainer/clients"
+              className="text-xs font-extrabold px-3 py-1.5 rounded-lg shrink-0"
+              style={{ background: "#f59e0b", color: "#0a0a0a", touchAction: "manipulation" }}>
+              Ver alumnos →
+            </Link>
+          </div>
+          <div className="p-2 flex flex-col gap-1.5">
+            {registrations.slice(0, 5).map((n) => (
+              <Link key={n.id} href="/trainer/clients"
+                className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl"
+                style={{ background: "var(--bg-panel)" }}>
+                <UserPlus className="h-3.5 w-3.5 shrink-0" style={{ color: "#f59e0b" }} />
+                <span className="flex-1 min-w-0 truncate text-sm font-semibold" style={{ color: "var(--text)" }}>{n.body}</span>
+                <span className="text-[10px] shrink-0" style={{ color: "var(--text-3)" }}>
+                  {new Date(n.sentAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Stats strip ────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <StatCard label="Alumnos activos" value={clients.length} icon={Users} />
@@ -442,42 +475,6 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
             <h2 className="text-xs font-extrabold uppercase tracking-wider mb-3" style={{ color: "var(--text-3)" }}>Calendario</h2>
             <MonthCalendar />
           </section>
-
-          {/* NUEVOS REGISTROS */}
-          {registrations.length > 0 && (
-            <section>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: "#f59e0b" }}>
-                  Nuevos registros
-                </h2>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full"
-                  style={{ background: "rgba(245,158,11,0.18)", color: "#f59e0b" }}>
-                  {registrations.length}
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                {registrations.slice(0, 5).map((n) => (
-                  <Link key={n.id} href="/trainer/clients"
-                    className="flex items-start gap-3 px-3 py-3 rounded-2xl group"
-                    style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)" }}>
-                    <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-                      style={{ background: "rgba(245,158,11,0.18)" }}>
-                      <UserPlus className="h-3.5 w-3.5" style={{ color: "#f59e0b" }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold leading-snug" style={{ color: "var(--text)" }}>{n.body}</p>
-                      <p className="text-[10px] mt-1 font-bold" style={{ color: "#f59e0b" }}>
-                        Tocá para aprobar →
-                        <span className="font-normal ml-1" style={{ color: "var(--text-3)" }}>
-                          {new Date(n.sentAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
 
           {/* AVISOS */}
           <section>
