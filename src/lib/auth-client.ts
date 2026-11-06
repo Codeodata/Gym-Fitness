@@ -10,8 +10,11 @@ export const authClient = createAuthClient({
       "ngrok-skip-browser-warning": "true",
     },
   },
-  // Permite pasar membershipRenewsAt (date) en signUp.email con tipado correcto.
-  plugins: [inferAdditionalFields({ user: { membershipRenewsAt: { type: "date", required: false } } })],
+  // Permite pasar membershipRenewsAt (date) y gender en signUp.email con tipado correcto.
+  plugins: [inferAdditionalFields({ user: {
+    membershipRenewsAt: { type: "date", required: false },
+    gender: { type: "string", required: false },
+  } })],
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;

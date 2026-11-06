@@ -21,6 +21,7 @@ export const user = pgTable("user", {
   role: text("role", { enum: ["trainer", "client"] }).notNull().default("client"),
   approved: boolean("approved").notNull().default(false),
   active: boolean("active").notNull().default(true),
+  gender: text("gender", { enum: ["chica", "chico"] }), // para agrupar alumnos y sugerir plantilla
   membershipType: text("membership_type", { enum: ["2dias", "3dias", "pase_libre"] }),
   membershipRenewsAt: timestamp("membership_renews_at"), // próxima fecha de renovación del plan
   membershipPaidAt: timestamp("membership_paid_at"),     // último pago registrado por el profe
@@ -96,6 +97,9 @@ export const plan = pgTable("plan", {
   description: text("description"),
   category: text("category", { enum: ["calentamiento", "funcional", "musculación"] }).notNull().default("musculación"),
   daysPerWeek: integer("days_per_week").notNull().default(3),
+  // Plantillas del profe: audiencia (chicas/chicos) y frecuencia (alinea con membership_type).
+  audience: text("audience", { enum: ["chicas", "chicos"] }), // null = general
+  frequency: text("frequency", { enum: ["2dias", "3dias", "pase_libre"] }),
   durationWeeks: integer("duration_weeks"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -195,6 +199,7 @@ export const notification = pgTable("notification", {
   fromId: text("from_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   toId: text("to_id").references(() => user.id, { onDelete: "set null" }), // null = todos
   body: text("body").notNull(),
+  type: text("type"), // 'registration' = alta de alumno; null = aviso normal del profe
   sentAt: timestamp("sent_at").notNull().defaultNow(),
   readAt: timestamp("read_at"),
 });

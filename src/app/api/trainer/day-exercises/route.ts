@@ -40,7 +40,16 @@ export async function POST(req: Request) {
   if (!session || session.user.role !== "trainer")
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { clientId, dayOfWeek, exerciseId, sets, reps, restSeconds, notes } = await req.json();
+  const body = await req.json();
+  const { clientId, dayOfWeek } = body;
+  if (!clientId || !dayOfWeek) return NextResponse.json({ error: "Missing clientId/dayOfWeek" }, { status: 400 });
+
+  // Acepta alta simple (exerciseId…) o alta múltiple (items: [{exerciseId,…}]).
+  type Item = { exerciseId: string; sets?: number; reps?: string; restSeconds?: number | null; notes?: string | null };
+  const items: Item[] = Array.isArray(body.items) && body.items.length > 0
+    ? body.items
+    : [{ exerciseId: body.exerciseId, sets: body.sets, reps: body.reps, restSeconds: body.restSeconds, notes: body.notes }];
+  if (items.some((it) => !it.exerciseId)) return NextResponse.json({ error: "Missing exerciseId" }, { status: 400 });
 
   const db = getDb();
   const [{ value: maxOrder }] = await db
@@ -51,16 +60,19 @@ export async function POST(req: Request) {
       eq(schema.clientDayExercise.dayOfWeek, dayOfWeek),
     ));
 
-  const [row] = await db.insert(schema.clientDayExercise).values({
-    clientId,
-    dayOfWeek,
-    exerciseId,
-    sets: sets ?? 3,
-    reps: reps ?? "10",
-    restSeconds: restSeconds ?? null,
-    notes: notes ?? null,
-    orderIndex: Number(maxOrder),
-  }).returning();
+  const base = Number(maxOrder);
+  const rows = await db.insert(schema.clientDayExercise).values(
+    items.map((it, i) => ({
+      clientId,
+      dayOfWeek,
+      exerciseId: it.exerciseId,
+      sets: it.sets ?? 3,
+      reps: it.reps ?? "10",
+      restSeconds: it.restSeconds ?? null,
+      notes: it.notes ?? null,
+      orderIndex: base + i,
+    })),
+  ).returning();
 
-  return NextResponse.json({ exercise: row });
+  return NextResponse.json({ exercises: rows, exercise: rows[0] });
 }

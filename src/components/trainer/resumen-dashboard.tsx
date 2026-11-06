@@ -102,7 +102,7 @@ export function ResumenDashboard({ userName, data }: { userName: string; data: D
     <div className="max-w-3xl pb-16">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-extrabold leading-none" style={{ color: "var(--text)" }}>Resumen</h1>
+        <h1 className="text-3xl font-extrabold leading-none" style={{ color: "var(--text)" }}>Estadísticas</h1>
         <p className="mt-2 text-sm" style={{ color: "var(--text-2)" }}>
           La foto de tu gimnasio, {userName.split(" ")[0]} — membresías, turnos, rutinas y seguimiento.
         </p>

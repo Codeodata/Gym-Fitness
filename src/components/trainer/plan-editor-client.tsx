@@ -239,6 +239,26 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
     }
   }
 
+  // ── Editar series / reps / peso ────────────────────────────────
+  async function updateExercise(
+    planExerciseId: string,
+    dayId: string,
+    patch: { sets?: number; reps?: string; weightKg?: string | null },
+  ) {
+    setDays((prev) =>
+      prev.map((d) =>
+        d.id === dayId
+          ? { ...d, exercises: d.exercises.map((e) => (e.id === planExerciseId ? { ...e, ...patch } : e)) }
+          : d,
+      ),
+    );
+    await fetch(`/api/trainer/plans/${planId}/exercises`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planExerciseId, ...patch }),
+    });
+  }
+
   // ── Add exercise ───────────────────────────────────────────────
   async function addExercise(item: ExerciseCatalogItem) {
     if (!addingToDayId || addingExercise) return;
@@ -518,9 +538,11 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
           .sort((a, b) => a.orderIndex - b.orderIndex);
 
         const dow = day.dayOfWeek ?? null;
+        // El badge ya muestra "Día N"; al lado va el nombre propio (si lo tiene).
+        const customName = day.name && day.name !== `Día ${day.dayNumber}` ? day.name : null;
         const dayLabel = dow
-          ? `${DOW_FULL[dow]} — ${day.name ?? `Día ${day.dayNumber}`}`
-          : day.name ?? `Día ${day.dayNumber}`;
+          ? `${DOW_FULL[dow]}${customName ? ` — ${customName}` : ""}`
+          : customName ?? "";
 
         const isAddingHere = addingToDayId === day.id;
 
@@ -536,17 +558,19 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
               style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-hover)" }}
             >
               <span
-                className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-extrabold shrink-0"
+                className="px-2.5 py-1 rounded-lg flex items-center justify-center text-xs font-extrabold shrink-0 uppercase tracking-wide"
                 style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
               >
-                D{day.dayNumber}
+                Día {day.dayNumber}
               </span>
-              <span
-                className="font-extrabold text-sm"
-                style={{ color: "var(--text)" }}
-              >
-                {dayLabel}
-              </span>
+              {dayLabel && (
+                <span
+                  className="font-extrabold text-sm"
+                  style={{ color: "var(--text)" }}
+                >
+                  {dayLabel}
+                </span>
+              )}
               <span className="ml-auto text-xs" style={{ color: "var(--text-3)" }}>
                 {day.exercises.length} ejercicio{day.exercises.length !== 1 ? "s" : ""}
               </span>
@@ -572,6 +596,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                         ex={ex}
                         accent="var(--c-orange)"
                         onRemove={() => removeExercise(ex.id, day.id)}
+                        onUpdate={(patch) => updateExercise(ex.id, day.id, patch)}
                       />
                     ))}
                   </div>
@@ -599,6 +624,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                         ex={ex}
                         accent="var(--accent)"
                         onRemove={() => removeExercise(ex.id, day.id)}
+                        onUpdate={(patch) => updateExercise(ex.id, day.id, patch)}
                       />
                     ))}
                   </div>
@@ -738,49 +764,92 @@ function ExerciseRowEditable({
   ex,
   accent,
   onRemove,
+  onUpdate,
 }: {
   ex: ExerciseItem;
   accent: string;
   onRemove: () => void;
+  onUpdate: (patch: { sets?: number; reps?: string; weightKg?: string | null }) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [sets, setSets] = useState(String(ex.sets));
+  const [reps, setReps] = useState(ex.reps);
+  const [weight, setWeight] = useState(ex.weightKg ?? "");
+
+  function open() {
+    setSets(String(ex.sets));
+    setReps(ex.reps);
+    setWeight(ex.weightKg ?? "");
+    setEditing(true);
+  }
+  function save() {
+    const s = parseInt(sets, 10);
+    if (!reps.trim() || isNaN(s) || s < 1) { setEditing(false); return; }
+    onUpdate({ sets: s, reps: reps.trim(), weightKg: weight.trim() || null });
+    setEditing(false);
+  }
+
+  // ── Modo edición: series × reps × peso ──
+  if (editing) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl flex-wrap"
+        style={{ background: "var(--bg-hover)", border: `1px solid ${accent}` }}>
+        <span className="flex-1 min-w-[110px] text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+          {ex.exerciseName}
+        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <input type="number" min={1} max={20} value={sets} onChange={(e) => setSets(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()}
+            className="w-12 text-center text-xs font-bold rounded-lg px-1 py-2 outline-none tabular-nums"
+            style={{ background: "var(--bg-panel)", border: `1px solid ${accent}`, color: accent }} title="Series" />
+          <span className="text-xs" style={{ color: "var(--text-3)" }}>×</span>
+          <input type="text" value={reps} onChange={(e) => setReps(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()}
+            className="w-14 text-center text-xs font-bold rounded-lg px-1 py-2 outline-none"
+            style={{ background: "var(--bg-panel)", border: `1px solid ${accent}`, color: accent }} title="Repeticiones" />
+          <input type="text" value={weight} placeholder="kg" onChange={(e) => setWeight(e.target.value)} onKeyDown={(e) => e.key === "Enter" && save()}
+            className="w-14 text-center text-xs rounded-lg px-1 py-2 outline-none"
+            style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", color: "var(--text-3)" }} title="Peso (kg)" />
+          <button onClick={save} className="w-9 h-9 flex items-center justify-center rounded-lg shrink-0 cursor-pointer" style={{ background: accent, color: "#0a0a0a" }} title="Guardar">
+            <Check className="h-4 w-4" />
+          </button>
+          <button onClick={() => setEditing(false)} className="w-9 h-9 flex items-center justify-center rounded-lg shrink-0 cursor-pointer"
+            style={{ background: "var(--bg-panel)", color: "var(--text-3)", border: "1px solid var(--border)" }} title="Cancelar">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="group flex items-center gap-3 px-3 py-2.5 rounded-xl"
-      style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}
-    >
-      <span
-        className="flex-1 text-sm font-semibold truncate"
-        style={{ color: "var(--text)" }}
-      >
-        {ex.exerciseName}
-      </span>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-xs font-bold tabular-nums" style={{ color: accent }}>
+    <div className="flex flex-col gap-1 px-3 py-2.5 rounded-xl"
+      style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}>
+      <div className="flex items-center gap-3">
+        <span className="flex-1 text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+          {ex.exerciseName}
+        </span>
+        <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: accent }}>
           {ex.sets}×{ex.reps}
         </span>
         {ex.weightKg && (
-          <span className="text-xs tabular-nums" style={{ color: "var(--text-3)" }}>
+          <span className="text-xs tabular-nums px-1.5 py-0.5 rounded-md shrink-0"
+            style={{ background: "var(--bg-panel)", color: "var(--text-3)", border: "1px solid var(--border)" }}>
             {ex.weightKg} kg
           </span>
         )}
+        <button onClick={open} title="Editar series, repeticiones y peso"
+          className="w-8 h-8 flex items-center justify-center rounded-lg shrink-0 cursor-pointer"
+          style={{ background: "var(--bg-panel)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button onClick={onRemove} title="Quitar ejercicio"
+          className="w-8 h-8 flex items-center justify-center rounded-lg shrink-0 cursor-pointer"
+          style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
       {ex.notes && (
-        <span
-          className="text-xs truncate max-w-[100px] hidden sm:block"
-          style={{ color: "var(--text-3)" }}
-        >
-          {ex.notes}
-        </span>
+        <p className="text-[11px] italic leading-snug" style={{ color: "var(--text-3)" }}>{ex.notes}</p>
       )}
-      <button
-        onClick={onRemove}
-        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg shrink-0"
-        style={{ color: "var(--text-3)" }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--danger, #ef4444)")}
-        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
     </div>
   );
 }

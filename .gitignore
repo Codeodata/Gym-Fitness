@@ -50,3 +50,6 @@ next-env.d.ts
 # Reference images (only used locally)
 src/imagenes/
 .env*.local
+
+# Guías y material (solo local, no subir PDFs a GitHub)
+/docs/

@@ -23,22 +23,27 @@ const DIFFICULTIES = [
 
 type ExerciseRow = Exercise & { difficulty?: string | null };
 
-export function ExerciseManager({ initialExercises, isStretchMode = false }: { initialExercises: ExerciseRow[]; isStretchMode?: boolean }) {
+export function ExerciseManager({ initialExercises }: { initialExercises: ExerciseRow[] }) {
   const [exercises, setExercises] = useState<ExerciseRow[]>(initialExercises);
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<ExerciseRow>>({});
   const [showNew, setShowNew] = useState(false);
   const [newEx, setNewEx] = useState({ name: "", muscleGroup: "chest" as string, description: "", imageUrl: "", videoUrl: "", difficulty: "intermediate" });
+  const [type, setType] = useState<"ejercicios" | "estiramientos">("ejercicios");
   const [filterGroup, setFilterGroup] = useState("all");
   const [saving, setSaving] = useState(false);
   const [activeVideo, setActiveVideo] = useState<{ url: string; title: string; poster?: string } | null>(null);
 
-  const title = isStretchMode ? "Estiramientos" : "Biblioteca de ejercicios";
+  const isStretchMode = type === "estiramientos";
   const newLabel = isStretchMode ? "Nuevo estiramiento" : "Nuevo ejercicio";
   const singular = isStretchMode ? "estiramiento" : "ejercicio";
   const plural = isStretchMode ? "estiramientos" : "ejercicios";
 
-  const filtered = filterGroup === "all" ? exercises : exercises.filter((e) => e.muscleGroup === filterGroup);
+  // Primero separo por tipo (ejercicios vs estiramientos) y después por grupo muscular.
+  const byType = exercises.filter((e) => (isStretchMode ? e.isStretch : !e.isStretch));
+  const filtered = filterGroup === "all" ? byType : byType.filter((e) => e.muscleGroup === filterGroup);
+  const countEjercicios = exercises.filter((e) => !e.isStretch).length;
+  const countEstiramientos = exercises.filter((e) => e.isStretch).length;
 
   async function saveEdit(id: string) {
     setSaving(true);
@@ -51,12 +56,8 @@ export function ExerciseManager({ initialExercises, isStretchMode = false }: { i
       body: JSON.stringify(patch),
     });
     const updated = await res.json() as ExerciseRow;
-    // Si cambió de categoría (estiramiento ↔ ejercicio), sale de esta lista.
-    setExercises((prev) =>
-      updated.isStretch === isStretchMode
-        ? prev.map((e) => e.id === id ? { ...e, ...updated } : e)
-        : prev.filter((e) => e.id !== id),
-    );
+    // Actualizo en la lista única; si cambió de tipo, el toggle lo reubica solo.
+    setExercises((prev) => prev.map((e) => e.id === id ? { ...e, ...updated } : e));
     setEditId(null);
     setEditData({});
     setSaving(false);
@@ -94,9 +95,9 @@ export function ExerciseManager({ initialExercises, isStretchMode = false }: { i
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>{title}</h1>
+          <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Ejercicios</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-2)" }}>
-            {exercises.length} {plural} · Editá video, descripción y dificultad
+            {byType.length} {plural} · Editá video, descripción y dificultad
           </p>
         </div>
         <button
@@ -108,7 +109,32 @@ export function ExerciseManager({ initialExercises, isStretchMode = false }: { i
         </button>
       </div>
 
-      {/* Filter tabs */}
+      {/* Separador: Ejercicios / Estiramientos */}
+      <div className="inline-flex p-1 rounded-xl mb-4" style={{ background: "var(--bg-hover)" }}>
+        {([
+          { id: "ejercicios", label: "Ejercicios", n: countEjercicios },
+          { id: "estiramientos", label: "Estiramientos", n: countEstiramientos },
+        ] as const).map((t) => {
+          const active = type === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => { setType(t.id); setFilterGroup("all"); setShowNew(false); }}
+              className="px-4 py-2 rounded-lg text-sm font-bold cursor-pointer transition-all"
+              style={{
+                background: active ? "var(--bg-panel)" : "transparent",
+                color: active ? "var(--text)" : "var(--text-3)",
+                border: active ? "1px solid var(--border)" : "1px solid transparent",
+                touchAction: "manipulation",
+              }}
+            >
+              {t.label} <span className="tabular-nums" style={{ color: "var(--text-3)" }}>({t.n})</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Filtro por grupo muscular */}
       <div className="flex gap-1.5 flex-wrap mb-5">
         <button
           onClick={() => setFilterGroup("all")}
@@ -118,9 +144,9 @@ export function ExerciseManager({ initialExercises, isStretchMode = false }: { i
             color: filterGroup === "all" ? "var(--accent-fg)" : "var(--text-3)",
             border: "1px solid var(--border)",
           }}
-        >Todos ({exercises.length})</button>
+        >Todos ({byType.length})</button>
         {MUSCLE_GROUPS.map((g) => {
-          const count = exercises.filter((e) => e.muscleGroup === g.value).length;
+          const count = byType.filter((e) => e.muscleGroup === g.value).length;
           if (count === 0) return null;
           return (
             <button
@@ -158,7 +184,7 @@ export function ExerciseManager({ initialExercises, isStretchMode = false }: { i
               Cancelar
             </button>
             <button onClick={createEx} disabled={saving || !newEx.name.trim()} className="px-5 py-2 rounded-xl text-sm font-bold cursor-pointer btn-accent">
-              {saving ? "Guardando…" : "Crear ejercicio"}
+              {saving ? "Guardando…" : isStretchMode ? "Crear estiramiento" : "Crear ejercicio"}
             </button>
           </div>
         </div>

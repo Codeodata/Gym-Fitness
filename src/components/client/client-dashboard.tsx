@@ -105,7 +105,7 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold shrink-0"
           style={{ background: "var(--accent)", color: "var(--accent-fg)", touchAction: "manipulation" }}
         >
-          <ClipboardList className="h-4 w-4" /> Mi plan
+          <ClipboardList className="h-4 w-4" /> Mi rutina
         </Link>
       </div>
 
@@ -177,7 +177,7 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
                   Todavía no tenés un plan asignado
                 </p>
                 <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-2)" }}>
-                  Tu entrenador te va a asignar una rutina personalizada. Aparecerá en <strong>Mi plan</strong>.
+                  Tu entrenador te va a asignar una rutina personalizada. Aparecerá en <strong>Mi rutina</strong>.
                 </p>
               </div>
             </div>

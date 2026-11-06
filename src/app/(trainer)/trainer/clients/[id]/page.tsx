@@ -4,6 +4,7 @@ import { getDb, schema } from "@/lib/db";
 import { and, eq, gte } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { MembershipPicker } from "@/components/trainer/membership-picker";
+import { GenderPicker } from "@/components/trainer/gender-picker";
 import { MembershipRenewal } from "@/components/trainer/membership-renewal";
 import { ClientHistory } from "@/components/trainer/client-history";
 import { WeeklyScheduleBuilder } from "@/components/trainer/weekly-schedule-builder";
@@ -97,6 +98,11 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         />
       </div>
 
+      {/* Género */}
+      <div className="mb-6">
+        <GenderPicker clientId={id} current={client.gender as "chica" | "chico" | null} />
+      </div>
+
       {/* Renovación de membresía */}
       <div className="mb-6">
         <MembershipRenewal
@@ -116,7 +122,11 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       </div>
 
       {/* Weekly schedule */}
-      <WeeklyScheduleBuilder clientId={id} />
+      <WeeklyScheduleBuilder
+        clientId={id}
+        clientGender={client.gender as "chica" | "chico" | null}
+        clientFrequency={client.membershipType as "2dias" | "3dias" | "pase_libre" | null}
+      />
     </div>
   );
 }

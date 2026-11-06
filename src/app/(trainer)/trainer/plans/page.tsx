@@ -16,16 +16,43 @@ export default async function PlansPage() {
     .from(schema.planDay)
     .groupBy(schema.planDay.planId);
 
+  const exCountRows = await db
+    .select({ planId: schema.planDay.planId, count: count() })
+    .from(schema.planExercise)
+    .innerJoin(schema.planDay, eq(schema.planExercise.planDayId, schema.planDay.id))
+    .groupBy(schema.planDay.planId);
+
+  // Grupos musculares que toca cada plan (distinct planId × muscleGroup).
+  const muscleRows = await db
+    .select({ planId: schema.planDay.planId, muscleGroup: schema.exercise.muscleGroup })
+    .from(schema.planExercise)
+    .innerJoin(schema.planDay, eq(schema.planExercise.planDayId, schema.planDay.id))
+    .innerJoin(schema.exercise, eq(schema.planExercise.exerciseId, schema.exercise.id))
+    .groupBy(schema.planDay.planId, schema.exercise.muscleGroup);
+
   const dayCountMap = new Map(dayCountRows.map((r) => [r.planId, Number(r.count)]));
-  const plansWithCount = plans.map((p) => ({ ...p, dayCount: dayCountMap.get(p.id) ?? 0 }));
+  const exByPlan = new Map<string, number>();
+  for (const r of exCountRows) exByPlan.set(r.planId, (exByPlan.get(r.planId) ?? 0) + Number(r.count));
+  const muscleByPlan = new Map<string, string[]>();
+  for (const r of muscleRows) {
+    const arr = muscleByPlan.get(r.planId) ?? [];
+    arr.push(r.muscleGroup);
+    muscleByPlan.set(r.planId, arr);
+  }
+  const plansWithCount = plans.map((p) => ({
+    ...p,
+    dayCount: dayCountMap.get(p.id) ?? 0,
+    exerciseCount: exByPlan.get(p.id) ?? 0,
+    muscleGroups: muscleByPlan.get(p.id) ?? [],
+  }));
 
   return (
     <div className="max-w-5xl">
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Planes</h1>
+          <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Plantillas</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--text-2)" }}>
-            Creá plantillas y asignalas a tus alumnos
+            Armá tus plantillas (chicas/chicos × 2, 3 días o pase libre) y copialas a cada alumno
           </p>
         </div>
         <Link
@@ -34,7 +61,7 @@ export default async function PlansPage() {
           style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
         >
           <Plus className="h-4 w-4" />
-          Nuevo plan
+          Nueva plantilla
         </Link>
       </div>
 
@@ -47,9 +74,9 @@ export default async function PlansPage() {
             <ClipboardList className="h-7 w-7" style={{ color: "var(--text-3)" }} />
           </div>
           <div>
-            <p className="font-bold" style={{ color: "var(--text)" }}>Todavía no hay planes</p>
+            <p className="font-bold" style={{ color: "var(--text)" }}>Todavía no hay plantillas</p>
             <p className="text-sm mt-1" style={{ color: "var(--text-3)" }}>
-              Creá el primer plan y asignalo a tus alumnos
+              Creá la primera plantilla y copiala a tus alumnos
             </p>
           </div>
           <Link
@@ -57,7 +84,7 @@ export default async function PlansPage() {
             className="px-5 py-2.5 rounded-xl text-sm font-bold"
             style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
           >
-            Crear plan
+            Crear plantilla
           </Link>
         </div>
       ) : (

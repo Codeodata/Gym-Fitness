@@ -14,7 +14,14 @@ type Status = "pending" | "active" | "inactive";
 
 type ClientCard = User & { planInfo: PlanInfo };
 
-type Props = { clients: ClientCard[]; status: Status; filter?: string };
+type Props = {
+  clients: ClientCard[];
+  status: Status;
+  filter?: string;
+  accent?: string;
+  gender?: "todas" | "chica" | "chico";
+  membership?: "todas" | "2dias" | "3dias" | "pase_libre";
+};
 
 const STATUS_LABEL: Record<Status, string> = {
   pending:  "Pendiente",
@@ -46,7 +53,7 @@ function formatDate(d: Date | string) {
   return new Date(d).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-export function ClientsGrid({ clients: initial, status, filter }: Props) {
+export function ClientsGrid({ clients: initial, status, filter, accent, gender, membership }: Props) {
   const [list, setList] = useState(initial);
   const [loading, setLoading] = useState<string | null>(null);
   const [memberships, setMemberships] = useState<Record<string, string | null>>(
@@ -88,7 +95,12 @@ export function ClientsGrid({ clients: initial, status, filter }: Props) {
   }
 
   const q = (filter ?? "").trim().toLowerCase();
-  const visible = q ? list.filter((c) => c.name.toLowerCase().includes(q)) : list;
+  const visible = list.filter((c) => {
+    if (q && !c.name.toLowerCase().includes(q)) return false;
+    if (gender && gender !== "todas" && c.gender !== gender) return false;
+    if (membership && membership !== "todas" && c.membershipType !== membership) return false;
+    return true;
+  });
 
   if (visible.length === 0) return null;
 
@@ -129,10 +141,10 @@ export function ClientsGrid({ clients: initial, status, filter }: Props) {
                 style={{
                   background: status === "inactive"
                     ? "var(--bg-hover)"
-                    : "var(--accent)",
+                    : (accent ?? "var(--accent)"),
                   color: status === "inactive"
                     ? "var(--text-3)"
-                    : "var(--accent-fg)",
+                    : (accent ? "#0a0a0a" : "var(--accent-fg)"),
                 }}
               >
                 {initials(client.name)}

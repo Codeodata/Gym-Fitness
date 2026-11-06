@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, ArrowRight, Users, Send, X, Trash2, CalendarDays, CalendarRange } from "lucide-react";
+import { Bell, ArrowRight, Users, Send, X, Trash2, CalendarDays, CalendarRange, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { MonthCalendar } from "./monthly-calendar";
 
 type Slot = { id: string; dayOfWeek: number; startTime: string; type: string };
 type Enrollment = { slotId: string; clientId: string; clientName: string | null };
 type Client = { id: string; name: string };
-type Notification = { id: string; body: string; toId: string | null; sentAt: string };
+type Notification = { id: string; body: string; toId: string | null; sentAt: string; type?: string | null };
 
 const DAYS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const DAY_SHORT = ["", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -282,6 +282,8 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
   const todaySlots = slots.filter((s) => s.dayOfWeek === today).sort((a, b) => a.startTime.localeCompare(b.startTime));
   const weekSlots = slots.filter((s) => s.dayOfWeek >= 1 && s.dayOfWeek <= 5);
   const dayLabel = DAYS[today] ?? "Hoy";
+  const registrations = notifications.filter((n) => n.type === "registration");
+  const avisos = notifications.filter((n) => n.type !== "registration");
 
   if (loading) {
     return (
@@ -441,24 +443,60 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
             <MonthCalendar />
           </section>
 
+          {/* NUEVOS REGISTROS */}
+          {registrations.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: "#f59e0b" }}>
+                  Nuevos registros
+                </h2>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+                  style={{ background: "rgba(245,158,11,0.18)", color: "#f59e0b" }}>
+                  {registrations.length}
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {registrations.slice(0, 5).map((n) => (
+                  <Link key={n.id} href="/trainer/clients"
+                    className="flex items-start gap-3 px-3 py-3 rounded-2xl group"
+                    style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)" }}>
+                    <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                      style={{ background: "rgba(245,158,11,0.18)" }}>
+                      <UserPlus className="h-3.5 w-3.5" style={{ color: "#f59e0b" }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold leading-snug" style={{ color: "var(--text)" }}>{n.body}</p>
+                      <p className="text-[10px] mt-1 font-bold" style={{ color: "#f59e0b" }}>
+                        Tocá para aprobar →
+                        <span className="font-normal ml-1" style={{ color: "var(--text-3)" }}>
+                          {new Date(n.sentAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* AVISOS */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>Avisos</h2>
+              <h2 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>Avisos enviados</h2>
               <button onClick={() => setShowNotif(true)}
                 className="text-xs font-bold flex items-center gap-1 cursor-pointer"
                 style={{ color: "var(--accent)" }}>
                 <Send className="h-3 w-3" /> Nuevo
               </button>
             </div>
-            {notifications.length === 0 ? (
+            {avisos.length === 0 ? (
               <div className="rounded-2xl p-5 text-center" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
                 <Bell className="h-5 w-5 mx-auto mb-1.5" style={{ color: "var(--text-3)" }} />
                 <p className="text-xs" style={{ color: "var(--text-3)" }}>Sin avisos enviados.</p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {notifications.slice(0, 5).map((n) => (
+                {avisos.slice(0, 5).map((n) => (
                   <div key={n.id}
                     className="flex items-start gap-3 px-3 py-3 rounded-2xl group"
                     style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>

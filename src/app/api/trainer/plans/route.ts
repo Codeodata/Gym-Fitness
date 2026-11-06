@@ -25,6 +25,8 @@ const planSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   category: z.enum(["calentamiento", "funcional", "musculación"]).default("musculación"),
+  audience: z.enum(["chicas", "chicos"]).nullable().optional(),
+  frequency: z.enum(["2dias", "3dias", "pase_libre"]).nullable().optional(),
   daysPerWeek: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(5)]),
   durationWeeks: z.number().int().min(1).nullable().optional(),
   days: z.array(daySchema).min(1),
@@ -40,13 +42,15 @@ export async function POST(req: NextRequest) {
   if (!body.success) return NextResponse.json({ error: "Invalid body", issues: body.error.issues }, { status: 400 });
 
   const db = getDb();
-  const { name, description, category, daysPerWeek, durationWeeks, days } = body.data;
+  const { name, description, category, audience, frequency, daysPerWeek, durationWeeks, days } = body.data;
 
   // 1. Create plan
   const [newPlan] = await db.insert(schema.plan).values({
     name,
     description: description ?? null,
     category,
+    audience: audience ?? null,
+    frequency: frequency ?? null,
     daysPerWeek,
     durationWeeks: durationWeeks ?? null,
   }).returning();

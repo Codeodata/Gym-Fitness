@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { eq } from "drizzle-orm";
 import { getDb, schema } from "./db";
 
 export const auth = betterAuth({
@@ -30,8 +31,37 @@ export const auth = betterAuth({
       role: { type: "string", defaultValue: "client", input: false },
       approved: { type: "boolean", defaultValue: false, input: false },
       active: { type: "boolean", defaultValue: true, input: false },
-      // Fecha de renovación del plan: la carga el alumno al registrarse.
+      // Datos que el alumno carga al registrarse.
       membershipRenewsAt: { type: "date", required: false, input: true },
+      gender: { type: "string", required: false, input: true }, // 'chica' | 'chico'
+    },
+  },
+  // Al dar de alta un alumno, avisar al profe con una notificación de registro.
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (newUser) => {
+          try {
+            const role = (newUser as { role?: string }).role;
+            if (role && role !== "client") return;
+            const db = getDb();
+            const [trainer] = await db
+              .select({ id: schema.user.id })
+              .from(schema.user)
+              .where(eq(schema.user.role, "trainer"))
+              .limit(1);
+            if (!trainer) return;
+            await db.insert(schema.notification).values({
+              fromId: newUser.id,
+              toId: trainer.id,
+              type: "registration",
+              body: `Nuevo registro: ${newUser.name}${newUser.email ? ` (${newUser.email})` : ""}`,
+            });
+          } catch (err) {
+            console.error("No se pudo avisar al profe del nuevo registro:", err);
+          }
+        },
+      },
     },
   },
 });

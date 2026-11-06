@@ -184,6 +184,8 @@ export default function NewRoutinePage() {
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState<Category>("musculación");
+  const [audience, setAudience] = useState<"chicas" | "chicos" | "">("");
+  const [frequency, setFrequency] = useState<"2dias" | "3dias" | "pase_libre" | "">("");
   const [warmup, setWarmup] = useState<ExerciseForm[]>([]);
   const [exercises, setExercises] = useState<ExerciseForm[]>([]);
   const [pickerSection, setPickerSection] = useState<"warmup" | "main" | null>(null);
@@ -281,6 +283,8 @@ export default function NewRoutinePage() {
         body: JSON.stringify({
           name,
           category,
+          audience: audience || null,
+          frequency: frequency || null,
           daysPerWeek: 1,
           days: [{
             name,
@@ -293,8 +297,7 @@ export default function NewRoutinePage() {
         }),
       });
       if (!res.ok) { setError("Error al guardar"); return; }
-      const data = await res.json() as { id: string };
-      router.push("/trainer/routines");
+      router.push("/trainer/plans");
     } catch { setError("Error inesperado"); }
     finally { setLoading(false); }
   }
@@ -445,6 +448,60 @@ export default function NewRoutinePage() {
                       color: active ? cat.color : "var(--text-3)",
                     }}>
                     {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Audiencia + frecuencia (para sugerir la plantilla al alumno) */}
+        <div className="rounded-2xl p-5 flex flex-col gap-4"
+          style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-3)" }}>
+              Para (opcional)
+            </p>
+            <div className="flex gap-2">
+              {([
+                { id: "chicas", label: "Mujeres", color: "#f472b6" },
+                { id: "chicos", label: "Hombres", color: "#60a5fa" },
+              ] as const).map((a) => {
+                const active = audience === a.id;
+                return (
+                  <button key={a.id} type="button" onClick={() => setAudience(active ? "" : a.id)}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer transition-all"
+                    style={{
+                      background: active ? `${a.color}22` : "var(--bg-hover)",
+                      border: `2px solid ${active ? a.color : "var(--border)"}`,
+                      color: active ? a.color : "var(--text-3)",
+                    }}>
+                    {a.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-3)" }}>
+              Frecuencia (opcional)
+            </p>
+            <div className="flex gap-2">
+              {([
+                { id: "2dias", label: "2 días" },
+                { id: "3dias", label: "3 días" },
+                { id: "pase_libre", label: "Pase libre" },
+              ] as const).map((f) => {
+                const active = frequency === f.id;
+                return (
+                  <button key={f.id} type="button" onClick={() => setFrequency(active ? "" : f.id)}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer transition-all"
+                    style={{
+                      background: active ? "var(--accent-soft)" : "var(--bg-hover)",
+                      border: `2px solid ${active ? "var(--accent)" : "var(--border)"}`,
+                      color: active ? "var(--accent)" : "var(--text-3)",
+                    }}>
+                    {f.label}
                   </button>
                 );
               })}

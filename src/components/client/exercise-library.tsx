@@ -55,7 +55,7 @@ export function ExerciseLibrary({ exercises }: { exercises: Exercise[] }) {
     <div className="max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-5">
-        <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Biblioteca de ejercicios</h1>
+        <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Ejercicios</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-2)" }}>
           {exercises.length} ejercicios con video explicativo
         </p>

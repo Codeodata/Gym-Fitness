@@ -13,8 +13,8 @@ import Link from "next/link";
 const NAV = [
   { href: "/dashboard",   label: "Inicio",   icon: LayoutDashboard, image: "/trainer-bg.jpg", bgPos: "center" },
   { href: "/my-schedule", label: "Turnos",   icon: Clock,           image: "/turnos.jpg", bgPos: "center" },
-  { href: "/my-plan",     label: "Mi Plan",    icon: ClipboardList, image: "/asistencia2.jpg", bgPos: "center" },
-  { href: "/biblioteca",  label: "Biblioteca", icon: Video,         image: "/ejercicios.jpeg", bgPos: "center" },
+  { href: "/my-plan",     label: "Mi rutina",  icon: ClipboardList, image: "/asistencia2.jpg", bgPos: "center" },
+  { href: "/biblioteca",  label: "Ejercicios", icon: Video,         image: "/ejercicios.jpeg", bgPos: "center" },
   { href: "/estiramientos", label: "Estiramientos", icon: PersonStanding, image: "/estiramientos.png", bgPos: "35% center" },
   { href: "/progress",    label: "Progreso",   icon: TrendingUp,    image: "/progreso.jpg", bgPos: "center" },
 ];

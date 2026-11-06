@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [gender, setGender] = useState<"chica" | "chico" | "">("");
   const [renewsAt, setRenewsAt] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,12 +20,14 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!gender) { setError("Elegí tu género."); return; }
     setLoading(true);
     try {
       const res = await signUp.email({
         name,
         email,
         password,
+        gender,
         membershipRenewsAt: renewsAt ? new Date(`${renewsAt}T00:00:00`) : undefined,
       });
       if (res.error) { setError(res.error.message ?? "Error al registrarte"); return; }
@@ -94,6 +97,34 @@ export default function RegisterPage() {
               />
             </div>
           ))}
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium" style={{ color: "var(--text-2)" }}>Género</label>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { id: "chica", label: "Mujer", color: "#f472b6" },
+                { id: "chico", label: "Hombre", color: "#60a5fa" },
+              ] as const).map((g) => {
+                const active = gender === g.id;
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setGender(g.id)}
+                    className="h-12 rounded-xl text-sm font-bold"
+                    style={{
+                      background: active ? `${g.color}22` : "var(--bg-panel)",
+                      border: `2px solid ${active ? g.color : "var(--border-strong)"}`,
+                      color: active ? g.color : "var(--text-2)",
+                      touchAction: "manipulation",
+                    }}
+                  >
+                    {g.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium" style={{ color: "var(--text-2)" }}>Fecha de renovación de tu plan</label>

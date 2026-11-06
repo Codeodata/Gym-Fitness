@@ -16,11 +16,6 @@ type Props = {
   inactive: ClientCard[];
 };
 
-function countMatches(arr: ClientCard[], q: string): number {
-  if (!q) return arr.length;
-  return arr.filter((c) => c.name.toLowerCase().includes(q)).length;
-}
-
 const MEMBERSHIP: Record<string, { label: string; color: string; bg: string; icon: typeof Calendar }> = {
   "2dias":      { label: "2 días/sem", color: "#60a5fa", bg: "rgba(96,165,250,0.12)",  icon: Calendar },
   "3dias":      { label: "3 días/sem", color: "#c084fc", bg: "rgba(192,132,252,0.12)", icon: Zap },
@@ -38,15 +33,43 @@ const STATE_COLOR: Record<MembershipState, { color: string; bg: string }> = {
 // Orden de urgencia para el listado de membresías: vencidas y por vencer primero.
 const STATE_RANK: Record<MembershipState, number> = { overdue: 0, due: 1, soon: 2, ok: 3, none: 4 };
 
+// Colores por género. Las claves son los valores del enum (chica/chico);
+// las etiquetas visibles usan términos profesionales (Mujeres/Hombres).
+const GENDER = {
+  chica: { label: "Mujeres", color: "#f472b6" },
+  chico: { label: "Hombres", color: "#60a5fa" },
+} as const;
+
 export function ClientsView({ pending, active, inactive }: Props) {
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"alumnos" | "membresias">("alumnos");
+  const [genderFilter, setGenderFilter] = useState<"todas" | "chica" | "chico">("todas");
+  const [membershipFilter, setMembershipFilter] = useState<"todas" | "2dias" | "3dias" | "pase_libre">("todas");
   const q = query.trim().toLowerCase();
 
-  const nPending = countMatches(pending, q);
-  const nActive = countMatches(active, q);
-  const nInactive = countMatches(inactive, q);
-  const noResults = q !== "" && nPending + nActive + nInactive === 0;
+  const matches = (c: ClientCard) =>
+    (!q || c.name.toLowerCase().includes(q)) &&
+    (genderFilter === "todas" || c.gender === genderFilter) &&
+    (membershipFilter === "todas" || c.membershipType === membershipFilter);
+  const countMatch = (arr: ClientCard[]) => arr.filter(matches).length;
+
+  const nPending = countMatch(pending);
+  const nActive = countMatch(active);
+  const nInactive = countMatch(inactive);
+  const anyFilter = q !== "" || genderFilter !== "todas" || membershipFilter !== "todas";
+  const noResults = anyFilter && nPending + nActive + nInactive === 0;
+
+  const GEN_CHIPS = [
+    { id: "todas", label: "Todos",   color: "var(--accent)" },
+    { id: "chica", label: "Mujeres", color: GENDER.chica.color },
+    { id: "chico", label: "Hombres", color: GENDER.chico.color },
+  ] as const;
+  const MEM_CHIPS = [
+    { id: "todas",      label: "Todas",      color: "var(--accent)" },
+    { id: "2dias",      label: "2 días",     color: MEMBERSHIP["2dias"]!.color },
+    { id: "3dias",      label: "3 días",     color: MEMBERSHIP["3dias"]!.color },
+    { id: "pase_libre", label: "Pase libre", color: MEMBERSHIP["pase_libre"]!.color },
+  ] as const;
 
   return (
     <>
@@ -93,16 +116,47 @@ export function ClientsView({ pending, active, inactive }: Props) {
         <MembershipsView active={active} inactive={inactive} query={q} />
       ) : (
         <>
+          {/* Filtros: género + membresía */}
+          <div className="flex flex-col gap-2.5 mb-6">
+            <div className="flex gap-1.5 flex-wrap items-center">
+              <span className="text-[11px] font-bold uppercase tracking-wider mr-1 w-[72px] shrink-0" style={{ color: "var(--text-3)" }}>Género</span>
+              {GEN_CHIPS.map((c) => {
+                const sel = genderFilter === c.id;
+                return (
+                  <button key={c.id} onClick={() => setGenderFilter(c.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer"
+                    style={{ background: sel ? `${c.color}1f` : "var(--bg-panel)", border: `1px solid ${sel ? c.color : "var(--border)"}`, color: sel ? c.color : "var(--text-3)" }}>
+                    {c.id !== "todas" && <span className="w-2 h-2 rounded-full" style={{ background: c.color }} />}
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-1.5 flex-wrap items-center">
+              <span className="text-[11px] font-bold uppercase tracking-wider mr-1 w-[72px] shrink-0" style={{ color: "var(--text-3)" }}>Membresía</span>
+              {MEM_CHIPS.map((c) => {
+                const sel = membershipFilter === c.id;
+                return (
+                  <button key={c.id} onClick={() => setMembershipFilter(c.id)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer"
+                    style={{ background: sel ? `${c.color}1f` : "var(--bg-panel)", border: `1px solid ${sel ? c.color : "var(--border)"}`, color: sel ? c.color : "var(--text-3)" }}>
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {nPending > 0 && (
             <section className="mb-10">
               <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#f59e0b" }}>
                 Esperando aprobación · {nPending}
               </h2>
-              <ClientsGrid clients={pending} status="pending" filter={query} />
+              <ClientsGrid clients={pending} status="pending" filter={query} gender={genderFilter} membership={membershipFilter} />
             </section>
           )}
 
-          {(nActive > 0 || q === "") && (
+          {(nActive > 0 || !anyFilter) && (
             <section className="mb-10">
               <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "var(--text-3)" }}>
                 Activos · {nActive}
@@ -113,7 +167,20 @@ export function ClientsView({ pending, active, inactive }: Props) {
                   <p className="text-sm" style={{ color: "var(--text-3)" }}>No hay alumnos activos todavía.</p>
                 </div>
               ) : (
-                <ClientsGrid clients={active} status="active" filter={query} />
+                <div className="flex flex-col gap-7">
+                  {genderFilter !== "chico" && (
+                    <GenderGroup title={GENDER.chica.label} color={GENDER.chica.color}
+                      clients={active.filter((c) => c.gender === "chica")} query={query} q={q} membership={membershipFilter} />
+                  )}
+                  {genderFilter !== "chica" && (
+                    <GenderGroup title={GENDER.chico.label} color={GENDER.chico.color}
+                      clients={active.filter((c) => c.gender === "chico")} query={query} q={q} membership={membershipFilter} />
+                  )}
+                  {genderFilter === "todas" && (
+                    <GenderGroup title="Sin género asignado" color="var(--text-3)"
+                      clients={active.filter((c) => c.gender !== "chica" && c.gender !== "chico")} query={query} q={q} membership={membershipFilter} />
+                  )}
+                </div>
               )}
             </section>
           )}
@@ -123,7 +190,7 @@ export function ClientsView({ pending, active, inactive }: Props) {
               <h2 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#ef4444" }}>
                 Inactivos · {nInactive}
               </h2>
-              <ClientsGrid clients={inactive} status="inactive" filter={query} />
+              <ClientsGrid clients={inactive} status="inactive" filter={query} gender={genderFilter} membership={membershipFilter} />
             </section>
           )}
 
@@ -237,6 +304,29 @@ function StatMini({ label, value, color }: { label: string; value: number; color
     <div className="rounded-2xl px-3 py-3 text-center" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
       <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color, fontFamily: "'Barlow Condensed', sans-serif" }}>{value}</p>
       <p className="text-[11px] mt-1 font-medium" style={{ color: "var(--text-3)" }}>{label}</p>
+    </div>
+  );
+}
+
+/* ─── Grupo por género (chicas / chicos) ─────────────────────────────────── */
+
+function GenderGroup({ title, color, clients, query, q, membership }: {
+  title: string; color: string; clients: ClientCard[]; query: string; q: string;
+  membership: "todas" | "2dias" | "3dias" | "pase_libre";
+}) {
+  const n = clients.filter(
+    (c) => (!q || c.name.toLowerCase().includes(q)) && (membership === "todas" || c.membershipType === membership),
+  ).length;
+  if (n === 0) return null;
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
+        <h3 className="text-xs font-extrabold uppercase tracking-widest" style={{ color }}>
+          {title} · {n}
+        </h3>
+      </div>
+      <ClientsGrid clients={clients} status="active" filter={query} accent={color} membership={membership} />
     </div>
   );
 }

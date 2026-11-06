@@ -2,16 +2,21 @@ export const instant = false;
 import { connection } from "next/server";
 import { getDb, schema } from "@/lib/db";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import { and, eq } from "drizzle-orm";
-import { AgendaEditor } from "@/components/trainer/agenda-editor";
+import { RoutinesHub } from "@/components/trainer/routines-hub";
 
 export default async function RoutinesPage() {
   await connection();
   const db = getDb();
 
   const approvedClients = await db
-    .select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
+    .select({
+      id: schema.user.id,
+      name: schema.user.name,
+      gender: schema.user.gender,
+      membershipType: schema.user.membershipType,
+    })
     .from(schema.user)
     .where(and(eq(schema.user.role, "client"), eq(schema.user.approved, true)))
     .orderBy(schema.user.name);
@@ -25,21 +30,21 @@ export default async function RoutinesPage() {
             Rutinas
           </h1>
           <p className="mt-2 text-sm" style={{ color: "var(--text-2)" }}>
-            Qué entrena cada alumno, día por día. Tocá para editar nombres, alumnos y ejercicios.
+            Elegí un alumno para ver y editar su semana. Podés asignar una plantilla y ajustar los ejercicios.
           </p>
         </div>
         <Link
-          href="/trainer/plans/new"
+          href="/trainer/plans"
           className="btn-accent flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold shrink-0"
           style={{ touchAction: "manipulation" }}
         >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Crear rutina nueva</span>
-          <span className="sm:hidden">Nueva</span>
+          <ClipboardList className="h-4 w-4" />
+          <span className="hidden sm:inline">Plantillas</span>
+          <span className="sm:hidden">Plantillas</span>
         </Link>
       </div>
 
-      <AgendaEditor clients={approvedClients} />
+      <RoutinesHub clients={approvedClients} />
     </div>
   );
 }
