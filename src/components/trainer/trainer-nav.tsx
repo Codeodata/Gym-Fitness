@@ -82,7 +82,7 @@ export function TrainerNav({ userName, pendingCount = 0 }: { userName: string; p
           <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 flex items-center justify-center"
             style={{ background: "#000", boxShadow: "0 0 20px rgba(244,114,182,0.35)" }}
           >
-            <img src="/logo2.png" alt="Logo" className="w-full h-full object-contain" style={{ mixBlendMode: "lighten" }} />
+            <img src="/logo-cd.png" alt="Claudia Duran Fitness" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-extrabold uppercase tracking-widest"

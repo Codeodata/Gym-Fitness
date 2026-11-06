@@ -57,7 +57,7 @@ export default function LoginPage() {
               className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center"
               style={{ background: "#000", boxShadow: "0 0 32px rgba(244,114,182,0.45)" }}
             >
-              <img src="/logo2.png" alt="Logo" className="w-full h-full object-contain" style={{ mixBlendMode: "lighten" }} />
+              <img src="/logo-cd.png" alt="Claudia Duran Fitness" className="w-full h-full object-cover" />
             </div>
           </div>
 
