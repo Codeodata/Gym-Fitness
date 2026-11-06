@@ -30,7 +30,7 @@ const STATUS_LABEL: Record<Status, string> = {
 };
 const STATUS_COLOR: Record<Status, { bg: string; text: string }> = {
   pending:  { bg: "rgba(245,158,11,0.15)", text: "#f59e0b" },
-  active:   { bg: "rgba(196,241,53,0.12)", text: "var(--accent)" },
+  active:   { bg: "rgba(236,72,153,0.12)", text: "var(--accent)" },
   inactive: { bg: "rgba(239,68,68,0.12)",  text: "#ef4444"  },
 };
 

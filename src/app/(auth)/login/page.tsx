@@ -55,7 +55,7 @@ export default function LoginPage() {
           <div className="flex justify-center mb-8">
             <div
               className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center"
-              style={{ background: "#000", boxShadow: "0 0 32px rgba(196,241,53,0.45)" }}
+              style={{ background: "#000", boxShadow: "0 0 32px rgba(236,72,153,0.45)" }}
             >
               <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" style={{ mixBlendMode: "lighten" }} />
             </div>
@@ -85,9 +85,9 @@ export default function LoginPage() {
                   fontSize: "16px",
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#c4f135";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(196,241,53,0.1)";
-                  e.currentTarget.style.background = "rgba(196,241,53,0.04)";
+                  e.currentTarget.style.borderColor = "#ec4899";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(236,72,153,0.1)";
+                  e.currentTarget.style.background = "rgba(236,72,153,0.04)";
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
@@ -120,9 +120,9 @@ export default function LoginPage() {
                   fontSize: "16px",
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#c4f135";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(196,241,53,0.1)";
-                  e.currentTarget.style.background = "rgba(196,241,53,0.04)";
+                  e.currentTarget.style.borderColor = "#ec4899";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(236,72,153,0.1)";
+                  e.currentTarget.style.background = "rgba(236,72,153,0.04)";
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
@@ -147,10 +147,10 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full h-13 rounded-xl font-extrabold text-sm mt-1 transition-all uppercase tracking-widest"
               style={{
-                background: loading ? "rgba(196,241,53,0.4)" : "#c4f135",
+                background: loading ? "rgba(236,72,153,0.4)" : "#ec4899",
                 color: "#0d1a00",
                 cursor: loading ? "default" : "pointer",
-                boxShadow: loading ? "none" : "0 0 32px rgba(196,241,53,0.3)",
+                boxShadow: loading ? "none" : "0 0 32px rgba(236,72,153,0.3)",
                 letterSpacing: "0.1em",
                 height: "52px",
                 fontSize: "13px",

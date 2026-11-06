@@ -35,10 +35,10 @@
   --border: #1e1e1e;
   --border-strong: #2a2a2a;
 
-  /* Accent — lima */
-  --accent: #c4f135;
-  --accent-hover: #d0ff50;
-  --accent-soft: #1a2800;
+  /* Accent — rosa */
+  --accent: #ec4899;
+  --accent-hover: #f472b6;
+  --accent-soft: #3a0f28;
   --accent-fg: #0a0a0a;
 
   /* States */
@@ -59,9 +59,9 @@
   --text-3: #666666;      /* was #aaaaaa (2.3:1) — now 5.3:1 ✓ */
   --border: #e0e0e0;
   --border-strong: #cccccc;
-  --accent: #3d6b00;      /* darkened for 5.5:1 contrast on #f5f5f5 */
-  --accent-hover: #4d8500;
-  --accent-soft: #e9f7bb;
+  --accent: #be185d;      /* rosa oscuro para 5.8:1 de contraste sobre #f5f5f5 */
+  --accent-hover: #9d174d;
+  --accent-soft: #fce7f3;
   --accent-fg: #ffffff;
   --destructive: #b91c1c;
   --warning: #b45309;
@@ -194,8 +194,8 @@ html { caret-color: var(--accent); }
 
 /* ─── Nav animations ──────────────────────────────────────────────────────── */
 @keyframes neon-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px #c4f135, 0 0 18px rgba(196,241,53,0.45), 0 0 40px rgba(196,241,53,0.2); }
-  50%       { opacity: 0.6; box-shadow: 0 0 3px #c4f135, 0 0 8px rgba(196,241,53,0.2); }
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px #ec4899, 0 0 18px rgba(236,72,153,0.45), 0 0 40px rgba(236,72,153,0.2); }
+  50%       { opacity: 0.6; box-shadow: 0 0 3px #ec4899, 0 0 8px rgba(236,72,153,0.2); }
 }
 
 @keyframes indicator-pop {
@@ -220,8 +220,8 @@ html { caret-color: var(--accent); }
 }
 
 @keyframes nav-glow {
-  0%, 100% { box-shadow: 0 0 18px rgba(196,241,53,0.45), 0 0 4px rgba(196,241,53,0.85); }
-  50%      { box-shadow: 0 0 30px rgba(196,241,53,0.7), 0 0 7px rgba(196,241,53,0.95); }
+  0%, 100% { box-shadow: 0 0 18px rgba(236,72,153,0.45), 0 0 4px rgba(236,72,153,0.85); }
+  50%      { box-shadow: 0 0 30px rgba(236,72,153,0.7), 0 0 7px rgba(236,72,153,0.95); }
 }
 
 .nav-active-glow {
@@ -238,14 +238,14 @@ html { caret-color: var(--accent); }
   animation: indicator-pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Orange glow on accent buttons */
+/* Glow rosado en botones de acento */
 .btn-accent {
   background: var(--accent);
   color: var(--accent-fg);
-  box-shadow: 0 0 20px rgba(196,241,53,0.2);
+  box-shadow: 0 0 20px rgba(236,72,153,0.2);
   transition: box-shadow 150ms, background 150ms;
 }
-.btn-accent:hover { background: var(--accent-hover); box-shadow: 0 0 28px rgba(196,241,53,0.35); }
+.btn-accent:hover { background: var(--accent-hover); box-shadow: 0 0 28px rgba(236,72,153,0.35); }
 
 /* Stat cards */
 .stat-card {
