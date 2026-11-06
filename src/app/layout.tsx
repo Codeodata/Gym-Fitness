@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Gym Fitness",
+  title: "Claudia Duran Fitness",
   description: "Plataforma de entrenamiento personalizado",
 };
 
