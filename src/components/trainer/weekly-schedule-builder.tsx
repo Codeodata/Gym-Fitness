@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, X, Check, Search, Pencil, ClipboardList, Sparkles } from "lucide-react";
+import { Plus, X, Check, Search, Pencil, ClipboardList, ChevronDown, ChevronUp } from "lucide-react";
 
 const DAYS = [
   { label: "Lunes",     short: "Lun", dow: 1 },
@@ -173,6 +173,18 @@ export function WeeklyScheduleBuilder({
     return [...templates].sort((a, b) => score(b) - score(a));
   }, [templates, clientGender, clientFrequency]);
 
+  const AUD: Record<string, { label: string; color: string }> = {
+    chicas: { label: "Mujeres", color: "#f472b6" },
+    chicos: { label: "Hombres", color: "#60a5fa" },
+  };
+  const FREQ_LABEL: Record<string, string> = { "2dias": "2 días", "3dias": "3 días", "pase_libre": "Pase libre" };
+  const tplExCount = (t: Template) => t.days.reduce((a, d) => a + (d.exerciseCount || 0), 0);
+  const suggested = sortedTemplates.find((t) =>
+    !!clientGender && t.audience === (clientGender === "chica" ? "chicas" : "chicos") &&
+    !!clientFrequency && t.frequency === clientFrequency,
+  ) ?? null;
+  const otherTemplates = suggested ? sortedTemplates.filter((t) => t.id !== suggested.id) : sortedTemplates;
+
   const filteredExercises = allExercises.filter(e => {
     const matchSearch = !exSearch || e.name.toLowerCase().includes(exSearch.toLowerCase());
     const matchMuscle = !muscleFilter || e.muscleGroup === muscleFilter;
@@ -195,65 +207,109 @@ export function WeeklyScheduleBuilder({
       )}
 
       {/* Header */}
-      <div className="px-5 py-4 flex items-start justify-between gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
-        <div>
-          <h2 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: "var(--text)" }}>
-            Semana del alumno
-          </h2>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
-            {readOnly
-              ? "Vista de solo lectura. Editá la rutina desde la sección Rutinas."
-              : "Tocá un día para agregar ejercicios, o asigná una plantilla como punto de partida."}
-          </p>
-        </div>
-        {!readOnly && (
-          <button type="button" onClick={() => setShowTemplates(v => !v)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shrink-0 cursor-pointer"
-            style={{ background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent)", touchAction: "manipulation" }}>
-            <Sparkles className="h-3.5 w-3.5" /> Asignar plantilla
-          </button>
-        )}
+      <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+        <h2 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: "var(--text)" }}>
+          Semana del alumno
+        </h2>
+        <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
+          {readOnly
+            ? "Vista de solo lectura. Editá la rutina desde la sección Rutinas."
+            : "Primero asigná una plantilla; después (opcional) ajustá ejercicios sueltos por día."}
+        </p>
       </div>
 
-      {/* Panel de plantillas */}
-      {showTemplates && (
-        <div className="reveal-down p-4" style={{ background: "var(--bg)", borderBottom: "1px solid var(--border)" }}>
-          <p className="text-xs font-extrabold uppercase tracking-wider mb-3" style={{ color: "var(--text-3)" }}>
-            Elegí una plantilla (se copia a la semana de este alumno)
-          </p>
+      {/* ── Paso 1: Asignar plantilla ──────────────────────────── */}
+      {!readOnly && (
+        <div className="p-4" style={{ background: "var(--bg)", borderBottom: "1px solid var(--border)" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0"
+              style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>1</span>
+            <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: "var(--text)" }}>Asignar plantilla</h3>
+          </div>
+
           {templates.length === 0 ? (
             <p className="text-sm" style={{ color: "var(--text-3)" }}>Todavía no hay plantillas creadas.</p>
           ) : (
-            <div className="flex flex-col gap-2">
-              {sortedTemplates.map(tpl => {
-                const match =
-                  (!!clientGender && tpl.audience === (clientGender === "chica" ? "chicas" : "chicos")) &&
-                  (!!clientFrequency && tpl.frequency === clientFrequency);
+            <div className="flex flex-col gap-2.5">
+              {/* Sugerida (prominente) */}
+              {suggested && (() => {
+                const color = suggested.audience ? (AUD[suggested.audience]?.color ?? "var(--accent)") : "var(--accent)";
                 return (
-                  <button key={tpl.id} type="button" disabled={busy} onClick={() => assignTemplate(tpl)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-left cursor-pointer disabled:opacity-50"
-                    style={{ background: "var(--bg-panel)", border: `1px solid ${match ? "var(--accent)" : "var(--border)"}` }}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: "var(--accent-soft)" }}>
-                      <ClipboardList className="h-4 w-4" style={{ color: "var(--accent)" }} />
+                  <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: `${color}14`, border: `1px solid ${color}55` }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${color}22` }}>
+                      <ClipboardList className="h-5 w-5" style={{ color }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>{tpl.name}</p>
-                      <p className="text-[11px]" style={{ color: "var(--text-3)" }}>
-                        {tpl.days.length} día{tpl.days.length !== 1 ? "s" : ""}
-                        {tpl.audience ? ` · ${tpl.audience}` : ""}
-                        {tpl.frequency ? ` · ${tpl.frequency.replace("_", " ")}` : ""}
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-extrabold truncate" style={{ color: "var(--text)" }}>{suggested.name}</p>
+                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full shrink-0" style={{ background: color, color: "#0a0a0a" }}>sugerida</span>
+                      </div>
+                      <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>
+                        {suggested.days.length} días · {tplExCount(suggested)} ejercicios
                       </p>
                     </div>
-                    {match && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0"
-                        style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>sugerida</span>
-                    )}
-                  </button>
+                    <button type="button" disabled={busy} onClick={() => assignTemplate(suggested)}
+                      className="shrink-0 px-4 h-10 rounded-xl text-sm font-extrabold cursor-pointer disabled:opacity-50"
+                      style={{ background: color, color: "#0a0a0a", touchAction: "manipulation" }}>
+                      {busy ? "…" : "Asignar"}
+                    </button>
+                  </div>
                 );
-              })}
+              })()}
+
+              {/* Ver todas — resumido, se expande organizado por frecuencia */}
+              <button type="button" onClick={() => setShowTemplates(v => !v)}
+                className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                style={{ border: "1px dashed var(--border-strong)", color: "var(--text-2)", touchAction: "manipulation" }}>
+                {showTemplates ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                {showTemplates ? "Ocultar plantillas" : suggested ? `Ver todas las plantillas (${otherTemplates.length})` : "Elegir una plantilla"}
+              </button>
+
+              {showTemplates && (
+                <div className="reveal-down flex flex-col gap-3">
+                  {(["2dias", "3dias", "pase_libre"] as const).map((freq) => {
+                    const list = otherTemplates.filter((t) => t.frequency === freq);
+                    if (list.length === 0) return null;
+                    return (
+                      <div key={freq}>
+                        <p className="text-[10px] font-extrabold uppercase tracking-widest mb-1.5 px-1" style={{ color: "var(--text-3)" }}>{FREQ_LABEL[freq]}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {list.map((tpl) => {
+                            const color = tpl.audience ? (AUD[tpl.audience]?.color ?? "var(--text-3)") : "var(--text-3)";
+                            return (
+                              <button key={tpl.id} type="button" disabled={busy} onClick={() => assignTemplate(tpl)}
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left cursor-pointer disabled:opacity-50"
+                                style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                                <span className="flex-1 min-w-0">
+                                  <span className="block text-xs font-bold truncate" style={{ color: "var(--text)" }}>
+                                    {tpl.audience ? AUD[tpl.audience]?.label : tpl.name}
+                                  </span>
+                                  <span className="block text-[10px]" style={{ color: "var(--text-3)" }}>{tpl.days.length} días · {tplExCount(tpl)} ej.</span>
+                                </span>
+                                <Plus className="h-4 w-4 shrink-0" style={{ color }} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Paso 2: Ejercicios sueltos (opcional) ──────────────── */}
+      {!readOnly && (
+        <div className="px-4 pt-4 pb-1 flex items-center gap-2">
+          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0"
+            style={{ background: "var(--bg-hover)", color: "var(--text-3)", border: "1px solid var(--border)" }}>2</span>
+          <h3 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: "var(--text-2)" }}>
+            Ejercicios sueltos <span style={{ color: "var(--text-3)" }}>(opcional)</span>
+          </h3>
         </div>
       )}
 
