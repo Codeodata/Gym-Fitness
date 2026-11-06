@@ -190,19 +190,14 @@ export function ExerciseManager({ initialExercises }: { initialExercises: Exerci
         </div>
       )}
 
-      {/* Exercise grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {filtered.map((ex) => {
+      {/* Exercise list */}
+      <div className="rounded-2xl overflow-hidden" style={{ border: filtered.length ? "1px solid var(--border)" : "none", background: "var(--bg-panel)" }}>
+        {filtered.map((ex, idx) => {
           const isEditing = editId === ex.id;
           const diff = DIFFICULTIES.find((d) => d.value === (ex.difficulty ?? "intermediate"));
           return (
-            <div
-              key={ex.id}
-              className="exercise-card rounded-2xl overflow-hidden flex flex-col"
-              style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}
-            >
-              {/* Info / Edit */}
-              <div className="flex-1 p-4">
+            <div key={ex.id} style={{ borderTop: idx > 0 ? "1px solid var(--border)" : "none" }}>
+              <div className="p-4">
                 {isEditing ? (
                   <div className="flex flex-col gap-2">
                     <input
