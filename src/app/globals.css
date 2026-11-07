@@ -4,6 +4,7 @@
 @theme {
   --font-sans: var(--font-barlow), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: var(--font-barlow-condensed), "Arial Narrow", sans-serif;
+  --font-signature: var(--font-great-vibes), "Brush Script MT", cursive;
   /* Piso legible para metadatos/etiquetas: 11px (antes había 8–10px). */
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1.35;

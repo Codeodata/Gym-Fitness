@@ -9,6 +9,7 @@ import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BrandWordmark, BrandLogoLettering } from "@/components/brand-wordmark";
 
 const NAV = [
   { href: "/dashboard",   label: "Inicio",   icon: LayoutDashboard, image: "/trainer-bg.jpg", bgPos: "center" },
@@ -90,13 +91,8 @@ export function ClientNav({ userName }: { userName: string }) {
             <img src="/logo-cd.png" alt="Claudia Duran Fitness" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
-            <p
-              className="text-sm font-extrabold uppercase tracking-widest"
-              style={{ color: "#fff", fontFamily: "var(--font-display)" }}
-            >
-              Claudia Duran Fitness
-            </p>
-            <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <BrandLogoLettering />
+            <p className="text-xs truncate mt-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>
               {userName}
             </p>
           </div>
@@ -222,12 +218,7 @@ export function ClientNav({ userName }: { userName: string }) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <span
-          className="font-extrabold text-sm uppercase tracking-widest flex-1"
-          style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}
-        >
-          Claudia Duran Fitness
-        </span>
+        <span className="flex-1 min-w-0"><BrandWordmark size="sm" color="var(--text)" /></span>
         <button onClick={toggleTheme} className="p-2 rounded-xl cursor-pointer" style={{ color: "var(--text-3)", touchAction: "manipulation" }}>
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>

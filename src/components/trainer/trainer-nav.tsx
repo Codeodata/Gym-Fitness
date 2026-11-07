@@ -9,6 +9,7 @@ import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { BrandWordmark, BrandLogoLettering } from "@/components/brand-wordmark";
 
 const NAV = [
   { href: "/trainer/dashboard", label: "Inicio",      icon: LayoutDashboard, image: "/trainer-bg.jpg",   bgPos: "center" },
@@ -85,11 +86,8 @@ export function TrainerNav({ userName, pendingCount = 0 }: { userName: string; p
             <img src="/logo-cd.png" alt="Claudia Duran Fitness" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-extrabold uppercase tracking-widest"
-              style={{ fontFamily: "var(--font-display)", color: "#fff" }}>
-              Claudia Duran Fitness
-            </p>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Panel entrenador</p>
+            <BrandLogoLettering />
+            <p className="text-xs mt-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>Panel entrenador</p>
           </div>
           {onClose && (
             <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl shrink-0"
@@ -198,12 +196,7 @@ export function TrainerNav({ userName, pendingCount = 0 }: { userName: string; p
         >
           <Menu className="h-5 w-5" />
         </button>
-        <span
-          className="font-extrabold text-sm uppercase tracking-widest flex-1"
-          style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}
-        >
-          Claudia Duran Fitness
-        </span>
+        <span className="flex-1 min-w-0"><BrandWordmark size="sm" color="var(--text)" /></span>
         <button onClick={toggleTheme} className="p-2 rounded-xl cursor-pointer" style={{ color: "var(--text-3)", touchAction: "manipulation" }}>
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>

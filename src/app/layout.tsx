@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Barlow, Barlow_Condensed } from "next/font/google";
+import { Barlow, Barlow_Condensed, Great_Vibes } from "next/font/google";
 import "./globals.css";
 
 // Autoalojadas por next/font (sin pedidos a Google, sin salto de layout).
@@ -8,6 +8,13 @@ const barlow = Barlow({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-barlow",
+  display: "swap",
+});
+// Firma de la marca ("Claudia Duran" manuscrito, como en el logo).
+const greatVibes = Great_Vibes({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-great-vibes",
   display: "swap",
 });
 const barlowCondensed = Barlow_Condensed({
@@ -24,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning className={`${barlow.variable} ${barlowCondensed.variable}`}>
+    <html lang="es" suppressHydrationWarning className={`${barlow.variable} ${barlowCondensed.variable} ${greatVibes.variable}`}>
       <head>
         {/* Prevent flash of wrong theme */}
         <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}` }} />
