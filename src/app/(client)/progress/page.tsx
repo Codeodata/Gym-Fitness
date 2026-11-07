@@ -1,7 +1,7 @@
 export const instant = false;
 import { getSession } from "@/lib/get-session";
 import { getDb, schema } from "@/lib/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { ClientProgress } from "@/components/client/client-progress";
 
 export default async function ProgressPage() {
@@ -39,8 +39,9 @@ export default async function ProgressPage() {
       })
       .from(schema.exerciseLog)
       .innerJoin(schema.workoutLog, eq(schema.exerciseLog.workoutLogId, schema.workoutLog.id))
-      .innerJoin(schema.planExercise, eq(schema.exerciseLog.planExerciseId, schema.planExercise.id))
-      .innerJoin(schema.exercise, eq(schema.planExercise.exerciseId, schema.exercise.id))
+      // exercise_id es la fuente; los registros viejos solo tenían plan_exercise_id.
+      .leftJoin(schema.planExercise, eq(schema.exerciseLog.planExerciseId, schema.planExercise.id))
+      .innerJoin(schema.exercise, sql`${schema.exercise.id} = coalesce(${schema.exerciseLog.exerciseId}, ${schema.planExercise.exerciseId})`)
       .where(eq(schema.workoutLog.clientId, clientId))
       .orderBy(desc(schema.workoutLog.loggedAt))
       .limit(200),

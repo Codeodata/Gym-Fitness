@@ -215,7 +215,7 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
 
           {/* CTA: registrar la sesión del día (luego de ver la rutina) */}
           {plan && (
-            <Link href="/my-plan"
+            <Link href="/my-plan?registrar=hoy"
               className="flex items-center justify-center gap-2 h-12 rounded-2xl text-sm font-extrabold"
               style={{ background: "var(--accent)", color: "var(--accent-fg)", touchAction: "manipulation" }}>
               <CalendarCheck className="h-5 w-5" /> Registrar sesión de hoy

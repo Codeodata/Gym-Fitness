@@ -655,11 +655,11 @@ function SessionTimeline({ logs }: { logs: Log[] }) {
                 style={{ borderTop: "1px solid var(--border)" }}>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-extrabold text-sm"
                   style={{ background: "var(--accent-soft)", color: "var(--accent)", fontFamily: "var(--font-display)" }}>
-                  D{log.dayNumber ?? "?"}
+                  {log.dayNumber ? `D${log.dayNumber}` : new Date(log.loggedAt).getDate()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                    {log.dayName || `Día ${log.dayNumber ?? "?"}`}
+                    {log.dayName || (log.dayNumber ? `Día ${log.dayNumber}` : "Entrenamiento")}
                   </p>
                   <p className="text-xs first-letter:uppercase mt-0.5" style={{ color: "var(--text-3)" }}>
                     {new Date(log.loggedAt).toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "short" })}

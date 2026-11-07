@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Flame, Dumbbell, PlayCircle, CalendarDays, CheckCircle, CalendarCheck } from "lucide-react";
+import { Flame, Dumbbell, PlayCircle, CalendarDays, CheckCircle, CalendarCheck, Pencil } from "lucide-react";
 import { VideoModal, type ActiveVideo } from "./video-modal";
+import { SessionLogger, savedLogKey, type LoggableEx } from "./session-logger";
 
 const DAY_NAMES = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
@@ -19,6 +20,9 @@ const MUSCLE_LABELS: Record<string, string> = {
 
 type Ex = {
   id: string;
+  exerciseId: string;
+  planExerciseId: string | null;
+  last: LoggableEx["last"];
   name: string;
   muscleGroup: string;
   section: string;
@@ -51,6 +55,7 @@ function ExerciseRow({ ex, onPlay }: { ex: Ex; onPlay: (v: ActiveVideo) => void 
         <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>{ex.name}</p>
         <p className="text-xs" style={{ color: "var(--text-3)" }}>
           {MUSCLE_LABELS[ex.muscleGroup] ?? ex.muscleGroup}
+          {ex.last?.weightKg ? <> · última vez <span className="tabular-nums font-semibold" style={{ color: "var(--text-2)" }}>{ex.last.weightKg.replace(".", ",")} kg</span></> : null}
         </p>
         {ex.notes && (
           <p className="text-xs italic mt-0.5 leading-tight" style={{ color: "var(--text-3)" }}>{ex.notes}</p>
@@ -131,12 +136,9 @@ export function MyPlanWeek() {
   const [days, setDays] = useState<Day[]>([]);
   const [loading, setLoading] = useState(true);
   const [video, setVideo] = useState<ActiveVideo | null>(null);
-
-  // Registro de sesión
-  const [openLogDow, setOpenLogDow] = useState<number | null>(null);
-  const [weights, setWeights] = useState<Record<string, string>>({}); // planExerciseId → kg
-  const [loggingDow, setLoggingDow] = useState<number | null>(null);
-  const [loggedDows, setLoggedDows] = useState<Set<number>>(new Set());
+  // Registro de sesión: un día a la vez en modo registro.
+  const [logDow, setLogDow] = useState<number | null>(null);
+  const [savedDows, setSavedDows] = useState<Set<number>>(new Set());
 
   const jsDay = new Date().getDay();
   const todayDow = jsDay === 0 || jsDay === 6 ? null : jsDay;
@@ -144,36 +146,33 @@ export function MyPlanWeek() {
   useEffect(() => {
     fetch("/api/client/week-plan")
       .then((r) => r.json())
-      .then((d) => setDays(d.days ?? []))
+      .then((d) => {
+        const loaded: Day[] = d.days ?? [];
+        setDays(loaded);
+        // Sesiones ya registradas hoy (guardado local del id para poder corregirlas).
+        const saved = new Set<number>();
+        for (const day of loaded) {
+          try { if (localStorage.getItem(savedLogKey(day.dow))) saved.add(day.dow); } catch {}
+        }
+        setSavedDows(saved);
+        // /my-plan?registrar=hoy → abre directo el registro del día.
+        if (new URLSearchParams(window.location.search).get("registrar") === "hoy" && todayDow &&
+            loaded.some((x) => x.dow === todayDow)) {
+          setLogDow(todayDow);
+          setTimeout(() => document.getElementById(`dia-${todayDow}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+        }
+      })
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function logSession(day: Day) {
-    setLoggingDow(day.dow);
-    try {
-      const exercises = day.blocks.flatMap((b) =>
-        b.exercises.map((ex) => ({
-          planExerciseId: ex.id,
-          setsDone: ex.sets,
-          repsDone: ex.reps,
-          weightKg: weights[ex.id]?.trim() || null,
-          notes: null as string | null,
-        }))
-      );
-      const planDayId = day.blocks[0]?.planDayId ?? null;
-      const res = await fetch("/api/client/log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planDayId, exercises }),
-      });
-      if (res.ok) {
-        setLoggedDows((prev) => new Set(prev).add(day.dow));
-        setOpenLogDow(null);
-      }
-    } finally {
-      setLoggingDow(null);
-    }
-  }
+  const loggable = (day: Day): LoggableEx[] =>
+    [...day.blocks.flatMap((b) => b.exercises).filter((e) => e.section !== "warmup"), ...day.singles]
+      .map((e) => ({
+        key: e.id, exerciseId: e.exerciseId, planExerciseId: e.planExerciseId, name: e.name,
+        sets: e.sets, reps: e.reps, weightKg: e.weightKg, last: e.last,
+        videoUrl: e.videoUrl, imageUrl: e.imageUrl,
+      }));
 
   if (loading) return (
     <div className="rounded-2xl p-6 flex items-center justify-center"
@@ -210,7 +209,7 @@ export function MyPlanWeek() {
       {days.map((day) => {
         const isToday = day.dow === todayDow;
         return (
-          <div key={day.dow} className="flex flex-col gap-2.5">
+          <div key={day.dow} id={`dia-${day.dow}`} className="flex flex-col gap-2.5 scroll-mt-20">
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4" style={{ color: isToday ? "var(--accent)" : "var(--text-3)" }} />
               <h2 className="text-sm font-extrabold uppercase tracking-widest"
@@ -225,81 +224,48 @@ export function MyPlanWeek() {
               )}
             </div>
 
-            {day.blocks.map((block) => (
-              <BlockCard key={block.id} block={block} onPlay={setVideo} />
-            ))}
-
-            {day.singles.length > 0 && (
-              <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
-                <div className="px-5 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
-                  <p className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5"
-                    style={{ color: "var(--text-3)" }}>
-                    <Dumbbell className="h-3 w-3" /> Ejercicios sueltos
-                  </p>
-                </div>
-                <div className="px-5 py-3 flex flex-col gap-1.5">
-                  {day.singles.map((ex) => <ExerciseRow key={ex.id} ex={ex} onPlay={setVideo} />)}
-                </div>
-              </div>
-            )}
-
-            {/* Registrar sesión del día */}
-            {loggedDows.has(day.dow) ? (
-              <div className="flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold"
-                style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-                <CheckCircle className="h-4 w-4" /> Sesión registrada
-              </div>
-            ) : openLogDow === day.dow ? (
-              <div className="rounded-2xl p-4 flex flex-col gap-3"
-                style={{ background: "var(--bg-panel)", border: "1px solid var(--accent)" }}>
-                <p className="text-xs font-bold" style={{ color: "var(--text-2)" }}>
-                  Anotá el peso que usaste (opcional) y confirmá la sesión.
-                </p>
-                <div className="flex flex-col gap-1.5">
-                  {day.blocks.flatMap((b) => b.exercises).filter((e) => e.section !== "warmup").map((ex) => (
-                    <div key={ex.id} className="flex items-center gap-2">
-                      <p className="flex-1 text-sm truncate" style={{ color: "var(--text)" }}>{ex.name}</p>
-                      <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: "var(--text-3)" }}>
-                        {ex.sets}×{ex.reps}
-                      </span>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <input
-                          type="number" inputMode="decimal" min={0} step="0.5"
-                          placeholder="kg"
-                          value={weights[ex.id] ?? ""}
-                          onChange={(e) => setWeights((p) => ({ ...p, [ex.id]: e.target.value }))}
-                          className="w-16 px-2 py-1.5 rounded-lg text-sm text-center font-bold outline-none"
-                          style={{ background: "var(--bg-hover)", border: "1px solid var(--border)", color: "var(--text)" }}
-                        />
-                        <span className="text-xs" style={{ color: "var(--text-3)" }}>kg</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setOpenLogDow(null)}
-                    disabled={loggingDow === day.dow}
-                    className="flex-1 h-10 rounded-xl text-sm font-bold"
-                    style={{ background: "var(--bg-hover)", color: "var(--text-3)", cursor: "pointer" }}>
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => logSession(day)}
-                    disabled={loggingDow === day.dow}
-                    className="flex-1 h-10 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2"
-                    style={{ background: "var(--accent)", color: "var(--accent-fg)", cursor: "pointer" }}>
-                    {loggingDow === day.dow ? "Guardando…" : <><CheckCircle className="h-4 w-4" /> Confirmar sesión</>}
-                  </button>
-                </div>
-              </div>
+            {logDow === day.dow ? (
+              <SessionLogger
+                dow={day.dow}
+                planDayId={day.blocks[0]?.planDayId ?? null}
+                exercises={loggable(day)}
+                onPlay={setVideo}
+                onCancel={() => setLogDow(null)}
+                onSaved={() => { setSavedDows((p) => new Set(p).add(day.dow)); setLogDow(null); }}
+              />
             ) : (
-              <button
-                onClick={() => setOpenLogDow(day.dow)}
-                className="flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-extrabold"
-                style={{ background: "var(--accent)", color: "var(--accent-fg)", cursor: "pointer", touchAction: "manipulation" }}>
-                <CalendarCheck className="h-4 w-4" /> Registrar sesión
-              </button>
+              <>
+                {day.blocks.map((block) => (
+                  <BlockCard key={block.id} block={block} onPlay={setVideo} />
+                ))}
+
+                {day.singles.length > 0 && (
+                  <div className="rounded-2xl px-4 py-3 flex flex-col gap-1.5" style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
+                    {day.singles.map((ex) => <ExerciseRow key={ex.id} ex={ex} onPlay={setVideo} />)}
+                  </div>
+                )}
+
+                {savedDows.has(day.dow) ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold"
+                      style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+                      <CheckCircle className="h-4 w-4" /> Sesión registrada
+                    </div>
+                    <button onClick={() => setLogDow(day.dow)}
+                      className="flex items-center gap-1.5 h-11 px-4 rounded-xl text-sm font-bold cursor-pointer"
+                      style={{ background: "var(--bg-hover)", color: "var(--text-2)", touchAction: "manipulation" }}>
+                      <Pencil className="h-4 w-4" /> Corregir
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setLogDow(day.dow)}
+                    className="flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-extrabold cursor-pointer"
+                    style={{ background: "var(--accent)", color: "var(--accent-fg)", touchAction: "manipulation" }}>
+                    <CalendarCheck className="h-4 w-4" /> Registrar sesión
+                  </button>
+                )}
+              </>
             )}
           </div>
         );

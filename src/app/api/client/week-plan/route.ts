@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";
 import { headers } from "next/headers";
-import { eq, asc, inArray } from "drizzle-orm";
+import { eq, asc, desc, inArray } from "drizzle-orm";
 
 // La semana del alumno se arma desde client_day_block (bloques de rutina por día)
 // + client_day_exercise (ejercicios sueltos por día) — el mismo modelo que escribe
@@ -37,6 +37,7 @@ export async function GET() {
     ? await db
         .select({
           id: schema.planExercise.id,
+          exerciseId: schema.planExercise.exerciseId,
           planDayId: schema.planExercise.planDayId,
           section: schema.planExercise.section,
           sets: schema.planExercise.sets,
@@ -59,6 +60,7 @@ export async function GET() {
   const singles = await db
     .select({
       id: schema.clientDayExercise.id,
+      exerciseId: schema.clientDayExercise.exerciseId,
       dayOfWeek: schema.clientDayExercise.dayOfWeek,
       sets: schema.clientDayExercise.sets,
       reps: schema.clientDayExercise.reps,
@@ -73,6 +75,35 @@ export async function GET() {
     .innerJoin(schema.exercise, eq(schema.clientDayExercise.exerciseId, schema.exercise.id))
     .where(eq(schema.clientDayExercise.clientId, clientId))
     .orderBy(asc(schema.clientDayExercise.dayOfWeek), asc(schema.clientDayExercise.orderIndex));
+
+  // Último registro del alumno por ejercicio (para precargar peso/series/reps).
+  const exerciseIds = [...new Set([...blockExercises.map((e) => e.exerciseId), ...singles.map((s) => s.exerciseId)])];
+  const lastRows = exerciseIds.length
+    ? await db
+        .select({
+          exerciseId: schema.exerciseLog.exerciseId,
+          weightKg: schema.exerciseLog.weightKg,
+          setsDone: schema.exerciseLog.setsDone,
+          repsDone: schema.exerciseLog.repsDone,
+          loggedAt: schema.workoutLog.loggedAt,
+        })
+        .from(schema.exerciseLog)
+        .innerJoin(schema.workoutLog, eq(schema.exerciseLog.workoutLogId, schema.workoutLog.id))
+        .where(eq(schema.workoutLog.clientId, clientId))
+        .orderBy(desc(schema.workoutLog.loggedAt))
+        .limit(500)
+    : [];
+  const last = new Map<string, { weightKg: string | null; setsDone: number | null; repsDone: string | null; loggedAt: string }>();
+  for (const r of lastRows) {
+    if (r.exerciseId && !last.has(r.exerciseId)) {
+      last.set(r.exerciseId, {
+        weightKg: r.weightKg ? String(Number(r.weightKg)) : null,
+        setsDone: r.setsDone,
+        repsDone: r.repsDone,
+        loggedAt: r.loggedAt.toISOString(),
+      });
+    }
+  }
 
   const days = [1, 2, 3, 4, 5]
     .map((dow) => ({
@@ -89,6 +120,9 @@ export async function GET() {
             .filter((e) => e.planDayId === b.planDayId)
             .map((e) => ({
               id: e.id,
+              exerciseId: e.exerciseId,
+              planExerciseId: e.id as string | null,
+              last: last.get(e.exerciseId) ?? null,
               name: e.name,
               muscleGroup: e.muscleGroup,
               section: e.section,
@@ -105,6 +139,9 @@ export async function GET() {
         .filter((s) => s.dayOfWeek === dow)
         .map((s) => ({
           id: s.id,
+          exerciseId: s.exerciseId,
+          planExerciseId: null as string | null,
+          last: last.get(s.exerciseId) ?? null,
           name: s.name,
           muscleGroup: s.muscleGroup,
           section: "main" as const,

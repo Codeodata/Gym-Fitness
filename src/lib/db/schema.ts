@@ -171,9 +171,12 @@ export const exerciseLog = pgTable("exercise_log", {
   workoutLogId: uuid("workout_log_id")
     .notNull()
     .references(() => workoutLog.id, { onDelete: "cascade" }),
+  // Opcional: la rutina asignada vive en client_day_exercise (sin plan_exercise).
   planExerciseId: uuid("plan_exercise_id")
-    .notNull()
     .references(() => planExercise.id),
+  // Ejercicio registrado (fuente de verdad para el progreso).
+  exerciseId: uuid("exercise_id")
+    .references(() => exercise.id, { onDelete: "cascade" }),
   setsDone: integer("sets_done"),
   repsDone: text("reps_done"),
   weightKg: numeric("weight_kg", { precision: 6, scale: 2 }),
