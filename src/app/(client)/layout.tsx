@@ -46,7 +46,7 @@ export default async function ClientLayout({ children }: { children: React.React
       {/* Content */}
       <div style={{ position: "relative", zIndex: 4 }}>
         <ClientNav userName={session.user.name} />
-        <main className="pb-8 pt-16 lg:pt-0 lg:pl-64 px-4 lg:px-8 lg:py-8">
+        <main className="pb-8 pt-16 lg:ml-64 px-4 lg:px-8 lg:py-8 min-w-0">
           {children}
         </main>
       </div>

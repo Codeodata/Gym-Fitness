@@ -1,8 +1,7 @@
 export const instant = false;
 import { unstable_cache } from "next/cache";
-import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
-import { ExerciseLibrary } from "@/components/client/exercise-library";
+import { MovementLibrary } from "@/components/client/movement-library";
 
 const getExercises = unstable_cache(
   () =>
@@ -15,15 +14,22 @@ const getExercises = unstable_cache(
         difficulty: schema.exercise.difficulty,
         imageUrl: schema.exercise.imageUrl,
         videoUrl: schema.exercise.videoUrl,
+        isStretch: schema.exercise.isStretch,
       })
       .from(schema.exercise)
-      .where(eq(schema.exercise.isStretch, false))
       .orderBy(schema.exercise.muscleGroup, schema.exercise.name),
-  ["exercises-library"],
+  ["movement-library"],
   { tags: ["exercises"] },
 );
 
-export default async function BibliotecaPage() {
-  const exercises = await getExercises();
-  return <ExerciseLibrary exercises={exercises} />;
+// Ejercicios y estiramientos en una sola sección (igual que el profe).
+export default async function BibliotecaPage({ searchParams }: { searchParams: Promise<{ tipo?: string }> }) {
+  const [all, { tipo }] = await Promise.all([getExercises(), searchParams]);
+  return (
+    <MovementLibrary
+      exercises={all.filter((e) => !e.isStretch)}
+      stretches={all.filter((e) => e.isStretch)}
+      initialKind={tipo === "estiramientos" ? "estiramientos" : "ejercicios"}
+    />
+  );
 }

@@ -83,7 +83,7 @@ export default async function DashboardPage() {
   return (
     <div data-client-theme="" style={{ background: "var(--bg)", minHeight: "100svh" }}>
       <ClientNav userName={session.user.name} />
-      <main className="pb-24 md:pb-8 pt-16 md:pt-0 md:pl-64 px-4 md:px-8 md:py-8">
+      <main className="pb-24 lg:pb-8 pt-16 lg:ml-64 px-4 lg:px-8 lg:pt-8 min-w-0">
         <ClientDashboard
           userName={session.user.name}
           plan={assignment ?? null}

@@ -118,8 +118,8 @@ export function ResumenDashboard({ userName, data }: { userName: string; data: D
           ) : undefined} />
         <Kpi icon={Dumbbell} label="Con rutina" value={`${kpis.assignedClients}`} accent="var(--c-purple)"
           sub={<span className="text-2xs mt-1 block" style={{ color: "var(--text-3)" }}>{pctConRutina}% de los activos</span>} />
-        <Kpi icon={CalendarCheck} label="Ocupación turnos" value={`${kpis.occupancyPct}%`} accent="var(--c-blue)"
-          sub={<span className="text-2xs mt-1 block" style={{ color: "var(--text-3)" }}>{kpis.totalEnrollments} en {kpis.totalSlots} turnos</span>} />
+        <Kpi icon={CalendarCheck} label="Turnos reservados" value={kpis.totalEnrollments} accent="var(--c-blue)"
+          sub={<span className="text-2xs mt-1 block" style={{ color: "var(--text-3)" }}>en {kpis.totalSlots} turnos por semana</span>} />
         <Kpi icon={CreditCard} label="Membresías por vencer" value={byVencer} accent={byVencer > 0 ? "var(--warning)" : "var(--c-green)"} />
         <Kpi icon={UserPlus} label="Nuevos este mes" value={kpis.newThisMonth} accent="var(--c-green)" />
         <Kpi icon={Activity} label="Sesiones (7 días)" value={kpis.sessionsThisWeek} accent="var(--c-orange)" />
@@ -166,21 +166,23 @@ export function ResumenDashboard({ userName, data }: { userName: string; data: D
 
       {/* Ocupación de turnos */}
       <section className="mb-8">
-        <SectionTitle right={<span className="text-xs font-bold" style={{ color: "var(--c-blue)" }}>{kpis.occupancyPct}% ocupado</span>}>
-          Ocupación de turnos
+        <SectionTitle right={<span className="text-xs font-bold" style={{ color: "var(--c-blue)" }}>{kpis.totalEnrollments} reservas</span>}>
+          Reservas por día
         </SectionTitle>
         <div className="rounded-2xl p-5" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
           <div className="flex items-end justify-between gap-2" style={{ height: 130 }}>
             {occupancy.map((o) => {
-              const full = o.pct >= 100;
+              // Sin cupo máximo: la barra es relativa al día con más reservas.
+              const maxDay = Math.max(1, ...occupancy.map((d) => d.enrolled));
+              const pct = Math.round((o.enrolled / maxDay) * 100);
               return (
                 <div key={o.dow} className="flex-1 flex flex-col items-center justify-end gap-1.5 h-full">
-                  <span className="text-xs font-extrabold tabular-nums" style={{ color: full ? "var(--warning)" : "var(--text-2)" }}>{o.pct}%</span>
+                  <span className="text-xs font-extrabold tabular-nums" style={{ color: "var(--text-2)" }}>{o.enrolled}</span>
                   <div className="w-full rounded-lg relative overflow-hidden" style={{ background: "var(--bg-hover)", height: "100%" }}>
                     <div className="absolute bottom-0 left-0 right-0 rounded-lg"
-                      style={{ height: mounted ? `${Math.max(Math.min(o.pct, 100), 3)}%` : "3%", background: full ? "var(--warning)" : "var(--c-blue)", transition: `height 0.7s cubic-bezier(0.16,1,0.3,1) ${o.dow * 40}ms` }} />
+                      style={{ height: mounted ? `${Math.max(pct, 3)}%` : "3%", background: "var(--c-blue)", transition: `height 0.7s cubic-bezier(0.16,1,0.3,1) ${o.dow * 40}ms` }} />
                   </div>
-                  <span className="text-2xs tabular-nums" style={{ color: "var(--text-3)" }}>{o.enrolled}/{o.capacity || "—"}</span>
+                  <span className="text-2xs tabular-nums" style={{ color: "var(--text-3)" }}>{o.slots} turno{o.slots !== 1 ? "s" : ""}</span>
                   <span className="text-2xs font-bold uppercase" style={{ color: "var(--text-3)" }}>{DOW_SHORT[o.dow]}</span>
                 </div>
               );

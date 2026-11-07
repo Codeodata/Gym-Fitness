@@ -122,7 +122,7 @@ async function seed() {
     slotIds.push(id);
     await db.execute(`
       INSERT INTO class_slot (id, day_of_week, start_time, type, max_capacity)
-      VALUES ('${id}', ${s.day}, '${s.time}', '${s.type}', 12);
+      VALUES ('${id}', ${s.day}, '${s.time}', '${s.type}', NULL);
     `);
   }
   console.log(`✓ ${SLOTS_DEF.length} turnos creados`);
