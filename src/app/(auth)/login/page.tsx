@@ -28,21 +28,34 @@ export default function LoginPage() {
 
   return (
     <div
-      className="relative min-h-svh flex items-center justify-center px-5 py-10 overflow-hidden"
+      className="relative min-h-svh flex items-end md:items-center justify-center px-5 pt-10 pb-14 md:py-10 overflow-hidden"
       style={{ background: "#080808" }}
     >
       {/* ── Fondo: imagen de marca a pantalla completa (desktop y mobile) ── */}
+      {/* Celular: versión vertical (logo arriba, Claudia abajo). Desktop: la horizontal. */}
       <Image
-        src="/clau-login.jpg"
+        src="/clau-login-mobile.jpg"
         alt="Claudia Duran Fitness"
         fill
         priority
         sizes="100vw"
-        className="object-cover object-center"
+        className="object-cover object-top md:hidden"
       />
-      {/* Scrim para asegurar contraste del formulario sobre la foto */}
+      <Image
+        src="/clau-login.jpg"
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-center hidden md:block"
+      />
+      {/* Scrim: en celular deja ver el logo y oscurece solo donde va el formulario */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 md:hidden"
+        style={{ background: "linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.1) 40%, rgba(5,5,5,0.75) 100%)" }}
+      />
+      <div
+        className="absolute inset-0 hidden md:block"
         style={{
           background:
             "linear-gradient(180deg, rgba(5,5,5,0.45) 0%, rgba(5,5,5,0.6) 55%, rgba(5,5,5,0.8) 100%)",
@@ -51,7 +64,7 @@ export default function LoginPage() {
 
       {/* ── Tarjeta del formulario (glass flotante) ── */}
       <div
-        className="relative z-10 w-full max-w-sm rounded-3xl px-7 py-9"
+        className="relative z-10 w-full max-w-sm rounded-3xl px-6 py-7 md:px-7 md:py-9"
         style={{
           background: "rgba(13,13,13,0.72)",
           backdropFilter: "blur(16px)",
@@ -61,7 +74,7 @@ export default function LoginPage() {
         }}
       >
         {/* Logo */}
-        <div className="flex justify-center mb-8">
+        <div className="hidden md:flex justify-center mb-8">
           <div
             className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center"
             style={{ background: "#000", boxShadow: "0 0 32px rgba(244,114,182,0.45)" }}
