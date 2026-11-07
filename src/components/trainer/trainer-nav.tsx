@@ -14,7 +14,7 @@ import { BrandWordmark, BrandLogoLettering } from "@/components/brand-wordmark";
 const NAV = [
   { href: "/trainer/dashboard", label: "Inicio",      icon: LayoutDashboard, image: "/trainer-bg.jpg",   bgPos: "center" },
   { href: "/trainer/clients",   label: "Alumnos",     icon: Users,           image: "/alumnos.jpg",      bgPos: "center" },
-  { href: "/trainer/classes",   label: "Turnos",      icon: Clock,           image: "/turnos.jpg",       bgPos: "center" },
+  { href: "/trainer/classes",   label: "Turnos",      icon: Clock,           image: "/asistencias.jpg",       bgPos: "center" },
   { href: "/trainer/routines",  label: "Rutinas",     icon: ClipboardList,   image: "/trainer-bg2.jpg",  bgPos: "center" },
   { href: "/trainer/exercises", label: "Ejercicios",  icon: Library,         image: "/ejercicios.jpeg",  bgPos: "center" },
   { href: "/trainer/resumen",   label: "Estadísticas", icon: BarChart3,      image: "/progreso.jpg",     bgPos: "center" },
