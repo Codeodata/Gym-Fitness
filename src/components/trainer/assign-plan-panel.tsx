@@ -169,7 +169,7 @@ export function AssignPlanPanel({ clientId, plans, currentPlanId }: Props) {
                               <button
                                 key={dow}
                                 onClick={() => toggleDayDow(pd.id, dow)}
-                                className="px-2 py-1 rounded-lg text-[10px] font-bold transition-colors"
+                                className="px-2 py-1 rounded-lg text-2xs font-bold transition-colors"
                                 style={{
                                   background: isActive ? "var(--accent)" : "var(--bg-hover)",
                                   color: isActive ? "var(--accent-fg)" : "var(--text-3)",

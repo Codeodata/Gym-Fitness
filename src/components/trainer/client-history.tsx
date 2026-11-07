@@ -31,15 +31,15 @@ export function ClientHistory({
         <div className="rounded-xl px-3 py-3 flex items-center gap-2.5" style={{ background: "var(--bg-hover)" }}>
           <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: C_ASIST }} />
           <div>
-            <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>{attendanceTotal}</p>
-            <p className="text-[10px] leading-tight mt-0.5" style={{ color: "var(--text-3)" }}>asistencias marcadas</p>
+            <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>{attendanceTotal}</p>
+            <p className="text-2xs leading-tight mt-0.5" style={{ color: "var(--text-3)" }}>asistencias marcadas</p>
           </div>
         </div>
         <div className="rounded-xl px-3 py-3 flex items-center gap-2.5" style={{ background: "var(--bg-hover)" }}>
           <Activity className="h-5 w-5 shrink-0" style={{ color: C_ENTREN }} />
           <div>
-            <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>{workoutTotal}</p>
-            <p className="text-[10px] leading-tight mt-0.5" style={{ color: "var(--text-3)" }}>entrenamientos registrados</p>
+            <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>{workoutTotal}</p>
+            <p className="text-2xs leading-tight mt-0.5" style={{ color: "var(--text-3)" }}>entrenamientos registrados</p>
           </div>
         </div>
       </div>
@@ -59,7 +59,7 @@ export function ClientHistory({
                 <div className="w-1/2 rounded-t-md" title={`${w.entrenamientos} entrenamientos`}
                   style={{ height: mounted ? `${Math.max((w.entrenamientos / maxW) * 100, w.entrenamientos > 0 ? 5 : 1)}%` : "1%", background: C_ENTREN, transition: `height 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 25}ms` }} />
               </div>
-              <span className="text-[9px] tabular-nums" style={{ color: "var(--text-3)" }}>{w.label}</span>
+              <span className="text-2xs tabular-nums" style={{ color: "var(--text-3)" }}>{w.label}</span>
             </div>
           ))}
         </div>
@@ -76,7 +76,7 @@ function Legend({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="w-2.5 h-2.5 rounded-sm" style={{ background: color }} />
-      <span className="text-[11px]" style={{ color: "var(--text-3)" }}>{label}</span>
+      <span className="text-xs" style={{ color: "var(--text-3)" }}>{label}</span>
     </div>
   );
 }

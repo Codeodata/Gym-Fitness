@@ -82,7 +82,7 @@ export function RoutinesHub({ clients }: { clients: Client[] }) {
       {/* Filtros: género + membresía */}
       <div className="flex flex-col gap-2.5">
         <div className="flex gap-1.5 flex-wrap items-center">
-          <span className="text-[11px] font-bold uppercase tracking-wider mr-1 w-[72px] shrink-0" style={{ color: "var(--text-3)" }}>Género</span>
+          <span className="text-xs font-bold uppercase tracking-wider mr-1 w-[72px] shrink-0" style={{ color: "var(--text-3)" }}>Género</span>
           {GEN_CHIPS.map((c) => {
             const sel = genderFilter === c.id;
             return (
@@ -96,7 +96,7 @@ export function RoutinesHub({ clients }: { clients: Client[] }) {
           })}
         </div>
         <div className="flex gap-1.5 flex-wrap items-center">
-          <span className="text-[11px] font-bold uppercase tracking-wider mr-1 w-[72px] shrink-0" style={{ color: "var(--text-3)" }}>Membresía</span>
+          <span className="text-xs font-bold uppercase tracking-wider mr-1 w-[72px] shrink-0" style={{ color: "var(--text-3)" }}>Membresía</span>
           {MEM_CHIPS.map((c) => {
             const sel = membershipFilter === c.id;
             return (
@@ -134,7 +134,7 @@ export function RoutinesHub({ clients }: { clients: Client[] }) {
                   </div>
                   <span className="flex-1 min-w-0 truncate text-sm font-bold" style={{ color: "var(--text)" }}>{c.name}</span>
                   {c.membershipType && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                    <span className="text-2xs font-bold px-2 py-0.5 rounded-full shrink-0"
                       style={{ background: "var(--bg-hover)", color: "var(--text-3)" }}>
                       {MEM_LABEL[c.membershipType]}
                     </span>

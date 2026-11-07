@@ -93,12 +93,12 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
       <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1
-            className="text-2xl font-extrabold capitalize"
-            style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}
+            className="font-extrabold first-letter:uppercase"
+            style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}
           >
             Hola, {userName.split(" ")[0]} 👋
           </h1>
-          <p className="text-sm mt-0.5 capitalize" style={{ color: "var(--text-2)" }}>{dateLabel}</p>
+          <p className="text-sm mt-0.5 first-letter:uppercase" style={{ color: "var(--text-2)" }}>{dateLabel}</p>
         </div>
         <Link
           href="/my-plan"
@@ -141,26 +141,26 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
               }}>
               <Flame className="h-5 w-5" style={{ color: streak > 0 ? "var(--accent)" : "var(--text-3)" }} />
               <p className="text-2xl font-extrabold tabular-nums leading-none"
-                style={{ color: streak > 0 ? "var(--accent)" : "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                style={{ color: streak > 0 ? "var(--accent)" : "var(--text)", fontFamily: "var(--font-display)" }}>
                 {streak}
               </p>
-              <p className="text-[11px]" style={{ color: "var(--text-3)" }}>días seguidos</p>
+              <p className="text-xs" style={{ color: "var(--text-3)" }}>días seguidos</p>
             </div>
             <div className="rounded-2xl p-4 flex flex-col gap-1.5 stat-card">
               <Activity className="h-5 w-5" style={{ color: "var(--c-blue)" }} />
               <p className="text-2xl font-extrabold tabular-nums leading-none"
-                style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
                 {sessionsThisMonth}
               </p>
-              <p className="text-[11px]" style={{ color: "var(--text-3)" }}>este mes</p>
+              <p className="text-xs" style={{ color: "var(--text-3)" }}>este mes</p>
             </div>
             <div className="rounded-2xl p-4 flex flex-col gap-1.5 stat-card">
               <Trophy className="h-5 w-5" style={{ color: "var(--c-yellow)" }} />
               <p className="text-2xl font-extrabold tabular-nums leading-none"
-                style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
                 {totalSessions}
               </p>
-              <p className="text-[11px]" style={{ color: "var(--text-3)" }}>totales</p>
+              <p className="text-xs" style={{ color: "var(--text-3)" }}>totales</p>
             </div>
           </div>
 
@@ -192,11 +192,11 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
                 <Dumbbell className="h-6 w-6" style={{ color: catStyle.color }} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-extrabold uppercase tracking-widest mb-1" style={{ color: catStyle.color }}>
+                <p className="text-2xs font-extrabold uppercase tracking-widest mb-1" style={{ color: catStyle.color }}>
                   {plan.category}
                 </p>
                 <p className="font-extrabold text-base truncate"
-                  style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
                   {plan.planName}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
@@ -262,7 +262,7 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
                       <Clock className="h-6 w-6 shrink-0" style={{ color: accent }} />
                       <div className="flex-1">
                         <p className="text-2xl font-extrabold tabular-nums"
-                          style={{ color: accent, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                          style={{ color: accent, fontFamily: "var(--font-display)" }}>
                           {slot.startTime} hs
                         </p>
                         <p className="text-sm font-semibold capitalize" style={{ color: accent }}>{slot.type}</p>
@@ -309,7 +309,7 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
                 <Bell className="h-3.5 w-3.5" />
                 Avisos
                 {unreadCount > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                  <span className="px-1.5 py-0.5 rounded-full text-2xs font-bold"
                     style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
                     {unreadCount}
                   </span>
@@ -333,7 +333,7 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
                         <p className="text-xs font-bold leading-snug" style={{ color: "var(--text)" }}>
                           {membership.state === "overdue" ? "Renová tu membresía" : "Renovación de plan"}
                         </p>
-                        <p className="text-[11px] mt-0.5 leading-snug" style={{ color: "var(--text-2)" }}>{membership.clientMessage}</p>
+                        <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-2)" }}>{membership.clientMessage}</p>
                       </div>
                     </div>
                   )}
@@ -349,7 +349,7 @@ export function ClientDashboard({ userName, plan, sessionsThisMonth, totalSessio
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium leading-snug" style={{ color: "var(--text)" }}>{n.body}</p>
-                        <p className="text-[10px] mt-1" style={{ color: "var(--text-3)" }}>
+                        <p className="text-2xs mt-1" style={{ color: "var(--text-3)" }}>
                           {new Date(n.sentAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                         </p>
                       </div>

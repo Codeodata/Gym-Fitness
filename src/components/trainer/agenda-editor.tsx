@@ -204,9 +204,9 @@ export function AgendaEditor({ clients }: { clients: Client[] }) {
                 }}>
                 <span className="text-xs font-extrabold uppercase tracking-wider block"
                   style={{ color: isActive ? da.color : "var(--text-3)" }}>{short}</span>
-                <span className="text-[10px] hidden sm:block mt-0.5"
+                <span className="text-2xs hidden sm:block mt-0.5"
                   style={{ color: isActive ? da.color : "var(--text-3)", opacity: 0.7 }}>{isToday ? "Hoy" : label}</span>
-                <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-[10px] font-extrabold mt-1.5"
+                <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-2xs font-extrabold mt-1.5"
                   style={{
                     background: count > 0 ? (isActive ? da.color : "var(--bg-hover)") : "transparent",
                     color: count > 0 ? (isActive ? "#000" : "var(--text-3)") : "var(--text-3)",
@@ -327,7 +327,7 @@ function BlockCard({
           ) : (
             <button type="button" onClick={() => { setDayName(block.planDayName ?? ""); setEditingDay(true); }}
               className="flex items-center gap-2 text-left w-full" title="Editar nombre del día">
-              <p className="text-base font-extrabold leading-tight truncate" style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+              <p className="text-base font-extrabold leading-tight truncate" style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
                 {block.planDayName ?? `Día ${block.dayNumber}`}
               </p>
               <span className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--bg-panel)", color: c.color }}>
@@ -338,7 +338,7 @@ function BlockCard({
 
           {/* Plan name */}
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: "var(--bg-panel)", color: c.color }}>
+            <span className="text-2xs font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: "var(--bg-panel)", color: c.color }}>
               {block.planCategory}
             </span>
             {editingPlan ? (
@@ -360,7 +360,7 @@ function BlockCard({
       <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="flex items-center gap-2 mb-2.5">
           <Users className="h-3.5 w-3.5" style={{ color: c.color }} />
-          <span className="text-[11px] font-extrabold uppercase tracking-wider flex-1" style={{ color: "var(--text-3)" }}>
+          <span className="text-xs font-extrabold uppercase tracking-wider flex-1" style={{ color: "var(--text-3)" }}>
             Alumnos ({block.students.length})
           </span>
           <button type="button" onClick={() => setAddingStudents(v => !v)}
@@ -381,7 +381,7 @@ function BlockCard({
             {block.students.map(s => (
               <div key={s.blockId} className="flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-full"
                 style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
-                <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-extrabold" style={{ background: c.bg, color: c.color }}>
+                <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-2xs font-extrabold" style={{ background: c.bg, color: c.color }}>
                   {s.clientName?.charAt(0).toUpperCase() ?? "?"}
                 </div>
                 <span className="text-xs font-semibold" style={{ color: "var(--text)" }}>{s.clientName ?? "Sin nombre"}</span>
@@ -409,7 +409,7 @@ function BlockCard({
       <div className="px-4 py-3">
         <div className="flex items-center gap-2 mb-2.5">
           <Dumbbell className="h-3.5 w-3.5" style={{ color: c.color }} />
-          <span className="text-[11px] font-extrabold uppercase tracking-wider flex-1" style={{ color: "var(--text-3)" }}>
+          <span className="text-xs font-extrabold uppercase tracking-wider flex-1" style={{ color: "var(--text-3)" }}>
             Ejercicios ({block.exercises.length})
           </span>
         </div>
@@ -474,7 +474,7 @@ function BlockCard({
               title="Borrar la rutina completa">
               <Trash2 className="h-3.5 w-3.5" /> Borrar rutina
             </button>
-            <span className="text-[10px] ml-auto flex items-center gap-1" style={{ color: "var(--text-3)" }}>
+            <span className="text-2xs ml-auto flex items-center gap-1" style={{ color: "var(--text-3)" }}>
               <AlertTriangle className="h-3 w-3" /> Los ejercicios se comparten con quien tenga esta rutina
             </span>
           </>
@@ -496,7 +496,7 @@ function ExerciseGroup({ title, icon: Icon, color, exercises, onUpdate, onRemove
       {title && (
         <div className="flex items-center gap-1.5 mb-1.5">
           <Icon className="h-3 w-3" style={{ color }} />
-          <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color }}>{title}</span>
+          <span className="text-2xs font-extrabold uppercase tracking-wider" style={{ color }}>{title}</span>
         </div>
       )}
       <div className="flex flex-col gap-1.5">
@@ -606,7 +606,7 @@ function AddExercisePanel({ accent, catalog, catalogLoaded, onAdd, onClose }: {
             className="flex items-center justify-between px-3 py-2 rounded-lg text-left text-sm cursor-pointer"
             style={{ background: "var(--bg-panel)", color: "var(--text)", border: "1px solid var(--border)" }}>
             <span className="truncate">{item.name}</span>
-            <span className="text-[10px] font-bold uppercase ml-2 shrink-0" style={{ color: "var(--text-3)" }}>{item.muscleGroup}</span>
+            <span className="text-2xs font-bold uppercase ml-2 shrink-0" style={{ color: "var(--text-3)" }}>{item.muscleGroup}</span>
           </button>
         ))}
       </div>
@@ -657,7 +657,7 @@ function StudentPicker({ clients, accent, already, onConfirm, onCancel, confirmL
                     {checked && <Check className="h-2.5 w-2.5" style={{ color: "#000" }} />}
                   </div>
                   <span className="flex-1 min-w-0 truncate text-sm font-semibold" style={{ color: "var(--text)" }}>{c.name}</span>
-                  {isAlready && <span className="text-[9px] font-bold uppercase shrink-0" style={{ color: "var(--text-3)" }}>ya está</span>}
+                  {isAlready && <span className="text-2xs font-bold uppercase shrink-0" style={{ color: "var(--text-3)" }}>ya está</span>}
                 </button>
               );
             })}
@@ -774,7 +774,7 @@ function InlineEdit({ value, setValue, onSave, onCancel, accent, placeholder, sm
         onChange={e => setValue(e.target.value)}
         onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); onSave(); } if (e.key === "Escape") { e.preventDefault(); onCancel(); } }}
         className={`flex-1 min-w-0 font-extrabold bg-transparent outline-none ${small ? "text-xs" : "text-base"} pb-0.5`}
-        style={{ color: "var(--text)", borderBottom: `1.5px solid ${accent}`, fontFamily: small ? undefined : "'Barlow Condensed', sans-serif" }} />
+        style={{ color: "var(--text)", borderBottom: `1.5px solid ${accent}`, fontFamily: small ? undefined : "var(--font-display)" }} />
       <button type="button" onMouseDown={e => e.preventDefault()} onClick={onSave} className="p-1 rounded-lg shrink-0 cursor-pointer" style={{ color: accent }}><Check className="h-4 w-4" /></button>
       <button type="button" onMouseDown={e => e.preventDefault()} onClick={onCancel} className="p-1 rounded-lg shrink-0 cursor-pointer" style={{ color: "var(--text-3)" }}><X className="h-4 w-4" /></button>
     </div>

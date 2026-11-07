@@ -98,10 +98,10 @@ function WeightChart({ weights }: { weights: Weight[] }) {
         </div>
       )}
       <div className="flex justify-between mt-1">
-        <span className="text-[10px]" style={{ color: "var(--text-3)" }}>
+        <span className="text-2xs" style={{ color: "var(--text-3)" }}>
           {new Date(rev[0]!.recordedAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
         </span>
-        <span className="text-[10px]" style={{ color: "var(--text-3)" }}>
+        <span className="text-2xs" style={{ color: "var(--text-3)" }}>
           {new Date(rev.at(-1)!.recordedAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
         </span>
       </div>
@@ -164,7 +164,7 @@ function WeeklyBars({ logs }: { logs: Log[] }) {
         {weeks.map((w, i) => (
           <div key={i} className="flex-1 text-center">
             {(i === 0 || i === 5 || i === 11) && (
-              <span className="text-[8px]"
+              <span className="text-2xs"
                 style={{ color: w.isCurrent ? "var(--accent)" : "var(--text-3)", fontWeight: w.isCurrent ? 800 : 500 }}>
                 {w.label}
               </span>
@@ -228,7 +228,7 @@ function Heatmap({ logs }: { logs: Log[] }) {
         {weeks.map((_, wi) => {
           const ml = monthLabels.find((m) => m.wi === wi);
           return (
-            <div key={wi} style={{ flex: 1, fontSize: "9px", color: "var(--text-3)", fontWeight: 700, overflow: "hidden" }}>
+            <div key={wi} style={{ flex: 1, fontSize: "11px", color: "var(--text-3)", fontWeight: 700, overflow: "hidden" }}>
               {ml?.label ?? ""}
             </div>
           );
@@ -239,7 +239,7 @@ function Heatmap({ logs }: { logs: Log[] }) {
         {/* Day labels */}
         <div style={{ display: "flex", flexDirection: "column", gap: `${GAP}px`, flexShrink: 0, width: "18px" }}>
           {["L","M","X","J","V","S","D"].map((d, i) => (
-            <div key={i} style={{ aspectRatio: "1", fontSize: "9px", color: "var(--text-3)", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "2px", fontWeight: 700 }}>
+            <div key={i} style={{ aspectRatio: "1", fontSize: "11px", color: "var(--text-3)", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "2px", fontWeight: 700 }}>
               {i % 2 === 0 ? d : ""}
             </div>
           ))}
@@ -407,10 +407,10 @@ function ExerciseChart({ entries, color }: { entries: ExEntry[]; color: string }
         )}
 
         <div className="flex justify-between mt-1">
-          <span className="text-[10px]" style={{ color: "var(--text-3)" }}>
+          <span className="text-2xs" style={{ color: "var(--text-3)" }}>
             {new Date(withW[0]!.loggedAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
           </span>
-          <span className="text-[10px]" style={{ color: "var(--text-3)" }}>
+          <span className="text-2xs" style={{ color: "var(--text-3)" }}>
             {new Date(withW.at(-1)!.loggedAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
           </span>
         </div>
@@ -470,7 +470,7 @@ function ExerciseSection({ entries }: { entries: ExEntry[] }) {
           const isAct  = g === active;
           return (
             <button key={g} onClick={() => { setActiveGroup(g); setSelectedEx(null); }}
-              className="shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer"
+              className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
               style={{
                 background: isAct ? col + "22" : "var(--bg-hover)",
                 color: isAct ? col : "var(--text-3)",
@@ -478,7 +478,7 @@ function ExerciseSection({ entries }: { entries: ExEntry[] }) {
                 touchAction: "manipulation",
               }}>
               {MG_LABEL[g] ?? g}
-              <span className="ml-1.5 text-[10px] opacity-60">{byGroup.get(g)?.size ?? 0}</span>
+              <span className="ml-1.5 text-2xs opacity-60">{byGroup.get(g)?.size ?? 0}</span>
             </button>
           );
         })}
@@ -541,7 +541,7 @@ function ExerciseSection({ entries }: { entries: ExEntry[] }) {
                 {/* Name + meta */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>{name}</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
                     {new Date(latest.loggedAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
                     {exEntries.length > 1 && (
                       <span> · {exEntries.length} sesiones</span>
@@ -554,7 +554,7 @@ function ExerciseSection({ entries }: { entries: ExEntry[] }) {
                   {latestW !== null && (
                     <div className="flex items-baseline gap-1">
                       <span className="font-extrabold tabular-nums"
-                        style={{ color: col, fontSize: "22px", lineHeight: 1, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                        style={{ color: col, fontSize: "22px", lineHeight: 1, fontFamily: "var(--font-display)" }}>
                         {latestW % 1 === 0 ? latestW : latestW.toFixed(1)}
                       </span>
                       <span className="text-xs font-semibold" style={{ color: "var(--text-3)" }}>kg</span>
@@ -570,14 +570,14 @@ function ExerciseSection({ entries }: { entries: ExEntry[] }) {
                     </span>
                   )}
                   {lastTwoW === 0 && latestW !== null && (
-                    <span className="text-[11px] font-bold px-2 py-1 rounded-xl"
+                    <span className="text-xs font-bold px-2 py-1 rounded-xl"
                       style={{ background: "var(--bg-hover)", color: "var(--text-3)" }}>
                       igual
                     </span>
                   )}
 
                   {isPR && (
-                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md"
+                    <span className="text-2xs font-extrabold px-1.5 py-0.5 rounded-md"
                       style={{ background: "var(--c-yellow-bg)", color: "var(--c-yellow)" }}>
                       ★ Mejor marca
                     </span>
@@ -648,20 +648,20 @@ function SessionTimeline({ logs }: { logs: Log[] }) {
       <div className="divide-y" style={{ borderColor: "var(--border)" }}>
         {[...groups.entries()].map(([month, entries]) => (
           <div key={month}>
-            <p className="px-5 pt-3 pb-1 text-[10px] font-extrabold uppercase tracking-widest capitalize"
+            <p className="px-5 pt-3 pb-1 text-2xs font-extrabold uppercase tracking-widest capitalize"
               style={{ color: "var(--text-3)" }}>{month}</p>
             {entries.map((log) => (
               <div key={log.id} className="flex items-center gap-4 px-5 py-3"
                 style={{ borderTop: "1px solid var(--border)" }}>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-extrabold text-sm"
-                  style={{ background: "var(--accent-soft)", color: "var(--accent)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  style={{ background: "var(--accent-soft)", color: "var(--accent)", fontFamily: "var(--font-display)" }}>
                   D{log.dayNumber ?? "?"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
                     {log.dayName || `Día ${log.dayNumber ?? "?"}`}
                   </p>
-                  <p className="text-xs capitalize mt-0.5" style={{ color: "var(--text-3)" }}>
+                  <p className="text-xs first-letter:uppercase mt-0.5" style={{ color: "var(--text-3)" }}>
                     {new Date(log.loggedAt).toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "short" })}
                   </p>
                 </div>
@@ -771,7 +771,7 @@ function WeightHistory({ weights }: { weights: Weight[] }) {
             {new Date(w.recordedAt).toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "short" })}
           </span>
           <span className="text-sm font-extrabold tabular-nums"
-            style={{ color: i === 0 ? "var(--accent)" : "var(--text-2)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+            style={{ color: i === 0 ? "var(--accent)" : "var(--text-2)", fontFamily: "var(--font-display)" }}>
             {parseFloat(w.weightKg).toFixed(1)} kg
           </span>
           <button
@@ -830,7 +830,7 @@ function MuscleGroupFrequency({ entries }: { entries: ExEntry[] }) {
                   {MG_LABEL[group] ?? group}
                 </span>
                 <span className="text-sm font-extrabold tabular-nums"
-                  style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
                   {count}
                 </span>
               </div>
@@ -869,7 +869,7 @@ function WeekRing({ done, goal }: { done: number; goal: number }) {
         style={{ transition: "stroke-dasharray 600ms cubic-bezier(.4,0,.2,1)" }}
       />
       <text x="34" y="34" textAnchor="middle" dominantBaseline="central"
-        style={{ fill: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif", fontSize: "17px", fontWeight: 800 }}>
+        style={{ fill: "var(--text)", fontFamily: "var(--font-display)", fontSize: "17px", fontWeight: 800 }}>
         {done}
       </text>
     </svg>
@@ -938,10 +938,10 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
           style={{ background: streak > 0 ? "var(--accent-soft)" : "var(--bg-panel)", border: `1px solid ${streak > 0 ? "var(--accent)" : "var(--border)"}` }}>
           <Flame className="h-4 w-4" style={{ color: streak > 0 ? "var(--accent)" : "var(--text-3)" }} />
           <p className="text-3xl font-extrabold tabular-nums leading-none"
-            style={{ color: streak > 0 ? "var(--accent)" : "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+            style={{ color: streak > 0 ? "var(--accent)" : "var(--text)", fontFamily: "var(--font-display)" }}>
             {streak}
           </p>
-          <p className="text-[11px] font-semibold leading-tight" style={{ color: "var(--text-3)" }}>
+          <p className="text-xs font-semibold leading-tight" style={{ color: "var(--text-3)" }}>
             {streak === 1 ? "día seguido" : "días seguidos"}
           </p>
         </div>
@@ -950,20 +950,20 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
           style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
           <Activity className="h-4 w-4" style={{ color: "var(--c-blue)" }} />
           <p className="text-3xl font-extrabold tabular-nums leading-none"
-            style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+            style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
             {thisMonth}
           </p>
-          <p className="text-[11px] font-semibold leading-tight" style={{ color: "var(--text-3)" }}>este mes</p>
+          <p className="text-xs font-semibold leading-tight" style={{ color: "var(--text-3)" }}>este mes</p>
         </div>
         {/* Total */}
         <div className="rounded-2xl p-4 flex flex-col gap-1.5"
           style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
           <Trophy className="h-4 w-4" style={{ color: "var(--c-yellow)" }} />
           <p className="text-3xl font-extrabold tabular-nums leading-none"
-            style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+            style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
             {logs.length}
           </p>
-          <p className="text-[11px] font-semibold leading-tight" style={{ color: "var(--text-3)" }}>totales</p>
+          <p className="text-xs font-semibold leading-tight" style={{ color: "var(--text-3)" }}>totales</p>
         </div>
       </div>
 
@@ -973,7 +973,7 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
         <WeekRing done={thisWeek} goal={weeklyGoal} />
         <div className="flex-1 min-w-0">
           <p className="font-extrabold text-base leading-none"
-            style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+            style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
             {thisWeek} de {weeklyGoal} esta semana
           </p>
           <p className="text-xs mt-1" style={{ color: "var(--text-3)" }}>
@@ -999,7 +999,7 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
                     outline: isToday ? "2px solid var(--accent)" : "none",
                     outlineOffset: "1px",
                   }}>
-                  <span className="text-[8px] font-extrabold"
+                  <span className="text-2xs font-extrabold"
                     style={{ color: trained ? "var(--accent-fg)" : "var(--text-3)" }}>
                     {["L","M","X","J","V","S"][i]}
                   </span>
@@ -1025,7 +1025,7 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
             }}
           >
             {t.icon}
-            <span className="text-[11px] sm:text-sm leading-none">{t.label}</span>
+            <span className="text-xs sm:text-sm leading-none">{t.label}</span>
           </button>
         ))}
       </div>
@@ -1051,7 +1051,7 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
 
             {/* Weekly bars — tendencia 12 semanas */}
             <div className="px-5 pt-4 pb-3" style={{ borderBottom: "1px solid var(--border)" }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider mb-3" style={{ color: "var(--text-3)" }}>
+              <p className="text-2xs font-extrabold uppercase tracking-wider mb-3" style={{ color: "var(--text-3)" }}>
                 Sesiones por semana
               </p>
               <WeeklyBars logs={logs} />
@@ -1059,22 +1059,22 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
 
             {/* Heatmap */}
             <div className="px-5 pt-4 pb-3" style={{ borderBottom: "1px solid var(--border)" }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-wider mb-3" style={{ color: "var(--text-3)" }}>
+              <p className="text-2xs font-extrabold uppercase tracking-wider mb-3" style={{ color: "var(--text-3)" }}>
                 Últimas 12 semanas
               </p>
               <Heatmap logs={logs} />
               <div className="flex items-center gap-4 mt-3">
                 <div className="flex items-center gap-1.5">
                   <div style={{ width: "11px", height: "11px", borderRadius: "3px", background: "var(--bg-hover)", opacity: 0.35 }} />
-                  <span className="text-[10px]" style={{ color: "var(--text-3)" }}>Sin entreno</span>
+                  <span className="text-2xs" style={{ color: "var(--text-3)" }}>Sin entreno</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div style={{ width: "11px", height: "11px", borderRadius: "3px", background: "var(--accent)" }} />
-                  <span className="text-[10px]" style={{ color: "var(--text-3)" }}>1 sesión</span>
+                  <span className="text-2xs" style={{ color: "var(--text-3)" }}>1 sesión</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div style={{ width: "11px", height: "11px", borderRadius: "3px", background: "var(--c-lime)" }} />
-                  <span className="text-[10px]" style={{ color: "var(--text-3)" }}>2+ sesiones</span>
+                  <span className="text-2xs" style={{ color: "var(--text-3)" }}>2+ sesiones</span>
                 </div>
               </div>
             </div>
@@ -1093,7 +1093,7 @@ export function ClientProgress({ weights, logs, exerciseLogs }: Props) {
                 {curW ? (
                   <>
                     <span className="text-3xl font-extrabold tabular-nums"
-                      style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                      style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
                       {curW.toFixed(1)}
                     </span>
                     <span className="text-base font-semibold" style={{ color: "var(--text-3)" }}>kg</span>

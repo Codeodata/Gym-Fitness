@@ -96,7 +96,7 @@ export function MembershipRenewal({
         {saved
           ? <span className="text-xs font-bold flex items-center gap-1" style={{ color: "var(--success)" }}><Check className="h-3.5 w-3.5" /> Guardado</span>
           : status.state !== "none" && (
-            <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-lg flex items-center gap-1"
+            <span className="text-xs font-extrabold px-2 py-0.5 rounded-lg flex items-center gap-1"
               style={{ color: col.color, background: col.bg }}>
               {status.alert && <AlertTriangle className="h-3 w-3" />}
               {status.trainerLabel}
@@ -134,7 +134,7 @@ export function MembershipRenewal({
         </button>
       </div>
 
-      <p className="text-[11px] leading-snug" style={{ color: "var(--text-3)" }}>
+      <p className="text-xs leading-snug" style={{ color: "var(--text-3)" }}>
         Al marcar pagado se corre la renovación 30 días y se apaga el aviso del alumno. Podés ajustar la fecha manualmente.
       </p>
     </div>

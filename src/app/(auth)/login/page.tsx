@@ -179,7 +179,7 @@ export default function LoginPage() {
 
       {/* Footer */}
       <p
-        className="absolute bottom-5 left-0 right-0 text-center z-10 text-[10px] uppercase tracking-widest"
+        className="absolute bottom-5 left-0 right-0 text-center z-10 text-2xs uppercase tracking-widest"
         style={{ color: "rgba(255,255,255,0.4)" }}
       >
         Claudia Duran Fitness © 2026

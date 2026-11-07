@@ -68,11 +68,11 @@ function DayPanel({ day, dow, isToday, isSuccess, logging, logEntries, updateEnt
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-extrabold text-base leading-none"
-              style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+              style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
               {DOW_FULL[dow]} — {dayLabel}
             </p>
             {isToday && (
-              <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md"
+              <span className="text-2xs font-extrabold px-1.5 py-0.5 rounded-md"
                 style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
                 HOY
               </span>
@@ -91,7 +91,7 @@ function DayPanel({ day, dow, isToday, isSuccess, logging, logEntries, updateEnt
           {muscleGroups.map((mg) => {
             const col = MG_COLOR[mg] ?? "var(--accent)";
             return (
-              <span key={mg} className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+              <span key={mg} className="text-2xs font-bold px-2 py-0.5 rounded-md"
                 style={{ background: `${col}20`, color: col }}>
                 {MG_LABEL[mg] ?? mg}
               </span>
@@ -116,14 +116,14 @@ function DayPanel({ day, dow, isToday, isSuccess, logging, logEntries, updateEnt
                     <p className="font-bold text-sm" style={{ color: "var(--text)" }}>
                       {pe.exercise.name}
                     </p>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                    <span className="text-2xs font-bold px-1.5 py-0.5 rounded-md"
                       style={{ background: `${mgColor}1f`, color: mgColor }}>
                       {MG_LABEL[pe.exercise.muscleGroup] ?? pe.exercise.muscleGroup}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="text-sm font-extrabold tabular-nums"
-                      style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                      style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
                       {pe.sets} × {pe.reps}
                     </span>
                     {pe.weightKg && (
@@ -297,7 +297,7 @@ export function PlanView({ plan, assignment }: Props) {
 
       {/* Plan header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>{plan.name}</h1>
+        <h1 className="font-extrabold" style={{ color: "var(--text)" }}>{plan.name}</h1>
         {plan.description && (
           <p className="text-sm mt-1" style={{ color: "var(--text-2)" }}>{plan.description}</p>
         )}
@@ -343,7 +343,7 @@ export function PlanView({ plan, assignment }: Props) {
                   touchAction: "manipulation",
                 }}
               >
-                <span className="text-[11px] font-extrabold uppercase tracking-wider"
+                <span className="text-xs font-extrabold uppercase tracking-wider"
                   style={{ color: isSel ? "var(--accent)" : isToday ? "var(--accent)" : "var(--text-3)" }}>
                   {DOW_LETTER[dow]}
                 </span>
@@ -365,7 +365,7 @@ export function PlanView({ plan, assignment }: Props) {
                   }
                 </div>
 
-                <span className="text-[9px] font-extrabold"
+                <span className="text-2xs font-extrabold"
                   style={{ color: isToday ? "var(--accent)" : "transparent", lineHeight: 1 }}>
                   HOY
                 </span>
@@ -390,7 +390,7 @@ export function PlanView({ plan, assignment }: Props) {
         <div className="rounded-2xl p-10 flex flex-col items-center gap-3 text-center"
           style={{ border: "1px solid var(--border)", background: "var(--bg-panel)" }}>
           <Moon className="h-8 w-8" style={{ color: "var(--text-3)" }} />
-          <p className="font-extrabold text-base" style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+          <p className="font-extrabold text-base" style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
             {DOW_FULL[selectedDow]} — Descanso
           </p>
           <p className="text-sm" style={{ color: "var(--text-3)" }}>

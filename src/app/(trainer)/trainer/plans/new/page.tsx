@@ -317,7 +317,7 @@ export default function NewRoutinePage() {
           <ArrowLeft className="h-4 w-4" style={{ color: "var(--text-2)" }} />
         </Link>
         <div>
-          <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Nueva rutina</h1>
+          <h1 className="font-extrabold" style={{ color: "var(--text)" }}>Nueva rutina</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--text-2)" }}>
             Armala desde cero o partí de una rutina que ya tengas
           </p>

@@ -93,7 +93,7 @@ export function WeeklySchedule({ clients, assignments, logs, attendance: initial
     <div className="max-w-3xl">
       {/* Header + resumen semanal */}
       <div className="mb-5">
-        <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Asistencias</h1>
+        <h1 className="font-extrabold" style={{ color: "var(--text)" }}>Asistencias</h1>
         {dateRangeLabel && <p className="text-sm mt-0.5" style={{ color: "var(--text-2)" }}>{dateRangeLabel}</p>}
       </div>
       <div className="grid grid-cols-3 gap-3 mb-5">
@@ -124,13 +124,13 @@ export function WeeklySchedule({ clients, assignments, logs, attendance: initial
                       background: isSel ? "var(--accent-soft)" : "transparent",
                       touchAction: "manipulation",
                     }}>
-                    <span className="block text-[11px] font-extrabold uppercase tracking-wider"
+                    <span className="block text-xs font-extrabold uppercase tracking-wider"
                       style={{ color: isSel ? "var(--accent)" : isToday ? "var(--accent)" : "var(--text-3)" }}>
                       {DAY_NAMES[i]}
                     </span>
                     <span className="block text-sm font-bold tabular-nums leading-tight mt-0.5"
                       style={{ color: isSel ? "var(--text)" : "var(--text-2)" }}>{d.getDate()}</span>
-                    <span className="inline-flex items-center justify-center min-w-4 h-4 mt-1 rounded-full text-[9px] font-extrabold px-1"
+                    <span className="inline-flex items-center justify-center min-w-4 h-4 mt-1 rounded-full text-2xs font-extrabold px-1"
                       style={{ background: cnt > 0 ? (isSel ? "var(--accent)" : "var(--bg-hover)") : "transparent", color: cnt > 0 ? (isSel ? "#000" : "var(--text-3)") : "transparent" }}>
                       {cnt > 0 ? cnt : ""}
                     </span>
@@ -147,7 +147,7 @@ export function WeeklySchedule({ clients, assignments, logs, attendance: initial
               style={{ background: "var(--bg-panel)", border: "1px solid var(--border)", color: "var(--text-2)" }}>
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <p className="text-sm font-extrabold capitalize" style={{ color: "var(--text)" }}>
+            <p className="text-sm font-extrabold first-letter:uppercase" style={{ color: "var(--text)" }}>
               {DAY_FULL[selected]} {selDay.getDate()}{selIsToday ? " · Hoy" : ""}
             </p>
             <button type="button" onClick={() => setSelected((s) => Math.min(6, s + 1))} disabled={selected === 6}
@@ -182,12 +182,12 @@ export function WeeklySchedule({ clients, assignments, logs, attendance: initial
                         <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>{client.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           {assignment?.planName ? (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+                            <span className="text-2xs font-semibold px-1.5 py-0.5 rounded-md" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
                               {assignment.daysPerWeek === 5 ? "Pase libre" : `${assignment.daysPerWeek}d/sem`}
                             </span>
-                          ) : <span className="text-[10px]" style={{ color: "var(--text-3)" }}>Sin plan</span>}
+                          ) : <span className="text-2xs" style={{ color: "var(--text-3)" }}>Sin plan</span>}
                           {logged && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold" style={{ color: "var(--accent)" }}>
+                            <span className="inline-flex items-center gap-1 text-2xs font-semibold" style={{ color: "var(--accent)" }}>
                               <Check className="h-2.5 w-2.5" /> Se registró
                             </span>
                           )}
@@ -227,8 +227,8 @@ export function WeeklySchedule({ clients, assignments, logs, attendance: initial
 function StatMini({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="rounded-2xl px-3 py-3 text-center" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
-      <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color, fontFamily: "'Barlow Condensed', sans-serif" }}>{value}</p>
-      <p className="text-[11px] mt-1 font-medium" style={{ color: "var(--text-3)" }}>{label}</p>
+      <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color, fontFamily: "var(--font-display)" }}>{value}</p>
+      <p className="text-xs mt-1 font-medium" style={{ color: "var(--text-3)" }}>{label}</p>
     </div>
   );
 }

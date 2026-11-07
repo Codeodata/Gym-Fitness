@@ -200,7 +200,7 @@ export function MyPlanWeek() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-extrabold" style={{ color: "var(--text)" }}>Mi rutina</h1>
+        <h1 className="font-extrabold" style={{ color: "var(--text)" }}>Mi rutina</h1>
         <span className="text-xs px-2.5 py-1 rounded-full font-bold"
           style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
           {days.length} día{days.length !== 1 ? "s" : ""} de entrenamiento
@@ -218,7 +218,7 @@ export function MyPlanWeek() {
                 {DAY_NAMES[day.dow]}
               </h2>
               {isToday && (
-                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded"
+                <span className="text-2xs font-extrabold px-1.5 py-0.5 rounded"
                   style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
                   HOY
                 </span>

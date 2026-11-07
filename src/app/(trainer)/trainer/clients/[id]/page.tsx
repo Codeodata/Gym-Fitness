@@ -62,7 +62,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           <ArrowLeft className="h-4 w-4" style={{ color: "var(--text-2)" }} />
         </Link>
         <div>
-          <h1 className="text-xl font-extrabold" style={{ color: "var(--text)" }}>{client.name}</h1>
+          <h1 className="font-extrabold" style={{ color: "var(--text)" }}>{client.name}</h1>
           <p className="text-xs" style={{ color: "var(--text-3)" }}>Alumno</p>
         </div>
       </div>

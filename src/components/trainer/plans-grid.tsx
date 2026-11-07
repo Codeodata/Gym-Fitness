@@ -114,7 +114,7 @@ export function PlansGrid({ plans }: { plans: Plan[] }) {
               {c.id !== "todas" && <span className="w-2 h-2 rounded-full" style={{ background: c.color }} />}
               {c.label}
               <span
-                className="text-[10px] font-extrabold tabular-nums px-1.5 py-0.5 rounded-md"
+                className="text-2xs font-extrabold tabular-nums px-1.5 py-0.5 rounded-md"
                 style={{ background: sel ? c.color : "var(--bg-hover)", color: sel ? "#0a0a0a" : "var(--text-3)" }}
               >
                 {n}
@@ -127,7 +127,7 @@ export function PlansGrid({ plans }: { plans: Plan[] }) {
       {/* Filtro por grupo muscular */}
       {musclesPresent.length > 0 && (
         <div className="flex gap-1.5 mb-8 flex-wrap items-center">
-          <span className="text-[11px] font-bold uppercase tracking-wider mr-1" style={{ color: "var(--text-3)" }}>
+          <span className="text-xs font-bold uppercase tracking-wider mr-1" style={{ color: "var(--text-3)" }}>
             Músculo
           </span>
           <button
@@ -172,7 +172,7 @@ export function PlansGrid({ plans }: { plans: Plan[] }) {
               <div className="flex items-baseline gap-3 mb-4">
                 <h2
                   className="text-xl font-extrabold leading-none"
-                  style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}
+                  style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}
                 >
                   {g.label}
                 </h2>
@@ -216,7 +216,7 @@ export function PlansGrid({ plans }: { plans: Plan[] }) {
             <div className="flex items-baseline gap-3 mb-4">
               <h2
                 className="text-xl font-extrabold leading-none"
-                style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}
+                style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}
               >
                 Otras
               </h2>
@@ -262,7 +262,7 @@ function PlanCard({
       <div className="flex items-center justify-between gap-2">
         {aud ? (
           <span
-            className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0"
+            className="inline-flex items-center gap-1.5 text-2xs font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0"
             style={{ background: `${aud.color}1f`, color: aud.color }}
           >
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: aud.color }} />
@@ -270,14 +270,14 @@ function PlanCard({
           </span>
         ) : (
           <span
-            className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0"
+            className="text-2xs font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0"
             style={{ background: cat.bg, color: cat.color }}
           >
             {cat.label}
           </span>
         )}
         <span
-          className="text-[11px] font-semibold tabular-nums px-2 py-1 rounded-lg shrink-0"
+          className="text-xs font-semibold tabular-nums px-2 py-1 rounded-lg shrink-0"
           style={{ background: "var(--bg-hover)", color: plan.exerciseCount > 0 ? "var(--text-2)" : "#f59e0b" }}
         >
           {plan.exerciseCount > 0 ? `${plan.exerciseCount} ej.` : "Sin ejercicios"}
@@ -286,7 +286,7 @@ function PlanCard({
 
       <h3
         className="font-extrabold text-base leading-tight"
-        style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}
+        style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}
       >
         {plan.name}
       </h3>
@@ -299,7 +299,7 @@ function PlanCard({
             return (
               <span
                 key={m}
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                className="text-2xs font-bold px-1.5 py-0.5 rounded-md"
                 style={{ background: `${mm.color}1f`, color: mm.color }}
               >
                 {mm.label}

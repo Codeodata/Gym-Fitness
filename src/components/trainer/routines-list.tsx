@@ -131,7 +131,7 @@ export function RoutinesList({ routines, clients }: Props) {
                 color: sel ? (style?.color ?? "var(--accent)") : "var(--text-3)",
               }}>
               {f.label}
-              <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md"
+              <span className="text-2xs font-extrabold px-1.5 py-0.5 rounded-md"
                 style={{ background: sel ? (style?.border ?? "var(--accent-soft)") : "var(--bg-hover)", color: sel ? (style?.color ?? "var(--accent)") : "var(--text-3)" }}>
                 {cnt}
               </span>
@@ -161,7 +161,7 @@ export function RoutinesList({ routines, clients }: Props) {
                 <div className="flex-1 min-w-0">
                   <p className="font-extrabold" style={{ color: "var(--text)" }}>{routine.name}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md"
                       style={{ background: cat.bg, color: cat.color }}>{cat.label}</span>
                     <span className="text-xs" style={{ color: "var(--text-3)" }}>
                       {routine.dayCount} día{routine.dayCount !== 1 ? "s" : ""}

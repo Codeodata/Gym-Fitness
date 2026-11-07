@@ -119,7 +119,7 @@ export function ClientsView({ pending, active, inactive }: Props) {
           {/* Filtros: género + membresía */}
           <div className="flex flex-col gap-2.5 mb-6">
             <div className="flex gap-1.5 flex-wrap items-center">
-              <span className="text-[11px] font-bold uppercase tracking-wider mr-1 w-[72px] shrink-0" style={{ color: "var(--text-3)" }}>Género</span>
+              <span className="text-xs font-bold uppercase tracking-wider mr-1 w-[72px] shrink-0" style={{ color: "var(--text-3)" }}>Género</span>
               {GEN_CHIPS.map((c) => {
                 const sel = genderFilter === c.id;
                 return (
@@ -133,7 +133,7 @@ export function ClientsView({ pending, active, inactive }: Props) {
               })}
             </div>
             <div className="flex gap-1.5 flex-wrap items-center">
-              <span className="text-[11px] font-bold uppercase tracking-wider mr-1 w-[72px] shrink-0" style={{ color: "var(--text-3)" }}>Membresía</span>
+              <span className="text-xs font-bold uppercase tracking-wider mr-1 w-[72px] shrink-0" style={{ color: "var(--text-3)" }}>Membresía</span>
               {MEM_CHIPS.map((c) => {
                 const sel = membershipFilter === c.id;
                 return (
@@ -263,17 +263,17 @@ function MembershipsView({ active, inactive, query }: { active: ClientCard[]; in
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>{c.name}</p>
-                  {!isActive && <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md shrink-0" style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>inactivo</span>}
+                  {!isActive && <span className="text-2xs font-bold uppercase px-1.5 py-0.5 rounded-md shrink-0" style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}>inactivo</span>}
                 </div>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   {m ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: m.bg, color: m.color }}>
+                    <span className="inline-flex items-center gap-1 text-2xs font-bold px-1.5 py-0.5 rounded-md" style={{ background: m.bg, color: m.color }}>
                       {MIcon && <MIcon className="h-2.5 w-2.5" />}{m.label}
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold" style={{ color: "var(--text-3)" }}>Sin plan</span>
+                    <span className="text-2xs font-bold" style={{ color: "var(--text-3)" }}>Sin plan</span>
                   )}
-                  <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: "var(--text-3)" }}>
+                  <span className="inline-flex items-center gap-1 text-2xs" style={{ color: "var(--text-3)" }}>
                     <BadgeCheck className="h-2.5 w-2.5" style={{ color: c.membershipPaidAt ? "var(--success)" : "var(--text-3)" }} />
                     {c.membershipPaidAt ? `Pagó ${fmtShort(c.membershipPaidAt)}` : "Sin pago"}
                   </span>
@@ -282,7 +282,7 @@ function MembershipsView({ active, inactive, query }: { active: ClientCard[]; in
 
               {/* Estado de renovación */}
               <div className="flex items-center gap-1.5 shrink-0">
-                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2 py-1 rounded-lg text-right"
+                <span className="inline-flex items-center gap-1 text-xs font-extrabold px-2 py-1 rounded-lg text-right"
                   style={{ color: sc.color, background: sc.bg }}>
                   {status.alert && <AlertTriangle className="h-3 w-3 shrink-0" />}
                   {status.state === "none"
@@ -302,8 +302,8 @@ function MembershipsView({ active, inactive, query }: { active: ClientCard[]; in
 function StatMini({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="rounded-2xl px-3 py-3 text-center" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
-      <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color, fontFamily: "'Barlow Condensed', sans-serif" }}>{value}</p>
-      <p className="text-[11px] mt-1 font-medium" style={{ color: "var(--text-3)" }}>{label}</p>
+      <p className="text-2xl font-extrabold tabular-nums leading-none" style={{ color, fontFamily: "var(--font-display)" }}>{value}</p>
+      <p className="text-xs mt-1 font-medium" style={{ color: "var(--text-3)" }}>{label}</p>
     </div>
   );
 }

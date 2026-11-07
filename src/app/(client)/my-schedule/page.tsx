@@ -5,7 +5,7 @@ export default function MySchedulePage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-3xl font-extrabold uppercase" style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+        <h1 className="font-extrabold uppercase" style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
           Mis turnos
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--text-2)" }}>

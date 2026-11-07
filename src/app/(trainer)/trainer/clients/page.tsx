@@ -49,7 +49,7 @@ export default async function ClientsPage() {
   return (
     <div className="max-w-5xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Alumnos</h1>
+        <h1 className="font-extrabold" style={{ color: "var(--text)" }}>Alumnos</h1>
         <p className="mt-1 text-sm" style={{ color: "var(--text-2)" }}>
           Gestioná accesos, membresías y rutinas de cada alumno
         </p>

@@ -46,7 +46,7 @@ export function TurnosTabs({
       {view === "turnos" ? (
         <>
           <div className="mb-6">
-            <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Turnos</h1>
+            <h1 className="font-extrabold" style={{ color: "var(--text)" }}>Turnos</h1>
             <p className="mt-1 text-sm" style={{ color: "var(--text-2)" }}>
               Asigná alumnos a cada turno semanal — tocá cualquier turno para gestionar
             </p>

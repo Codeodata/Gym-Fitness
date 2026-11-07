@@ -69,7 +69,7 @@ export default function RegisterPage() {
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "var(--accent)" }}>
             <Dumbbell className="h-7 w-7" style={{ color: "var(--accent-fg)" }} />
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Crear cuenta</h1>
+          <h1 className="font-bold" style={{ color: "var(--text)" }}>Crear cuenta</h1>
           <p className="text-sm text-center" style={{ color: "var(--text-2)" }}>
             Registrate y esperá la aprobación del entrenador
           </p>

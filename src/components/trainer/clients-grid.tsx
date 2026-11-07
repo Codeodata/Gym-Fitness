@@ -127,7 +127,7 @@ export function ClientsGrid({ clients: initial, status, filter, accent, gender, 
               style={{ borderBottom: "1px solid var(--border)" }}
             >
               <span
-                className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg"
+                className="text-2xs font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg"
                 style={{ background: sc.bg, color: sc.text }}
               >
                 {STATUS_LABEL[status]}
@@ -154,7 +154,7 @@ export function ClientsGrid({ clients: initial, status, filter, accent, gender, 
                   className="font-extrabold text-base leading-tight truncate"
                   style={{
                     color: status === "inactive" ? "var(--text-2)" : "var(--text)",
-                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontFamily: "var(--font-display)",
                   }}
                 >
                   {client.name}
@@ -206,7 +206,7 @@ export function ClientsGrid({ clients: initial, status, filter, accent, gender, 
                 <Clock className="h-3.5 w-3.5 shrink-0 mt-1.5" style={{ color: "var(--text-3)" }} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
+                    <span className="text-2xs font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>
                       Membresía
                     </span>
                     {savedMem === client.id && <Check className="h-3 w-3" style={{ color: "#4ade80" }} />}
@@ -222,7 +222,7 @@ export function ClientsGrid({ clients: initial, status, filter, accent, gender, 
                           onClick={() => setMembership(client.id, type)}
                           disabled={savingMem === client.id}
                           title={m.label}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all"
                           style={{
                             background: isActive ? m.bg : "var(--bg-hover)",
                             border: `1px solid ${isActive ? m.color : "var(--border)"}`,

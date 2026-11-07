@@ -40,7 +40,7 @@ function Kpi({ icon: Icon, label, value, accent, sub }: {
       </div>
       <div className="min-w-0">
         <p className="text-2xl font-extrabold tabular-nums leading-none"
-          style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>{value}</p>
+          style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>{value}</p>
         <p className="text-xs mt-1 font-medium leading-tight" style={{ color: "var(--text-3)" }}>{label}</p>
         {sub}
       </div>
@@ -102,7 +102,7 @@ export function ResumenDashboard({ userName, data }: { userName: string; data: D
     <div className="max-w-3xl pb-16">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-extrabold leading-none" style={{ color: "var(--text)" }}>Estadísticas</h1>
+        <h1 className="font-extrabold leading-none" style={{ color: "var(--text)" }}>Estadísticas</h1>
         <p className="mt-2 text-sm" style={{ color: "var(--text-2)" }}>
           La foto de tu gimnasio, {userName.split(" ")[0]} — membresías, turnos, rutinas y seguimiento.
         </p>
@@ -112,14 +112,14 @@ export function ResumenDashboard({ userName, data }: { userName: string; data: D
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         <Kpi icon={Users} label="Alumnos activos" value={kpis.activeClients} accent="var(--accent)"
           sub={kpis.pendingClients > 0 ? (
-            <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-md mt-1" style={{ background: "rgba(245,158,11,0.15)", color: "var(--warning)" }}>
+            <span className="inline-block text-2xs font-bold px-1.5 py-0.5 rounded-md mt-1" style={{ background: "rgba(245,158,11,0.15)", color: "var(--warning)" }}>
               {kpis.pendingClients} pendiente{kpis.pendingClients !== 1 ? "s" : ""}
             </span>
           ) : undefined} />
         <Kpi icon={Dumbbell} label="Con rutina" value={`${kpis.assignedClients}`} accent="var(--c-purple)"
-          sub={<span className="text-[10px] mt-1 block" style={{ color: "var(--text-3)" }}>{pctConRutina}% de los activos</span>} />
+          sub={<span className="text-2xs mt-1 block" style={{ color: "var(--text-3)" }}>{pctConRutina}% de los activos</span>} />
         <Kpi icon={CalendarCheck} label="Ocupación turnos" value={`${kpis.occupancyPct}%`} accent="var(--c-blue)"
-          sub={<span className="text-[10px] mt-1 block" style={{ color: "var(--text-3)" }}>{kpis.totalEnrollments} en {kpis.totalSlots} turnos</span>} />
+          sub={<span className="text-2xs mt-1 block" style={{ color: "var(--text-3)" }}>{kpis.totalEnrollments} en {kpis.totalSlots} turnos</span>} />
         <Kpi icon={CreditCard} label="Membresías por vencer" value={byVencer} accent={byVencer > 0 ? "var(--warning)" : "var(--c-green)"} />
         <Kpi icon={UserPlus} label="Nuevos este mes" value={kpis.newThisMonth} accent="var(--c-green)" />
         <Kpi icon={Activity} label="Sesiones (7 días)" value={kpis.sessionsThisWeek} accent="var(--c-orange)" />
@@ -137,16 +137,16 @@ export function ResumenDashboard({ userName, data }: { userName: string; data: D
             <Link key={c.label} href="/trainer/clients" className="rounded-2xl px-3 py-3.5 flex flex-col gap-1"
               style={{ background: "var(--bg-panel)", border: `1px solid ${c.value > 0 && c.color !== "var(--text-3)" ? c.color : "var(--border)"}` }}>
               <span className="inline-flex items-center gap-1.5 text-2xl font-extrabold tabular-nums leading-none"
-                style={{ color: c.color, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                style={{ color: c.color, fontFamily: "var(--font-display)" }}>
                 {(c.label === "Vencidas" || c.label === "Por vencer") && c.value > 0 && <AlertTriangle className="h-4 w-4" />}
                 {c.value}
               </span>
-              <span className="text-[11px] font-semibold" style={{ color: "var(--text-3)" }}>{c.label}</span>
+              <span className="text-xs font-semibold" style={{ color: "var(--text-3)" }}>{c.label}</span>
             </Link>
           ))}
         </div>
         <div className="rounded-2xl p-5 flex flex-col gap-4" style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}>
-          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>Por tipo de plan</p>
+          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>Por tipo de plan</p>
           {memberList.map((m) => {
             const pct = totalClients > 0 ? Math.round((m.value / totalClients) * 100) : 0;
             return (
@@ -180,8 +180,8 @@ export function ResumenDashboard({ userName, data }: { userName: string; data: D
                     <div className="absolute bottom-0 left-0 right-0 rounded-lg"
                       style={{ height: mounted ? `${Math.max(Math.min(o.pct, 100), 3)}%` : "3%", background: full ? "var(--warning)" : "var(--c-blue)", transition: `height 0.7s cubic-bezier(0.16,1,0.3,1) ${o.dow * 40}ms` }} />
                   </div>
-                  <span className="text-[10px] tabular-nums" style={{ color: "var(--text-3)" }}>{o.enrolled}/{o.capacity || "—"}</span>
-                  <span className="text-[10px] font-bold uppercase" style={{ color: "var(--text-3)" }}>{DOW_SHORT[o.dow]}</span>
+                  <span className="text-2xs tabular-nums" style={{ color: "var(--text-3)" }}>{o.enrolled}/{o.capacity || "—"}</span>
+                  <span className="text-2xs font-bold uppercase" style={{ color: "var(--text-3)" }}>{DOW_SHORT[o.dow]}</span>
                 </div>
               );
             })}
@@ -200,7 +200,7 @@ export function ResumenDashboard({ userName, data }: { userName: string; data: D
               <Link key={p.planId} href={`/trainer/plans/${p.planId}`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
                 style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}>
                 <span className="w-6 text-center text-sm font-extrabold tabular-nums shrink-0"
-                  style={{ color: i === 0 ? "var(--accent)" : "var(--text-3)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  style={{ color: i === 0 ? "var(--accent)" : "var(--text-3)", fontFamily: "var(--font-display)" }}>
                   {i === 0 ? <Trophy className="h-4 w-4 inline" /> : i + 1}
                 </span>
                 <span className="w-1.5 h-6 rounded-full shrink-0" style={{ background: CAT_COLOR[p.category] ?? "var(--accent)" }} />
@@ -251,7 +251,7 @@ export function ResumenDashboard({ userName, data }: { userName: string; data: D
                   <div className="w-1/2 rounded-t-md" title={`${t.entrenamientos} entrenamientos`}
                     style={{ height: mounted ? `${Math.max((t.entrenamientos / maxTrack) * 100, t.entrenamientos > 0 ? 4 : 1)}%` : "1%", background: C_ENTREN, transition: `height 0.7s cubic-bezier(0.16,1,0.3,1) ${i * 25}ms` }} />
                 </div>
-                <span className="text-[9px] tabular-nums" style={{ color: "var(--text-3)" }}>{t.label}</span>
+                <span className="text-2xs tabular-nums" style={{ color: "var(--text-3)" }}>{t.label}</span>
               </div>
             ))}
           </div>
@@ -261,14 +261,14 @@ export function ResumenDashboard({ userName, data }: { userName: string; data: D
               <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: C_ASIST }} />
               <div>
                 <p className="text-lg font-extrabold tabular-nums leading-none" style={{ color: "var(--text)" }}>{trackingTotals.asistencias}</p>
-                <p className="text-[10px]" style={{ color: "var(--text-3)" }}>asistencias este mes</p>
+                <p className="text-2xs" style={{ color: "var(--text-3)" }}>asistencias este mes</p>
               </div>
             </div>
             <div className="rounded-xl px-3 py-2.5 flex items-center gap-2" style={{ background: "var(--bg-hover)" }}>
               <Activity className="h-4 w-4 shrink-0" style={{ color: C_ENTREN }} />
               <div>
                 <p className="text-lg font-extrabold tabular-nums leading-none" style={{ color: "var(--text)" }}>{trackingTotals.entrenamientos}</p>
-                <p className="text-[10px]" style={{ color: "var(--text-3)" }}>entrenamientos este mes</p>
+                <p className="text-2xs" style={{ color: "var(--text-3)" }}>entrenamientos este mes</p>
               </div>
             </div>
           </div>

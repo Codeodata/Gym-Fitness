@@ -138,7 +138,7 @@ export function MySchedule() {
                   background: hasSlot ? day.bg : "transparent",
                   borderRight: "1px solid var(--border)",
                 }}>
-                <span className="text-[10px] font-extrabold tracking-wider"
+                <span className="text-2xs font-extrabold tracking-wider"
                   style={{ color: hasSlot ? day.color : "var(--text-3)" }}>
                   {day.short}
                 </span>
@@ -146,10 +146,10 @@ export function MySchedule() {
                   dayEnrolled.map((s) => (
                     <div key={s.id} className="w-full text-center">
                       <div className="text-xs font-extrabold tabular-nums leading-none"
-                        style={{ color: TYPE_ACCENT[s.type] ?? "var(--accent)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                        style={{ color: TYPE_ACCENT[s.type] ?? "var(--accent)", fontFamily: "var(--font-display)" }}>
                         {s.startTime}
                       </div>
-                      <div className="text-[9px] mt-0.5 font-semibold capitalize leading-none"
+                      <div className="text-2xs mt-0.5 font-semibold capitalize leading-none"
                         style={{ color: TYPE_ACCENT[s.type] ?? "var(--accent)", opacity: 0.7 }}>
                         {s.type === "musculación" ? "mus" : "fun"}
                       </div>
@@ -158,7 +158,7 @@ export function MySchedule() {
                 ) : (
                   <div className="w-4 h-4 rounded-full flex items-center justify-center"
                     style={{ background: "var(--bg-hover)" }}>
-                    <span className="text-[10px]" style={{ color: "var(--border-strong)" }}>—</span>
+                    <span className="text-2xs" style={{ color: "var(--border-strong)" }}>—</span>
                   </div>
                 )}
               </div>
@@ -219,7 +219,7 @@ export function MySchedule() {
                 return (
                   <div key={day.num} className="flex flex-col gap-2">
                     {/* Day header — colored per day */}
-                    <div className="text-center py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider"
+                    <div className="text-center py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider"
                       style={{ background: day.bg, color: day.color, border: `1px solid ${day.color}44` }}>
                       {day.short}
                     </div>
@@ -266,11 +266,11 @@ export function MySchedule() {
                           >
                             {/* Time */}
                             <span className="text-base font-extrabold tabular-nums leading-none"
-                              style={{ color: isEnrolled ? typeAccent : "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                              style={{ color: isEnrolled ? typeAccent : "var(--text)", fontFamily: "var(--font-display)" }}>
                               {slot.startTime}
                             </span>
                             {/* Type badge — always colored */}
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                            <span className="text-2xs font-bold px-1.5 py-0.5 rounded-md"
                               style={{ background: badgeBg, color: badgeColor }}>
                               {slot.type === "musculación" ? "MUS" : "FUN"}
                             </span>
@@ -285,7 +285,7 @@ export function MySchedule() {
                               }
                             </div>
                             {/* Estado / lugares libres */}
-                            <span className="text-[9px] font-bold leading-none text-center"
+                            <span className="text-2xs font-bold leading-none text-center"
                               style={{ color: isEnrolled ? typeAccent : isFull ? "#ef4444" : spotsLeft !== null && spotsLeft <= 2 ? "var(--warning)" : "var(--text-3)" }}>
                               {isEnrolled ? "Reservado" : isFull ? "Lleno" : spotsLeft !== null ? `${spotsLeft} libre${spotsLeft !== 1 ? "s" : ""}` : "Reservar"}
                             </span>

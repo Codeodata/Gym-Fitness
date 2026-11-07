@@ -36,10 +36,10 @@ function StatCard({ label, value, icon: Icon, accent }: {
       </div>
       <div className="min-w-0 w-full">
         <p className="text-xl sm:text-2xl font-extrabold tabular-nums leading-none"
-          style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+          style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
           {value}
         </p>
-        <p className="text-[11px] sm:text-xs mt-0.5 font-medium leading-tight" style={{ color: "var(--text-3)" }}>{label}</p>
+        <p className="text-xs sm:text-xs mt-0.5 font-medium leading-tight" style={{ color: "var(--text-3)" }}>{label}</p>
       </div>
     </div>
   );
@@ -174,11 +174,11 @@ function SlotCard({ slot, enrolled, allSlots, onMoveRequest }: {
       {/* Header */}
       <div className="px-4 pt-4 pb-3 flex flex-col gap-1" style={{ background: bg }}>
         <span className="text-3xl font-extrabold tabular-nums leading-none"
-          style={{ color: accent, fontFamily: "'Barlow Condensed', sans-serif" }}>
+          style={{ color: accent, fontFamily: "var(--font-display)" }}>
           {slot.startTime} hs
         </span>
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg capitalize"
+          <span className="text-xs font-bold px-2 py-0.5 rounded-lg capitalize"
             style={{ background: accent, color: "#0a0a0a" }}>
             {slot.type}
           </span>
@@ -195,7 +195,7 @@ function SlotCard({ slot, enrolled, allSlots, onMoveRequest }: {
           <p className="text-xs text-center py-2" style={{ color: "var(--text-3)" }}>Sin inscriptos</p>
         ) : enrolled.map((e) => (
           <div key={e.clientId} className="flex items-center gap-2 group cursor-default">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0"
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-2xs font-extrabold shrink-0"
               style={{ background: accent, color: "#0a0a0a" }}>
               {e.clientName?.[0]?.toUpperCase() ?? "?"}
             </div>
@@ -313,11 +313,11 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-extrabold capitalize leading-tight"
-            style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+          <h1 className="font-extrabold first-letter:uppercase leading-tight"
+            style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
             Buen día, {userName.split(" ")[0]} 👋
           </h1>
-          <p className="text-sm mt-0.5 capitalize" style={{ color: "var(--text-3)" }}>{dateLabel}</p>
+          <p className="text-sm mt-0.5 first-letter:uppercase" style={{ color: "var(--text-3)" }}>{dateLabel}</p>
         </div>
         <button
           onClick={() => setShowNotif(true)}
@@ -351,7 +351,7 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
                 style={{ background: "var(--bg-panel)" }}>
                 <UserPlus className="h-3.5 w-3.5 shrink-0" style={{ color: "#f59e0b" }} />
                 <span className="flex-1 min-w-0 truncate text-sm font-semibold" style={{ color: "var(--text)" }}>{n.body}</span>
-                <span className="text-[10px] shrink-0" style={{ color: "var(--text-3)" }}>
+                <span className="text-2xs shrink-0" style={{ color: "var(--text-3)" }}>
                   {new Date(n.sentAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </span>
               </Link>
@@ -430,13 +430,13 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
                         background: isToday ? dc.bg : "transparent",
                       }}>
                         <p className="text-sm font-extrabold"
-                          style={{ color: isToday ? dc.text : "var(--text-3)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                          style={{ color: isToday ? dc.text : "var(--text-3)", fontFamily: "var(--font-display)" }}>
                           {DAY_SHORT[dow]}
                         </p>
                       </div>
                       <div className="px-2 py-3 flex flex-col gap-1.5 flex-1">
                         {daySlots.length === 0
-                          ? <p className="text-[10px] text-center" style={{ color: "var(--text-3)" }}>—</p>
+                          ? <p className="text-2xs text-center" style={{ color: "var(--text-3)" }}>—</p>
                           : daySlots.map((s) => {
                             const cnt = enrollments.filter((e) => e.slotId === s.id).length;
                             const color = TYPE_COLOR[s.type] ?? "var(--accent)";
@@ -444,8 +444,8 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
                               <div key={s.id} className="rounded-lg px-1.5 py-1 flex items-center gap-1"
                                 style={{ background: TYPE_BG[s.type] ?? "var(--accent-soft)" }}>
                                 <div className="w-1 h-1 rounded-full shrink-0" style={{ background: color }} />
-                                <span className="text-[10px] font-bold tabular-nums" style={{ color }}>{s.startTime}</span>
-                                <span className="text-[10px] ml-auto font-semibold" style={{ color }}>{cnt}</span>
+                                <span className="text-2xs font-bold tabular-nums" style={{ color }}>{s.startTime}</span>
+                                <span className="text-2xs ml-auto font-semibold" style={{ color }}>{cnt}</span>
                               </div>
                             );
                           })
@@ -453,10 +453,10 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
                       </div>
                       <div className="py-2 text-center" style={{ borderTop: "1px solid var(--border)", background: isToday ? dc.bg : "transparent" }}>
                         <span className="text-sm font-extrabold"
-                          style={{ color: isToday ? dc.text : "var(--text-3)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                          style={{ color: isToday ? dc.text : "var(--text-3)", fontFamily: "var(--font-display)" }}>
                           {totalEnrolled}
                         </span>
-                        <p className="text-[9px]" style={{ color: "var(--text-3)" }}>alum.</p>
+                        <p className="text-2xs" style={{ color: "var(--text-3)" }}>alum.</p>
                       </div>
                     </div>
                   );
@@ -503,7 +503,7 @@ export function TrainerMainDashboard({ userName }: { userName: string }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium leading-snug" style={{ color: "var(--text)" }}>{n.body}</p>
-                      <p className="text-[10px] mt-1" style={{ color: "var(--text-3)" }}>
+                      <p className="text-2xs mt-1" style={{ color: "var(--text-3)" }}>
                         {n.toId ? `Para: ${clients.find((c) => c.id === n.toId)?.name ?? "alumno"}` : "Para: todos"}
                         {" · "}
                         {new Date(n.sentAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}

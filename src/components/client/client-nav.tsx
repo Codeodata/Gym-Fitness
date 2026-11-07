@@ -93,7 +93,7 @@ export function ClientNav({ userName }: { userName: string }) {
           <div className="flex-1 min-w-0">
             <p
               className="text-sm font-extrabold uppercase tracking-widest"
-              style={{ color: "#fff", fontFamily: "'Barlow Condensed', sans-serif" }}
+              style={{ color: "#fff", fontFamily: "var(--font-display)" }}
             >
               Claudia Duran Fitness
             </p>
@@ -225,7 +225,7 @@ export function ClientNav({ userName }: { userName: string }) {
         </button>
         <span
           className="font-extrabold text-sm uppercase tracking-widest flex-1"
-          style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}
+          style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}
         >
           Claudia Duran Fitness
         </span>

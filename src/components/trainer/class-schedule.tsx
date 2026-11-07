@@ -66,7 +66,7 @@ function AddClientPanel({
               <X className="h-4 w-4" />
             </button>
           </div>
-          <p className="text-xl font-extrabold" style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+          <p className="text-xl font-extrabold" style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
             {DAYS.find((d) => d.num === slot.dayOfWeek)?.label} {slot.startTime} hs
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-3)" }}>
@@ -203,7 +203,7 @@ export function ClassSchedule() {
                   >
                     {/* Time + type */}
                     <div className="flex items-center justify-between gap-1">
-                      <span className="font-extrabold text-sm tabular-nums" style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                      <span className="font-extrabold text-sm tabular-nums" style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
                         {slot.startTime} hs
                       </span>
                       <span className="text-xs font-bold px-1.5 py-0.5 rounded-lg"
@@ -226,7 +226,7 @@ export function ClassSchedule() {
                         {slotEnrolled.slice(0, 4).map((e) => (
                           <div key={e.clientId} className="flex items-center gap-1.5">
                             <div
-                              className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+                              className="w-4 h-4 rounded-full flex items-center justify-center text-2xs font-bold shrink-0"
                               style={{ background: typeStyle.bg, color: typeStyle.text }}
                             >
                               {e.clientName?.[0]?.toUpperCase() ?? "?"}
@@ -284,7 +284,7 @@ export function ClassSchedule() {
                       onClick={() => setActiveSlot(slot)}
                     >
                       <div className="shrink-0">
-                        <p className="font-extrabold text-base tabular-nums" style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                        <p className="font-extrabold text-base tabular-nums" style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
                           {slot.startTime} hs
                         </p>
                         <span className="text-xs font-bold px-1.5 py-0.5 rounded-lg"

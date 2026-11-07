@@ -72,7 +72,7 @@ export function MembershipPicker({
               <p className="text-xs font-extrabold leading-tight" style={{ color: active ? "var(--accent)" : "var(--text)" }}>
                 {opt.label}
               </p>
-              <p className="text-[10px] leading-tight" style={{ color: "var(--text-3)" }}>{opt.sub}</p>
+              <p className="text-2xs leading-tight" style={{ color: "var(--text-3)" }}>{opt.sub}</p>
             </button>
           );
         })}

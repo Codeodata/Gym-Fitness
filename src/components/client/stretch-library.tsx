@@ -55,7 +55,7 @@ export function StretchLibrary({ stretches }: { stretches: Stretch[] }) {
     <div className="max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-5">
-        <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Estiramientos</h1>
+        <h1 className="font-extrabold" style={{ color: "var(--text)" }}>Estiramientos</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-2)" }}>
           {stretches.length} estiramientos con video explicativo
         </p>
@@ -111,11 +111,11 @@ export function StretchLibrary({ stretches }: { stretches: Stretch[] }) {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm leading-snug" style={{ color: "var(--text)" }}>{ex.name}</p>
                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      <span className="text-[11px] font-bold" style={{ color }}>
+                      <span className="text-xs font-bold" style={{ color }}>
                         {MG_LABEL[ex.muscleGroup] ?? ex.muscleGroup}
                       </span>
                       {ex.difficulty && (
-                        <span className="text-[10px]" style={{ color: "var(--text-3)" }}>
+                        <span className="text-2xs" style={{ color: "var(--text-3)" }}>
                           · {DIFF_LABEL[ex.difficulty] ?? ex.difficulty}
                         </span>
                       )}

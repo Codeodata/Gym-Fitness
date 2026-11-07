@@ -50,7 +50,7 @@ export default async function PlansPage() {
     <div className="max-w-5xl">
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold" style={{ color: "var(--text)" }}>Plantillas</h1>
+          <h1 className="font-extrabold" style={{ color: "var(--text)" }}>Plantillas</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--text-2)" }}>
             Armá tus plantillas (chicas/chicos × 2, 3 días o pase libre) y copialas a cada alumno
           </p>

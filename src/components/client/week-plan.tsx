@@ -77,14 +77,14 @@ export function WeekPlan() {
               <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                 style={{ background: isToday ? "var(--accent)" : "var(--bg-hover)" }}>
                 <span className="text-sm font-extrabold leading-none"
-                  style={{ color: isToday ? "var(--accent-fg)" : "var(--text-3)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  style={{ color: isToday ? "var(--accent-fg)" : "var(--text-3)", fontFamily: "var(--font-display)" }}>
                   {DOW_LETTER[day.dow]}
                 </span>
               </div>
 
               <div className="flex-1 min-w-0">
                 <p className="font-extrabold text-sm leading-tight"
-                  style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}>
                   {DOW_FULL[day.dow]}
                   {subtitle ? <span className="font-normal" style={{ color: "var(--text-3)" }}> · {subtitle}</span> : null}
                 </p>
@@ -93,7 +93,7 @@ export function WeekPlan() {
                     {muscleGroups.map((mg) => {
                       const col = MG_COLOR[mg] ?? "var(--accent)";
                       return (
-                        <span key={mg} className="text-[10px] font-semibold px-1.5 py-px rounded"
+                        <span key={mg} className="text-2xs font-semibold px-1.5 py-px rounded"
                           style={{ background: `${col}18`, color: col }}>
                           {MG_LABEL[mg] ?? mg}
                         </span>
@@ -104,7 +104,7 @@ export function WeekPlan() {
               </div>
 
               {isToday && (
-                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
+                <span className="text-2xs font-extrabold px-1.5 py-0.5 rounded shrink-0"
                   style={{ background: "var(--accent)", color: "var(--accent-fg)" }}>
                   HOY
                 </span>
@@ -122,11 +122,11 @@ export function WeekPlan() {
                     <p className="flex-1 text-sm truncate" style={{ color: "var(--text)" }}>{ex.name}</p>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs font-extrabold tabular-nums"
-                        style={{ color: "var(--text-2)", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                        style={{ color: "var(--text-2)", fontFamily: "var(--font-display)" }}>
                         {ex.sets}×{ex.reps}
                       </span>
                       {ex.weightKg && (
-                        <span className="text-[11px] font-semibold tabular-nums"
+                        <span className="text-xs font-semibold tabular-nums"
                           style={{ color: "var(--accent)" }}>
                           {ex.weightKg}kg
                         </span>

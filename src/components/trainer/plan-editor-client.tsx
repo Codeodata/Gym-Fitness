@@ -346,7 +346,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
               className="text-xl font-extrabold flex-1 bg-transparent outline-none"
               style={{
                 color: "var(--text)",
-                fontFamily: "'Barlow Condensed', sans-serif",
+                fontFamily: "var(--font-display)",
                 borderBottom: "2px solid var(--accent)",
                 paddingBottom: "2px",
               }}
@@ -371,7 +371,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
           <div className="flex items-center gap-2 flex-1">
             <h2
               className="text-xl font-extrabold"
-              style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}
+              style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}
             >
               {planName}
             </h2>
@@ -423,7 +423,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
               {students.map((s) => (
                 <div key={s.clientId} className="group flex items-center gap-2.5 px-3 py-2 rounded-xl"
                   style={{ background: "var(--bg-hover)", border: "1px solid var(--border)" }}>
-                  <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-extrabold"
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-xs font-extrabold"
                     style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
                     {s.clientName?.charAt(0).toUpperCase() ?? "?"}
                   </div>
@@ -432,7 +432,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
                     {s.days.map((d) => (
-                      <span key={d} className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                      <span key={d} className="text-2xs font-bold px-1.5 py-0.5 rounded-md"
                         style={{ background: "var(--bg-panel)", color: "var(--text-2)" }}>
                         {DOW_SHORT[d]}
                       </span>
@@ -444,7 +444,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                     style={{ color: "var(--text-3)" }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = "var(--destructive)")}
                     onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}>
-                    {unassigning === s.clientId ? <span className="text-[10px]">…</span> : <X className="h-3.5 w-3.5" />}
+                    {unassigning === s.clientId ? <span className="text-2xs">…</span> : <X className="h-3.5 w-3.5" />}
                   </button>
                 </div>
               ))}
@@ -457,7 +457,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
               style={{ border: "1px solid var(--accent)", background: "var(--bg)" }}>
               {initialDays.length > 0 && (
                 <div>
-                  <p className="text-[11px] font-extrabold uppercase tracking-wider mb-2" style={{ color: "var(--text-3)" }}>
+                  <p className="text-xs font-extrabold uppercase tracking-wider mb-2" style={{ color: "var(--text-3)" }}>
                     ¿Qué día entrena cada jornada?
                   </p>
                   <div className="flex flex-col gap-1.5">
@@ -490,7 +490,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[11px] font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>Alumnos</p>
+                  <p className="text-xs font-extrabold uppercase tracking-wider" style={{ color: "var(--text-3)" }}>Alumnos</p>
                   {clients.length > 0 && (
                     <button type="button" onClick={() => setSelectedClients(new Set(filteredClients.map((c) => c.id)))}
                       className="text-xs font-bold cursor-pointer" style={{ color: "var(--accent)" }}>Todos</button>
@@ -521,7 +521,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                               {sel && <Check className="h-2.5 w-2.5" style={{ color: "var(--accent-fg)" }} />}
                             </div>
                             <span className="flex-1 min-w-0 truncate text-sm font-semibold" style={{ color: "var(--text)" }}>{c.name}</span>
-                            {already && <span className="text-[9px] font-bold uppercase shrink-0" style={{ color: "var(--text-3)" }}>ya asignado</span>}
+                            {already && <span className="text-2xs font-bold uppercase shrink-0" style={{ color: "var(--text-3)" }}>ya asignado</span>}
                           </button>
                         );
                       })}
@@ -602,7 +602,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                   <div className="flex items-center gap-1.5 mb-2">
                     <Flame className="h-3.5 w-3.5" style={{ color: "var(--c-orange)" }} />
                     <span
-                      className="text-[10px] font-extrabold uppercase tracking-wider"
+                      className="text-2xs font-extrabold uppercase tracking-wider"
                       style={{ color: "var(--c-orange)" }}
                     >
                       Entrada en calor
@@ -629,7 +629,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                     <div className="flex items-center gap-1.5 mb-2">
                       <Dumbbell className="h-3.5 w-3.5" style={{ color: "var(--accent)" }} />
                       <span
-                        className="text-[10px] font-extrabold uppercase tracking-wider"
+                        className="text-2xs font-extrabold uppercase tracking-wider"
                         style={{ color: "var(--accent)" }}
                       >
                         Trabajo principal
@@ -688,7 +688,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       onClick={() => setAddMuscle(null)}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer"
+                      className="px-2.5 py-1 rounded-full text-xs font-bold cursor-pointer"
                       style={{
                         background: !addMuscle ? addAccent : "var(--bg-panel)",
                         color: !addMuscle ? "#0a0a0a" : "var(--text-3)",
@@ -703,7 +703,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                         <button
                           key={mg}
                           onClick={() => setAddMuscle(sel ? null : mg)}
-                          className="px-2.5 py-1 rounded-full text-[11px] font-bold cursor-pointer"
+                          className="px-2.5 py-1 rounded-full text-xs font-bold cursor-pointer"
                           style={{
                             background: sel ? addAccent : "var(--bg-panel)",
                             color: sel ? "#0a0a0a" : "var(--text-3)",
@@ -740,7 +740,7 @@ export function PlanEditorClient({ planId, initialName, initialDays, clients, in
                     )}
                     {Object.entries(groupedCatalog).map(([group, items]) => (
                       <div key={group}>
-                        <p className="text-[10px] font-extrabold uppercase tracking-widest mb-1 px-1" style={{ color: "var(--text-3)" }}>{group}</p>
+                        <p className="text-2xs font-extrabold uppercase tracking-widest mb-1 px-1" style={{ color: "var(--text-3)" }}>{group}</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                           {items.map((item) => (
                             <button
@@ -885,7 +885,7 @@ function ExerciseRowEditable({
         </button>
       </div>
       {ex.notes && (
-        <p className="text-[11px] italic leading-snug" style={{ color: "var(--text-3)" }}>{ex.notes}</p>
+        <p className="text-xs italic leading-snug" style={{ color: "var(--text-3)" }}>{ex.notes}</p>
       )}
     </div>
   );

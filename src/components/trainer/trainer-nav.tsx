@@ -86,7 +86,7 @@ export function TrainerNav({ userName, pendingCount = 0 }: { userName: string; p
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-extrabold uppercase tracking-widest"
-              style={{ fontFamily: "'Barlow Condensed', sans-serif", color: "#fff" }}>
+              style={{ fontFamily: "var(--font-display)", color: "#fff" }}>
               Claudia Duran Fitness
             </p>
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>Panel entrenador</p>
@@ -130,7 +130,7 @@ export function TrainerNav({ userName, pendingCount = 0 }: { userName: string; p
                       <Icon style={{ color: active ? "var(--accent-fg)" : "rgba(255,255,255,0.6)" }} width={active ? 20 : 17} height={active ? 20 : 17} />
                     </span>
                     {showBadge && (
-                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-extrabold px-1"
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-2xs font-extrabold px-1"
                         style={{ background: "#f59e0b", color: "#000" }}>
                         {pendingCount > 9 ? "9+" : pendingCount}
                       </span>
@@ -138,7 +138,7 @@ export function TrainerNav({ userName, pendingCount = 0 }: { userName: string; p
                   </span>
                   <span className="flex-1">{label}</span>
                   {showBadge && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                    <span className="px-2 py-0.5 rounded-full text-2xs font-extrabold"
                       style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b" }}>
                       {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
                     </span>
@@ -200,7 +200,7 @@ export function TrainerNav({ userName, pendingCount = 0 }: { userName: string; p
         </button>
         <span
           className="font-extrabold text-sm uppercase tracking-widest flex-1"
-          style={{ color: "var(--text)", fontFamily: "'Barlow Condensed', sans-serif" }}
+          style={{ color: "var(--text)", fontFamily: "var(--font-display)" }}
         >
           Claudia Duran Fitness
         </span>
